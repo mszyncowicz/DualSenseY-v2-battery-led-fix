@@ -1,77 +1,48 @@
-# Template For C++ Projects
+# DualSenseY
 
-![C++](https://img.shields.io/badge/C%2B%2B-11%2F14%2F17%2F20%2F23-blue)
-![License](https://img.shields.io/github/license/franneck94/CppProjectTemplate)
-![Linux Build](https://github.com/franneck94/CppProjectTemplate/workflows/Ubuntu%20CI%20Test/badge.svg)
+DualSenseY (v2) is a C++ application that enables advanced control and visualization for DualSense controllers. Using ImGui for its UI and leveraging libraries for audio and controller emulation, DualSenseY provides features like LED color customization, adaptive trigger configuration, and audio-based haptic feedback.
 
-This is a template for C++ projects. What you get:
+## Features
 
-This is a template for Imgui C++ projects. What you get:
+- **LED Control**: Customize the RGB colors on the DualSense LED bar or use special modes:
+  - **Disco Mode**: Cycles through colors in a smooth transition.
+  - **Audio to LED**: Syncs LED brightness with audio peak values for visual feedback.
+  
+- **Adaptive Trigger Configuration**: Provides customizable force feedback for the DualSense adaptive triggers, with various force modes like rigid, pulse, and calibration.
 
-- Library and executable code separated in distinct folders.
-- Use of modern CMake for building and compiling.
-- External libraries:
-  - All graphical and imgui related libs via Git submodules:
-    - GLFW, Imgui and Implot
-  - General purpose libraries via CMake FetchContent:
-    - [JSON](https://github.com/nlohmann/json), [cxxopts](https://github.com/jarro2783/cxxopts) and [fmt](https://github.com/fmtlib/fmt)
-- Continuous integration testing with Github Actions and [pre-commit](https://pre-commit.com/)
-- Code documentation with [Doxygen](https://doxygen.nl/) and [Github Pages](https://franneck94.github.io/CppProjectTemplate/)
-- Tooling: Clang-Format, Cmake-Format, Clang-tidy, Sanitizers
+- **Haptic Feedback**: Supports standard rumble controls and audio-to-haptics, which generates feedback based on system audio. (Available only in USB mode.)
 
-## Structure
+- **Touchpad Visualization**: Displays real-time touch input on the controller's touchpad, including touch coordinates and packet number.
 
-``` text
-├── CMakeLists.txt
-├── app
-│   ├── CMakesLists.txt
-│   └── main.cc
-├── cmake
-│   └── cmake modules
-├── docs
-│   ├── Doxyfile
-│   └── html/
-├── external
-│   ├── CMakesLists.txt
-│   ├── ...
-├── src
-│   ├── CMakesLists.txt
-└── ─── render/...
-```
+- **Controller Emulation**: Offers DS4 and Xbox 360 emulation using ViGEm, allowing the DualSense to be recognized as an alternative controller in other software.
 
-Library code goes into [src/](src/), main program code in [app/](app).
+- **UDP Connectivity**: Integrates UDP communication for remote control or synchronization with other applications.
 
-## Software Requirements
+## Requirements (For programmers)
 
-- CMake 3.21+
-- GNU Makefile
-- Doxygen
-- VCPKG
-- MSVC 2017 (or higher), G++9 (or higher), Clang++9 (or higher)
+- **Libraries**:
+  - [Dear ImGui](https://github.com/ocornut/imgui)
+  - [GLFW](https://www.glfw.org/)
+  - [OpenGL](https://www.opengl.org/)
+  - [miniaudio](https://github.com/mackron/miniaudio) for audio processing
+  - [ViGEm](https://vigem.org/) for controller emulation
+  - **Windows Only**: Requires `IMMDeviceEnumerator` and `IAudioMeterInformation` for audio integration.
 
-## Building
+## Build Instructions
 
-First, clone this repo and do the preliminary work:
+1. Clone the repository and ensure dependencies are installed.
+2. Build the project using CMake or a suitable build system.
+3. Run the executable to open the DSX Client window.
 
-```shell
-git clone --recursive https://github.com/franneck94/CppProjectTemplate
-mkdir build
-```
+## Usage
 
-- App Executable
+1. Start DualSenseY.exe, and select the desired DualSense controller.
+2. Use the LED and adaptive trigger controls to customize your experience.
+3. Enable **Audio to LED** or **Disco Mode** under the "LED" section.
+4. For haptics, select **Audio to Haptics** to experience feedback based on system audio.
+5. To switch to emulation mode, choose between DS4 and Xbox 360 under "Controller Emulation."
 
-```shell
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release --target main
-cd app
-./main
-```
+## Notes
 
-- Documentation
-
-```shell
-cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build . --config Debug --target docs
-```
+- **Emulation** requires the ViGEmBus driver. Install it if not already present.
+- **Haptic Feedback** features are unavailable when using Bluetooth.

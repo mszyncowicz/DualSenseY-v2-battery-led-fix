@@ -5,6 +5,13 @@
 
 #include "cycle.hpp"
 
+bool connect = false;
+bool isConnected = false;
+bool testSpeaker = false;
+int AccelerometerX = 0;
+int AccelerometerY = 0;
+int AccelerometerZ = 0;
+
 void start_cycle()
 {
     glfwPollEvents();
@@ -26,18 +33,4 @@ void end_cycle(GLFWwindow *const window)
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
-}
-
-void cycle_function(GLFWwindow *const window)
-{
-    while (!glfwWindowShouldClose(window))
-    {
-        start_cycle();
-
-        ImGui::NewFrame();
-        render();
-        ImGui::Render();
-
-        end_cycle(window);
-    }
 }

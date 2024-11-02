@@ -1,25 +1,32 @@
-set(EXE_SOURCES "main.cpp" "cycle.cpp")
-set(EXE_HEADERS "cycle.hpp")
-add_executable("main" ${EXE_SOURCES} ${EXE_HEADERS})
-target_link_libraries("main" PRIVATE fmt::fmt-header-only)
-target_link_libraries("main" PRIVATE glfw)
-target_link_libraries("main" PRIVATE OpenGL::GL)
-target_link_libraries("main" PRIVATE imgui::imgui)
-target_link_libraries("main" PRIVATE implot::implot)
-target_link_libraries("main" PRIVATE render)
+cmake_minimum_required(VERSION 3.28)
+set(CMAKE_CXX_STANDARD 20)
+set(EXE_SOURCES "main.cpp" "cycle.cpp" "DualSense.h")
+set(EXE_HEADERS "cycle.hpp" "DualSense.h")
+add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h" )
+set_property(TARGET "DualSenseY" PROPERTY VS_DPI_AWARE "PerMonitor")
+target_link_libraries("DualSenseY" PRIVATE fmt::fmt-header-only)
+target_link_libraries("DualSenseY" PRIVATE glfw)
+target_link_libraries("DualSenseY" PRIVATE OpenGL::GL)
+target_link_libraries("DualSenseY" PRIVATE imgui::imgui)
+target_link_libraries("DualSenseY" PRIVATE implot::implot)
+target_link_libraries("DualSenseY" PRIVATE render "hidapi_winapi")
+target_link_libraries("DualSenseY" PRIVATE setupapi cfgmgr32)
+target_link_libraries("DualSenseY" PRIVATE setupapi ViGEmClient)
+target_link_libraries("DualSenseY" PRIVATE nlohmann_json)
+
 
 target_set_warnings(
     TARGET
-    "main"
+    "DualSenseY"
     ENABLE
     ${ENABLE_WARNINGS}
     AS_ERRORS
     ${ENABLE_WARNINGS_AS_ERRORS})
 
 if(${ENABLE_LTO})
-    target_enable_lto("main" optimized)
+    target_enable_lto("DualSenseY" optimized)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_clang_tidy_to_target("main")
+    add_clang_tidy_to_target("DualSenseY")
 endif()

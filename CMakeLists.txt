@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.28)
 
 project(
-    "ImGuiTemplate"
-    VERSION 1.0.0
+    "DualSenseY"
+    VERSION 6.3
     LANGUAGES C CXX)
 
 # Global CMake variables are set here
@@ -69,6 +69,9 @@ add_subdirectory(configured)
 add_subdirectory(external)
 add_subdirectory(src)
 add_subdirectory(app)
+add_subdirectory(hidapi)
+add_subdirectory(ViGEmClient)
+add_subdirectory("json/")
 
 # INSTALL TARGETS
 

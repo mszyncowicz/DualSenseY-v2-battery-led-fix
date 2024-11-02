@@ -7,10 +7,6 @@
 #endif
 #include <GLFW/glfw3.h>
 
-#include "render.hpp"
-
 void start_cycle();
 
 void end_cycle(GLFWwindow *const window);
-
-void cycle_function(GLFWwindow *const window);

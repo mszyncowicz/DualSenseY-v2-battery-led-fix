@@ -6,6 +6,9 @@ project(
     LANGUAGES C CXX)
 
 # Global CMake variables are set here
+SET(CMAKE_CXX_FLAGS_RELEASE "/Od /Zi")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O0")
+SET(CMAKE_C_FLAGS_RELEASE "-O0")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -67,7 +70,6 @@ find_package(OpenGL REQUIRED)
 
 add_subdirectory(configured)
 add_subdirectory(external)
-add_subdirectory(src)
 add_subdirectory(app)
 add_subdirectory(hidapi)
 add_subdirectory(ViGEmClient)

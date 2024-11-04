@@ -1,4 +1,5 @@
 #include "Settings.h"
+#include "MyUtils.h"
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -87,10 +88,10 @@ public:
         serverAddr.sin_port = htons(portNumber);
         serverAddr.sin_addr.s_addr = INADDR_ANY;
 
-        if (::bind(clientSocket, (SOCKADDR *)&serverAddr, sizeof(serverAddr)) ==
-            SOCKET_ERROR)
+        if (::bind(clientSocket, (SOCKADDR *)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
         {
-            std::cerr << "Bind failed.\n";
+            int err = WSAGetLastError();
+            std::cerr << "Bind failed. " << err << endl;
             closesocket(clientSocket);
             WSACleanup();
             return;
@@ -129,7 +130,7 @@ public:
             newPacket = true;
 
             UDPResponse response{"DSX Received UDP Instructions",
-                                 currentDateTime(),
+                                 MyUtils::currentDateTime(),
                                  true,
                                  Battery};
 
@@ -674,7 +675,12 @@ public:
 
     static void StartFakeDSXProcess()
     {
-        system("start /B DSX.exe");
+        if(filesystem::exists("DSX.exe")) {
+            system("start /B DSX.exe");
+        }
+        else {
+            cout << "DSX.exe is not present" << endl;
+        }
     }
 
     void Dispose()
@@ -694,14 +700,5 @@ private:
     bool serverOn;
     bool newPacket = false;
     bool unavailable;
-    Settings thisSettings;
-
-    std::string currentDateTime()
-    {
-        std::time_t now = std::time(nullptr);
-        std::tm *nowTm = std::localtime(&now);
-        char buf[100];
-        std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", nowTm);
-        return buf;
-    }
+    Settings thisSettings;    
 };

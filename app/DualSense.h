@@ -1,25 +1,25 @@
-#include <iostream>
-#include <hidapi.h>
-#include <vector>
-#include <thread>
-#include <chrono>
-#include <mmdeviceapi.h>
 #include <Propvarutil.h>
+#include <chrono>
+#include <hidapi.h>
+#include <iostream>
+#include <mmdeviceapi.h>
+#include <thread>
+#include <vector>
 #pragma comment(lib, "Propsys.lib")
-#include <functiondiscoverykeys_devpkey.h>
 #include <atlbase.h>
+#include <functiondiscoverykeys_devpkey.h>
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
-#include <cfgmgr32.h>
-#include <sstream>
-#include <cstdint>
 #include <algorithm>
 #include <array>
 #include <cfgmgr32.h>
+#include <cstdint>
 #include <regex>
 #include <setupapi.h>
+#include <sstream>
 #include <string>
 #include <usbiodef.h>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 
@@ -27,138 +27,166 @@ using namespace std;
 constexpr int ERR_BAD_ARGUMENTS = 1;
 constexpr int ERR_NO_DEVICES_FOUND = 2;
 constexpr int ERR_NO_DEVICE_INFO = 3;
-constexpr wchar_t GUID_DISK_DRIVE_STRING[] = L"{21EC2020-3AEA-1069-A2DD-08002B30309D}";
+constexpr wchar_t GUID_DISK_DRIVE_STRING[] =
+    L"{21EC2020-3AEA-1069-A2DD-08002B30309D}";
 BOOL GetParentDeviceInstanceId(_Out_ std::wstring &parentDeviceInstanceId,
                                _Out_ DEVINST &parentDeviceInstanceIdHandle,
-                               _In_ DEVINST currentDeviceInstanceId) {
-
-  CONFIGRET result =
-      CM_Get_Parent(&parentDeviceInstanceIdHandle, currentDeviceInstanceId, 0);
-  if (result == CR_SUCCESS) {
-    parentDeviceInstanceId.clear();
-    parentDeviceInstanceId.resize(MAX_DEVICE_ID_LEN);
-    result =
-        CM_Get_Device_IDW(parentDeviceInstanceIdHandle,
-                         (PWSTR)parentDeviceInstanceId.data(), MAX_DEVICE_ID_LEN, 0);
-    if (result == CR_SUCCESS) {
-      return TRUE;
+                               _In_ DEVINST currentDeviceInstanceId)
+{
+    CONFIGRET result = CM_Get_Parent(&parentDeviceInstanceIdHandle,
+                                     currentDeviceInstanceId,
+                                     0);
+    if (result == CR_SUCCESS)
+    {
+        parentDeviceInstanceId.clear();
+        parentDeviceInstanceId.resize(MAX_DEVICE_ID_LEN);
+        result = CM_Get_Device_IDW(parentDeviceInstanceIdHandle,
+                                   (PWSTR)parentDeviceInstanceId.data(),
+                                   MAX_DEVICE_ID_LEN,
+                                   0);
+        if (result == CR_SUCCESS)
+        {
+            return TRUE;
+        }
     }
-  }
-  return FALSE;
+    return FALSE;
 }
 
 // Tests whether given Device Instance ID matches the pattern.
 BOOL DeviceIdMatchesPattern(const std::wstring &deviceInstanceId,
-                            const std::wstring &pattern) {
-  std::wregex regexPattern(pattern);
-  return std::regex_match(deviceInstanceId, regexPattern);
+                            const std::wstring &pattern)
+{
+    std::wregex regexPattern(pattern);
+    return std::regex_match(deviceInstanceId, regexPattern);
 }
 
 // Searches for a parent device with a matching Device Instance ID pattern
 int FindParentDeviceInstanceId(
     const std::wstring &searchedDeviceInstanceId,
     const std::wstring &parentDeviceInstanceIdPattern,
-    std::wstring &foundDeviceInstanceId) {
-  GUID diskDriveGuid;
-  CLSIDFromString(GUID_DISK_DRIVE_STRING, &diskDriveGuid);
+    std::wstring &foundDeviceInstanceId)
+{
+    GUID diskDriveGuid;
+    CLSIDFromString(GUID_DISK_DRIVE_STRING, &diskDriveGuid);
 
-  HDEVINFO devInfo = SetupDiGetClassDevs(&diskDriveGuid, NULL, NULL,
-                                         DIGCF_PRESENT | DIGCF_ALLCLASSES);
-  std::wstring deviceInstanceId(MAX_DEVICE_ID_LEN, L'\0');
+    HDEVINFO devInfo = SetupDiGetClassDevs(&diskDriveGuid,
+                                           NULL,
+                                           NULL,
+                                           DIGCF_PRESENT | DIGCF_ALLCLASSES);
+    std::wstring deviceInstanceId(MAX_DEVICE_ID_LEN, L'\0');
 
-  if (devInfo != INVALID_HANDLE_VALUE) {
-    DWORD devIndex = 0;
-    SP_DEVINFO_DATA devInfoData = {};
-    devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+    if (devInfo != INVALID_HANDLE_VALUE)
+    {
+        DWORD devIndex = 0;
+        SP_DEVINFO_DATA devInfoData = {};
+        devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
 
-    while (SetupDiEnumDeviceInfo(devInfo, devIndex, &devInfoData)) {
-      std::fill(deviceInstanceId.begin(), deviceInstanceId.end(), L'\0');
-      SetupDiGetDeviceInstanceIdW(devInfo, &devInfoData, (PWSTR)deviceInstanceId.data(),
-                                 MAX_PATH, 0);
+        while (SetupDiEnumDeviceInfo(devInfo, devIndex, &devInfoData))
+        {
+            std::fill(deviceInstanceId.begin(), deviceInstanceId.end(), L'\0');
+            SetupDiGetDeviceInstanceIdW(devInfo,
+                                        &devInfoData,
+                                        (PWSTR)deviceInstanceId.data(),
+                                        MAX_PATH,
+                                        0);
 
-      if (_wcsicmp(searchedDeviceInstanceId.c_str(),
-                   deviceInstanceId.c_str()) == 0) {
-        DEVINST currentDeviceInstanceId = devInfoData.DevInst;
-        DEVINST parentDeviceInstanceId = 0;
-        std::wstring parentDeviceInstanceIdStr;
+            if (_wcsicmp(searchedDeviceInstanceId.c_str(),
+                         deviceInstanceId.c_str()) == 0)
+            {
+                DEVINST currentDeviceInstanceId = devInfoData.DevInst;
+                DEVINST parentDeviceInstanceId = 0;
+                std::wstring parentDeviceInstanceIdStr;
 
-        while (true) {
-          std::fill(deviceInstanceId.begin(), deviceInstanceId.end(), L'\0');
-          parentDeviceInstanceId = 0;
-          if (GetParentDeviceInstanceId(parentDeviceInstanceIdStr,
-                                        parentDeviceInstanceId,
-                                        currentDeviceInstanceId)) {
-            if (DeviceIdMatchesPattern(parentDeviceInstanceIdStr,
-                                       parentDeviceInstanceIdPattern)) {
-              foundDeviceInstanceId = parentDeviceInstanceIdStr; // Found ID
-              return 0;
+                while (true)
+                {
+                    std::fill(deviceInstanceId.begin(),
+                              deviceInstanceId.end(),
+                              L'\0');
+                    parentDeviceInstanceId = 0;
+                    if (GetParentDeviceInstanceId(parentDeviceInstanceIdStr,
+                                                  parentDeviceInstanceId,
+                                                  currentDeviceInstanceId))
+                    {
+                        if (DeviceIdMatchesPattern(
+                                parentDeviceInstanceIdStr,
+                                parentDeviceInstanceIdPattern))
+                        {
+                            foundDeviceInstanceId =
+                                parentDeviceInstanceIdStr; // Found ID
+                            return 0;
+                        }
+                        currentDeviceInstanceId = parentDeviceInstanceId;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
-            currentDeviceInstanceId = parentDeviceInstanceId;
-          } else {
-            break;
-          }
+            devIndex++;
         }
-      }
-      devIndex++;
-    }
 
-    if (devIndex == 0) {
-      return ERR_NO_DEVICES_FOUND;
+        if (devIndex == 0)
+        {
+            return ERR_NO_DEVICES_FOUND;
+        }
     }
-  } else {
-    return ERR_NO_DEVICE_INFO;
-  }
-  return ERR_NO_DEVICES_FOUND;
+    else
+    {
+        return ERR_NO_DEVICE_INFO;
+    }
+    return ERR_NO_DEVICES_FOUND;
 }
 
 #define MAX_READ_LENGTH 64
 #define MAX_USB_WRITE_LENGTH 48
 #define MAX_BT_WRITE_LENGTH 78
 
-const UINT32 hashTable[256] = { // Hash table from -> https://github.com/Ohjurot/DualSense-Windows/blob/main/VS19_Solution/DualSenseWindows/src/DualSenseWindows/DS_CRC32.cpp
-    0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 0xd56f2b94, 0xa2681b02,
-    0x3b614ab8, 0x4c667a2e, 0xdcd967bf, 0xabde5729, 0x32d70693, 0x45d03605,
-    0xdbb4a3a6, 0xacb39330, 0x35bac28a, 0x42bdf21c, 0xcfb5ffe9, 0xb8b2cf7f,
-    0x21bb9ec5, 0x56bcae53, 0xc8d83bf0, 0xbfdf0b66, 0x26d65adc, 0x51d16a4a,
-    0xc16e77db, 0xb669474d, 0x2f6016f7, 0x58672661, 0xc603b3c2, 0xb1048354,
-    0x280dd2ee, 0x5f0ae278, 0xe96ccf45, 0x9e6bffd3, 0x762ae69,  0x70659eff,
-    0xee010b5c, 0x99063bca, 0xf6a70,    0x77085ae6, 0xe7b74777, 0x90b077e1,
-    0x9b9265b,  0x7ebe16cd, 0xe0da836e, 0x97ddb3f8, 0xed4e242,  0x79d3d2d4,
-    0xf4dbdf21, 0x83dcefb7, 0x1ad5be0d, 0x6dd28e9b, 0xf3b61b38, 0x84b12bae,
-    0x1db87a14, 0x6abf4a82, 0xfa005713, 0x8d076785, 0x140e363f, 0x630906a9,
-    0xfd6d930a, 0x8a6aa39c, 0x1363f226, 0x6464c2b0, 0xa4deae1d, 0xd3d99e8b,
-    0x4ad0cf31, 0x3dd7ffa7, 0xa3b36a04, 0xd4b45a92, 0x4dbd0b28, 0x3aba3bbe,
-    0xaa05262f, 0xdd0216b9, 0x440b4703, 0x330c7795, 0xad68e236, 0xda6fd2a0,
-    0x4366831a, 0x3461b38c, 0xb969be79, 0xce6e8eef, 0x5767df55, 0x2060efc3,
-    0xbe047a60, 0xc9034af6, 0x500a1b4c, 0x270d2bda, 0xb7b2364b, 0xc0b506dd,
-    0x59bc5767, 0x2ebb67f1, 0xb0dff252, 0xc7d8c2c4, 0x5ed1937e, 0x29d6a3e8,
-    0x9fb08ed5, 0xe8b7be43, 0x71beeff9, 0x6b9df6f,  0x98dd4acc, 0xefda7a5a,
-    0x76d32be0, 0x1d41b76,  0x916b06e7, 0xe66c3671, 0x7f6567cb, 0x862575d,
-    0x9606c2fe, 0xe101f268, 0x7808a3d2, 0xf0f9344,  0x82079eb1, 0xf500ae27,
-    0x6c09ff9d, 0x1b0ecf0b, 0x856a5aa8, 0xf26d6a3e, 0x6b643b84, 0x1c630b12,
-    0x8cdc1683, 0xfbdb2615, 0x62d277af, 0x15d54739, 0x8bb1d29a, 0xfcb6e20c,
-    0x65bfb3b6, 0x12b88320, 0x3fba6cad, 0x48bd5c3b, 0xd1b40d81, 0xa6b33d17,
-    0x38d7a8b4, 0x4fd09822, 0xd6d9c998, 0xa1def90e, 0x3161e49f, 0x4666d409,
-    0xdf6f85b3, 0xa868b525, 0x360c2086, 0x410b1010, 0xd80241aa, 0xaf05713c,
-    0x220d7cc9, 0x550a4c5f, 0xcc031de5, 0xbb042d73, 0x2560b8d0, 0x52678846,
-    0xcb6ed9fc, 0xbc69e96a, 0x2cd6f4fb, 0x5bd1c46d, 0xc2d895d7, 0xb5dfa541,
-    0x2bbb30e2, 0x5cbc0074, 0xc5b551ce, 0xb2b26158, 0x4d44c65,  0x73d37cf3,
-    0xeada2d49, 0x9ddd1ddf, 0x3b9887c,  0x74beb8ea, 0xedb7e950, 0x9ab0d9c6,
-    0xa0fc457,  0x7d08f4c1, 0xe401a57b, 0x930695ed, 0xd62004e,  0x7a6530d8,
-    0xe36c6162, 0x946b51f4, 0x19635c01, 0x6e646c97, 0xf76d3d2d, 0x806a0dbb,
-    0x1e0e9818, 0x6909a88e, 0xf000f934, 0x8707c9a2, 0x17b8d433, 0x60bfe4a5,
-    0xf9b6b51f, 0x8eb18589, 0x10d5102a, 0x67d220bc, 0xfedb7106, 0x89dc4190,
-    0x49662d3d, 0x3e611dab, 0xa7684c11, 0xd06f7c87, 0x4e0be924, 0x390cd9b2,
-    0xa0058808, 0xd702b89e, 0x47bda50f, 0x30ba9599, 0xa9b3c423, 0xdeb4f4b5,
-    0x40d06116, 0x37d75180, 0xaede003a, 0xd9d930ac, 0x54d13d59, 0x23d60dcf,
-    0xbadf5c75, 0xcdd86ce3, 0x53bcf940, 0x24bbc9d6, 0xbdb2986c, 0xcab5a8fa,
-    0x5a0ab56b, 0x2d0d85fd, 0xb404d447, 0xc303e4d1, 0x5d677172, 0x2a6041e4,
-    0xb369105e, 0xc46e20c8, 0x72080df5, 0x50f3d63,  0x9c066cd9, 0xeb015c4f,
-    0x7565c9ec, 0x262f97a,  0x9b6ba8c0, 0xec6c9856, 0x7cd385c7, 0xbd4b551,
-    0x92dde4eb, 0xe5dad47d, 0x7bbe41de, 0xcb97148,  0x95b020f2, 0xe2b71064,
-    0x6fbf1d91, 0x18b82d07, 0x81b17cbd, 0xf6b64c2b, 0x68d2d988, 0x1fd5e91e,
-    0x86dcb8a4, 0xf1db8832, 0x616495a3, 0x1663a535, 0x8f6af48f, 0xf86dc419,
-    0x660951ba, 0x110e612c, 0x88073096, 0xff000000};
+const UINT32 hashTable[256] =
+    { // Hash table from -> https://github.com/Ohjurot/DualSense-Windows/blob/main/VS19_Solution/DualSenseWindows/src/DualSenseWindows/DS_CRC32.cpp
+        0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 0xd56f2b94, 0xa2681b02,
+        0x3b614ab8, 0x4c667a2e, 0xdcd967bf, 0xabde5729, 0x32d70693, 0x45d03605,
+        0xdbb4a3a6, 0xacb39330, 0x35bac28a, 0x42bdf21c, 0xcfb5ffe9, 0xb8b2cf7f,
+        0x21bb9ec5, 0x56bcae53, 0xc8d83bf0, 0xbfdf0b66, 0x26d65adc, 0x51d16a4a,
+        0xc16e77db, 0xb669474d, 0x2f6016f7, 0x58672661, 0xc603b3c2, 0xb1048354,
+        0x280dd2ee, 0x5f0ae278, 0xe96ccf45, 0x9e6bffd3, 0x762ae69,  0x70659eff,
+        0xee010b5c, 0x99063bca, 0xf6a70,    0x77085ae6, 0xe7b74777, 0x90b077e1,
+        0x9b9265b,  0x7ebe16cd, 0xe0da836e, 0x97ddb3f8, 0xed4e242,  0x79d3d2d4,
+        0xf4dbdf21, 0x83dcefb7, 0x1ad5be0d, 0x6dd28e9b, 0xf3b61b38, 0x84b12bae,
+        0x1db87a14, 0x6abf4a82, 0xfa005713, 0x8d076785, 0x140e363f, 0x630906a9,
+        0xfd6d930a, 0x8a6aa39c, 0x1363f226, 0x6464c2b0, 0xa4deae1d, 0xd3d99e8b,
+        0x4ad0cf31, 0x3dd7ffa7, 0xa3b36a04, 0xd4b45a92, 0x4dbd0b28, 0x3aba3bbe,
+        0xaa05262f, 0xdd0216b9, 0x440b4703, 0x330c7795, 0xad68e236, 0xda6fd2a0,
+        0x4366831a, 0x3461b38c, 0xb969be79, 0xce6e8eef, 0x5767df55, 0x2060efc3,
+        0xbe047a60, 0xc9034af6, 0x500a1b4c, 0x270d2bda, 0xb7b2364b, 0xc0b506dd,
+        0x59bc5767, 0x2ebb67f1, 0xb0dff252, 0xc7d8c2c4, 0x5ed1937e, 0x29d6a3e8,
+        0x9fb08ed5, 0xe8b7be43, 0x71beeff9, 0x6b9df6f,  0x98dd4acc, 0xefda7a5a,
+        0x76d32be0, 0x1d41b76,  0x916b06e7, 0xe66c3671, 0x7f6567cb, 0x862575d,
+        0x9606c2fe, 0xe101f268, 0x7808a3d2, 0xf0f9344,  0x82079eb1, 0xf500ae27,
+        0x6c09ff9d, 0x1b0ecf0b, 0x856a5aa8, 0xf26d6a3e, 0x6b643b84, 0x1c630b12,
+        0x8cdc1683, 0xfbdb2615, 0x62d277af, 0x15d54739, 0x8bb1d29a, 0xfcb6e20c,
+        0x65bfb3b6, 0x12b88320, 0x3fba6cad, 0x48bd5c3b, 0xd1b40d81, 0xa6b33d17,
+        0x38d7a8b4, 0x4fd09822, 0xd6d9c998, 0xa1def90e, 0x3161e49f, 0x4666d409,
+        0xdf6f85b3, 0xa868b525, 0x360c2086, 0x410b1010, 0xd80241aa, 0xaf05713c,
+        0x220d7cc9, 0x550a4c5f, 0xcc031de5, 0xbb042d73, 0x2560b8d0, 0x52678846,
+        0xcb6ed9fc, 0xbc69e96a, 0x2cd6f4fb, 0x5bd1c46d, 0xc2d895d7, 0xb5dfa541,
+        0x2bbb30e2, 0x5cbc0074, 0xc5b551ce, 0xb2b26158, 0x4d44c65,  0x73d37cf3,
+        0xeada2d49, 0x9ddd1ddf, 0x3b9887c,  0x74beb8ea, 0xedb7e950, 0x9ab0d9c6,
+        0xa0fc457,  0x7d08f4c1, 0xe401a57b, 0x930695ed, 0xd62004e,  0x7a6530d8,
+        0xe36c6162, 0x946b51f4, 0x19635c01, 0x6e646c97, 0xf76d3d2d, 0x806a0dbb,
+        0x1e0e9818, 0x6909a88e, 0xf000f934, 0x8707c9a2, 0x17b8d433, 0x60bfe4a5,
+        0xf9b6b51f, 0x8eb18589, 0x10d5102a, 0x67d220bc, 0xfedb7106, 0x89dc4190,
+        0x49662d3d, 0x3e611dab, 0xa7684c11, 0xd06f7c87, 0x4e0be924, 0x390cd9b2,
+        0xa0058808, 0xd702b89e, 0x47bda50f, 0x30ba9599, 0xa9b3c423, 0xdeb4f4b5,
+        0x40d06116, 0x37d75180, 0xaede003a, 0xd9d930ac, 0x54d13d59, 0x23d60dcf,
+        0xbadf5c75, 0xcdd86ce3, 0x53bcf940, 0x24bbc9d6, 0xbdb2986c, 0xcab5a8fa,
+        0x5a0ab56b, 0x2d0d85fd, 0xb404d447, 0xc303e4d1, 0x5d677172, 0x2a6041e4,
+        0xb369105e, 0xc46e20c8, 0x72080df5, 0x50f3d63,  0x9c066cd9, 0xeb015c4f,
+        0x7565c9ec, 0x262f97a,  0x9b6ba8c0, 0xec6c9856, 0x7cd385c7, 0xbd4b551,
+        0x92dde4eb, 0xe5dad47d, 0x7bbe41de, 0xcb97148,  0x95b020f2, 0xe2b71064,
+        0x6fbf1d91, 0x18b82d07, 0x81b17cbd, 0xf6b64c2b, 0x68d2d988, 0x1fd5e91e,
+        0x86dcb8a4, 0xf1db8832, 0x616495a3, 0x1663a535, 0x8f6af48f, 0xf86dc419,
+        0x660951ba, 0x110e612c, 0x88073096, 0xff000000};
 
 const UINT32 crcSeed = 0xeada2d49;
 
@@ -243,13 +271,16 @@ struct Battery
     BatteryState State;
     int Level;
 
-    Battery() : State(BatteryState::POWER_SUPPLY_STATUS_UNKNOWN), Level(0) {}
+    Battery() : State(BatteryState::POWER_SUPPLY_STATUS_UNKNOWN), Level(0)
+    {
+    }
 };
 
 class ButtonState
 {
 public:
-    bool square, triangle, circle, cross, DpadUp, DpadDown, DpadLeft, DpadRight, L1, L3, R1, R3, R2Btn, L2Btn, share, options, ps, touchBtn, micBtn;
+    bool square, triangle, circle, cross, DpadUp, DpadDown, DpadLeft, DpadRight,
+        L1, L3, R1, R3, R2Btn, L2Btn, share, options, ps, touchBtn, micBtn;
     uint8_t L2, R2;
     int RX, RY, LX, LY, TouchPacketNum;
     const char *PathIdentifier;
@@ -329,100 +360,101 @@ public:
     }
 };
 
-namespace Feature {
-    enum MuteLight : uint8_t
-    {
-        Off = 0,
-        On,
-        Breathing,
-        DoNothing, // literally nothing, this input is ignored,
-                   // though it might be a faster blink in other versions
-        NoAction4,
-        NoAction5,
-        NoAction6,
-        NoAction7 = 7
-    };
+namespace Feature
+{
+enum MuteLight : uint8_t
+{
+    Off = 0,
+    On,
+    Breathing,
+    DoNothing, // literally nothing, this input is ignored,
+               // though it might be a faster blink in other versions
+    NoAction4,
+    NoAction5,
+    NoAction6,
+    NoAction7 = 7
+};
 
-    enum class LightBrightness : uint8_t
-    {
-        Bright = 0,
-        Mid,
-        Dim,
-        BNoAction3 ,
-        BNoAction4,
-        BNoAction5,
-        BNoAction6,
-        BNoAction7 = 7
-    };
+enum class LightBrightness : uint8_t
+{
+    Bright = 0,
+    Mid,
+    Dim,
+    BNoAction3,
+    BNoAction4,
+    BNoAction5,
+    BNoAction6,
+    BNoAction7 = 7
+};
 
-    enum LightFadeAnimation : uint8_t
-    {
-        Nothing = 0,
-        FadeIn, // from black to blue
-        FadeOut // from blue to black
-    };
+enum LightFadeAnimation : uint8_t
+{
+    Nothing = 0,
+    FadeIn, // from black to blue
+    FadeOut // from blue to black
+};
 
-    enum RumbleMode : uint8_t
-    {
-        StandardRumble = 0xFF,
-        Haptic_Feedback = 0xFC
-    };
+enum RumbleMode : uint8_t
+{
+    StandardRumble = 0xFF,
+    Haptic_Feedback = 0xFC
+};
 
-    enum FeatureType : int8_t
-    {
-        Full = 0x57,
-        LetGo = 0x08
-    };
+enum FeatureType : int8_t
+{
+    Full = 0x57,
+    LetGo = 0x08
+};
 
-    enum AudioOutput : uint8_t
-    {
-        Headset = 0x05,
-        Speaker = 0x31
-    };
+enum AudioOutput : uint8_t
+{
+    Headset = 0x05,
+    Speaker = 0x31
+};
 
-    enum MicrophoneLED : uint8_t
-    {
-        Pulse = 0x2,
-        MLED_On = 0x1,
-        MLED_Off = 0x0
-    };
+enum MicrophoneLED : uint8_t
+{
+    Pulse = 0x2,
+    MLED_On = 0x1,
+    MLED_Off = 0x0
+};
 
-    enum MicrophoneStatus : uint8_t
-    {
-        MSTATUS_On = 0,
-        MSTATUS_Off = 0x10
-    };
+enum MicrophoneStatus : uint8_t
+{
+    MSTATUS_On = 0,
+    MSTATUS_Off = 0x10
+};
 
-    enum Brightness : uint8_t
-    {
-        High = 0x0,
-        Medium = 0x1,
-        Low = 0x2
-    };
+enum Brightness : uint8_t
+{
+    High = 0x0,
+    Medium = 0x1,
+    Low = 0x2
+};
 
-    enum PlayerLED : uint8_t
-    {
-        PLAYER_OFF = 0x0,
-        PLAYER_1 = 0x01,
-        PLAYER_2 = 0x02,
-        PLAYER_3 = 0x03,
-        PLAYER_4 = 0x04,
-        PLAYER_5 = 0x05,
-    };
+enum PlayerLED : uint8_t
+{
+    PLAYER_OFF = 0x0,
+    PLAYER_1 = 0x01,
+    PLAYER_2 = 0x02,
+    PLAYER_3 = 0x03,
+    PLAYER_4 = 0x04,
+    PLAYER_5 = 0x05,
+};
 
-    enum DeviceType : uint8_t
-    {
-        DualSense = 0,
-        DualSense_Edge = 1,
-        //DualShock4 = 2,
-    };
+enum DeviceType : uint8_t
+{
+    DualSense = 0,
+    DualSense_Edge = 1,
+    //DualShock4 = 2,
+};
 
-    enum ConnectionType : uint8_t
-    {
-        BT = 0x0,
-        USB = 0x1
-    };
-}; // namespace OutputData
+enum ConnectionType : uint8_t
+{
+    BT = 0x0,
+    USB = 0x1
+};
+}; // namespace Feature
 
 namespace Trigger
 {
@@ -443,84 +475,136 @@ enum TriggerMode : uint8_t
 
 namespace DualsenseUtils
 {
-    class InputFeatures
-    {
-    public:
-        Feature::RumbleMode VibrationType = Feature::Haptic_Feedback;
-        Feature::FeatureType Features = Feature::FeatureType::Full;
-        uint8_t _RightMotor = 0;
-        uint8_t _LeftMotor = 0;
-        uint8_t SpeakerVolume = 85;
-        int MicrophoneVolume = 35;
-        Feature::AudioOutput audioOutput = Feature::Speaker;
-        Feature::MicrophoneLED micLED = Feature::MicrophoneLED::MLED_Off;
-        Feature::MicrophoneStatus micStatus = Feature::MicrophoneStatus::MSTATUS_On;
-        Trigger::TriggerMode RightTriggerMode = Trigger::TriggerMode::Off;
-        Trigger::TriggerMode LeftTriggerMode = Trigger::TriggerMode::Off;
-        int RightTriggerForces[7] = {0};
-        int LeftTriggerForces[7] = {0};
-        Feature::Brightness _Brightness = Feature::Brightness::High;
-        Feature::PlayerLED playerLED = Feature::PlayerLED::PLAYER_OFF;
-        unsigned char PlayerLED_Bitmask = 0x0;
-        int Red = 0;
-        int Green = 0;
-        int Blue = 0;
-        const char *ID = ""; // Optional ID for arrays n' stuff
-    };
+class InputFeatures
+{
+public:
+    Feature::RumbleMode VibrationType = Feature::Haptic_Feedback;
+    Feature::FeatureType Features = Feature::FeatureType::Full;
+    uint8_t _RightMotor = 0;
+    uint8_t _LeftMotor = 0;
+    uint8_t SpeakerVolume = 100;
+    int MicrophoneVolume = 80;
+    Feature::AudioOutput audioOutput = Feature::Speaker;
+    Feature::MicrophoneLED micLED = Feature::MicrophoneLED::MLED_Off;
+    Feature::MicrophoneStatus micStatus = Feature::MicrophoneStatus::MSTATUS_On;
+    Trigger::TriggerMode RightTriggerMode = Trigger::TriggerMode::Off;
+    Trigger::TriggerMode LeftTriggerMode = Trigger::TriggerMode::Off;
+    int RightTriggerForces[7] = {0};
+    int LeftTriggerForces[7] = {0};
+    Feature::Brightness _Brightness = Feature::Brightness::High;
+    Feature::PlayerLED playerLED = Feature::PlayerLED::PLAYER_OFF;
+    unsigned char PlayerLED_Bitmask = 0x0;
+    int Red = 0;
+    int Green = 0;
+    int Blue = 0;
+    string ID = ""; // Optional ID for arrays n' stuff
 
-    int GetControllerCount()
+    nlohmann::json to_json() const {
+        nlohmann::json j;
+        j["VibrationType"] = VibrationType;
+        j["Features"] = Features;
+        j["_RightMotor"] = _RightMotor;
+        j["_LeftMotor"] = _LeftMotor;
+        j["SpeakerVolume"] = SpeakerVolume;
+        j["MicrophoneVolume"] = MicrophoneVolume;
+        j["audioOutput"] = audioOutput;
+        j["micLED"] = micLED;
+        j["micStatus"] = micStatus;
+        j["RightTriggerMode"] = RightTriggerMode;
+        j["LeftTriggerMode"] = LeftTriggerMode;
+        j["RightTriggerForces"] = std::vector<int>(std::begin(RightTriggerForces), std::end(RightTriggerForces));
+        j["LeftTriggerForces"] = std::vector<int>(std::begin(LeftTriggerForces), std::end(LeftTriggerForces));
+        j["_Brightness"] = _Brightness;
+        j["playerLED"] = playerLED;
+        j["PlayerLED_Bitmask"] = PlayerLED_Bitmask;
+        j["Red"] = Red;
+        j["Green"] = Green;
+        j["Blue"] = Blue;
+        j["ID"] = ID;
+        return j;
+    }
+
+    static InputFeatures from_json(const nlohmann::json& j) {
+        InputFeatures features;
+        j.at("VibrationType").get_to(features.VibrationType);
+        j.at("Features").get_to(features.Features);
+        j.at("_RightMotor").get_to(features._RightMotor);
+        j.at("_LeftMotor").get_to(features._LeftMotor);
+        j.at("SpeakerVolume").get_to(features.SpeakerVolume);
+        j.at("MicrophoneVolume").get_to(features.MicrophoneVolume);
+        j.at("audioOutput").get_to(features.audioOutput);
+        j.at("micLED").get_to(features.micLED);
+        j.at("micStatus").get_to(features.micStatus);
+        j.at("RightTriggerMode").get_to(features.RightTriggerMode);
+        j.at("LeftTriggerMode").get_to(features.LeftTriggerMode);
+        for (int i = 0; i < 7; ++i) {
+            features.RightTriggerForces[i] = j.at("RightTriggerForces")[i];
+            features.LeftTriggerForces[i] = j.at("LeftTriggerForces")[i];
+        }
+        j.at("_Brightness").get_to(features._Brightness);
+        j.at("playerLED").get_to(features.playerLED);
+        j.at("PlayerLED_Bitmask").get_to(features.PlayerLED_Bitmask);
+        j.at("Red").get_to(features.Red);
+        j.at("Green").get_to(features.Green);
+        j.at("Blue").get_to(features.Blue);
+        j.at("ID").get_to(features.ID);
+        return features;
+    }
+};
+
+int GetControllerCount()
+{
+    int i = 0;
+    hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
+    hid_device_info *cur = info;
+
+    while (cur)
     {
-        int i = 0;
+        cur = cur->next;
+        i++;
+    }
+
+    hid_free_enumeration(cur);
+    hid_free_enumeration(info);
+
+    return i;
+}
+
+vector<const char *> EnumerateControllerIDs()
+{
+    std::vector<const char *> v;
+    hid_device_info *initial = hid_enumerate(0x054c, 0x0ce6);
+
+    if (initial != NULL)
+    {
         hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
         hid_device_info *cur = info;
 
         while (cur)
         {
+            v.push_back(cur->path);
             cur = cur->next;
-            i++;
         }
 
+        hid_free_enumeration(initial);
         hid_free_enumeration(cur);
-        hid_free_enumeration(info);
-
-        return i;
+        return v;
     }
-
-    vector<const char *> EnumerateControllerIDs()
+    else
     {
-        std::vector<const char*> v;
-        hid_device_info *initial = hid_enumerate(0x054c, 0x0ce6);
-
-        if (initial != NULL)
-        {
-            hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
-            hid_device_info *cur = info;
-
-            while (cur)
-            {
-                v.push_back(cur->path);
-                cur = cur->next;
-            }
-
-            hid_free_enumeration(initial);
-            hid_free_enumeration(cur);
-            return v; 
-        }
-        else
-        {
-            hid_free_enumeration(initial);
-            v.push_back("");
-            return v; 
-        }
+        hid_free_enumeration(initial);
+        v.push_back("");
+        return v;
     }
-
-    enum Reconnect_Result
-    {
-        Reconnected = 0,
-        Fail = 1,
-        No_Change = 2
-    };
 }
+
+enum Reconnect_Result
+{
+    Reconnected = 0,
+    Fail = 1,
+    No_Change = 2
+};
+} // namespace DualsenseUtils
 
 std::wstring ctow(const char *src)
 {
@@ -611,14 +695,13 @@ bool compareDeviceIDs(const std::wstring &id1, const std::wstring &id2)
     return strippedId1 == strippedId2;
 }
 
-
 class Dualsense
 {
 private:
     int offset = 0;
     uint8_t connectionType;
     bool Running = false;
-    const wchar_t* DefaultError = L"Success";
+    const wchar_t *DefaultError = L"Success";
     int res;
     const char *path;
     wstring lastKnownParent;
@@ -636,7 +719,6 @@ private:
     ma_engine engine;
     ma_device device;
 
-   
 public:
     bool Connected = false;
     ButtonState State;
@@ -693,14 +775,14 @@ public:
                     cout << "Bluetooth connection detected." << endl;
                 }
 
-                std::wcout << L"Vendor ID: " << info->manufacturer_string << "\nPath: " << info->path
-                           << std::endl;
+                std::wcout << L"Vendor ID: " << info->manufacturer_string
+                           << "\nPath: " << info->path << std::endl;
 
                 Running = true;
                 Connected = true;
             }
 
-            path = Path;                 
+            path = Path;
         }
     };
 
@@ -749,31 +831,63 @@ public:
             buttonState.touchBtn = (misc2 & 0x02) != 0;
             buttonState.micBtn = (misc2 & 0x04) != 0;
 
-            buttonState.trackPadTouch0.RawTrackingNum = (uint8_t)(ButtonStates[33 + offset]);
-            buttonState.trackPadTouch0.ID = (uint8_t)(ButtonStates[33 + offset] & 0x7F);
-            buttonState.trackPadTouch0.IsActive = (ButtonStates[33 + offset] & 0x80) == 0;
-            buttonState.trackPadTouch0.X = ((ButtonStates[35 + offset] & 0x0F) << 8) | ButtonStates[34 + offset];
-            buttonState.trackPadTouch0.Y = ((ButtonStates[36 + offset]) << 4) | ((ButtonStates[35 + offset] & 0xF0) >> 4);
+            buttonState.trackPadTouch0.RawTrackingNum =
+                (uint8_t)(ButtonStates[33 + offset]);
+            buttonState.trackPadTouch0.ID =
+                (uint8_t)(ButtonStates[33 + offset] & 0x7F);
+            buttonState.trackPadTouch0.IsActive =
+                (ButtonStates[33 + offset] & 0x80) == 0;
+            buttonState.trackPadTouch0.X =
+                ((ButtonStates[35 + offset] & 0x0F) << 8) |
+                ButtonStates[34 + offset];
+            buttonState.trackPadTouch0.Y =
+                ((ButtonStates[36 + offset]) << 4) |
+                ((ButtonStates[35 + offset] & 0xF0) >> 4);
 
-            buttonState.trackPadTouch1.RawTrackingNum = (uint8_t)(ButtonStates[37 + offset]);
-            buttonState.trackPadTouch1.ID = (uint8_t)(ButtonStates[37 + offset] & 0x7F);
-            buttonState.trackPadTouch1.IsActive = (ButtonStates[37 + offset] & 0x80) == 0;
-            buttonState.trackPadTouch1.X = ((ButtonStates[39 + offset] & 0x0F) << 8) | ButtonStates[38 + offset];
-            buttonState.trackPadTouch1.Y = ((ButtonStates[40 + offset]) << 4) | ((ButtonStates[39 + offset] & 0xF0) >> 4);
+            buttonState.trackPadTouch1.RawTrackingNum =
+                (uint8_t)(ButtonStates[37 + offset]);
+            buttonState.trackPadTouch1.ID =
+                (uint8_t)(ButtonStates[37 + offset] & 0x7F);
+            buttonState.trackPadTouch1.IsActive =
+                (ButtonStates[37 + offset] & 0x80) == 0;
+            buttonState.trackPadTouch1.X =
+                ((ButtonStates[39 + offset] & 0x0F) << 8) |
+                ButtonStates[38 + offset];
+            buttonState.trackPadTouch1.Y =
+                ((ButtonStates[40 + offset]) << 4) |
+                ((ButtonStates[39 + offset] & 0xF0) >> 4);
             buttonState.TouchPacketNum = (uint8_t)(ButtonStates[41 + offset]);
 
-            buttonState.gyro.X = bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[16 + offset], ButtonStates[17 + offset]});
-            buttonState.gyro.Y = bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[18 + offset], ButtonStates[19 + offset]});
-            buttonState.gyro.Z = bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[20 + offset], ButtonStates[21 + offset]});
+            buttonState.gyro.X =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[16 + offset],
+                                                    ButtonStates[17 + offset]});
+            buttonState.gyro.Y =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[18 + offset],
+                                                    ButtonStates[19 + offset]});
+            buttonState.gyro.Z =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[20 + offset],
+                                                    ButtonStates[21 + offset]});
 
-            buttonState.accelerometer.X = bit_cast<int16_t>(array<uint8_t, 2>{ ButtonStates[22 + offset], ButtonStates[23 + offset]});
-            buttonState.accelerometer.Y = bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[24 + offset], ButtonStates[25 + offset]});
-            buttonState.accelerometer.Z = bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[26 + offset], ButtonStates[27 + offset]});
+            buttonState.accelerometer.X =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[22 + offset],
+                                                    ButtonStates[23 + offset]});
+            buttonState.accelerometer.Y =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[24 + offset],
+                                                    ButtonStates[25 + offset]});
+            buttonState.accelerometer.Z =
+                bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[26 + offset],
+                                                    ButtonStates[27 + offset]});
 
-            buttonState.accelerometer.SensorTimestamp = (static_cast<uint32_t>(ButtonStates[28 + offset])) | (static_cast<uint32_t>(ButtonStates[29 + offset]) << 8) | static_cast<uint32_t>(ButtonStates[30 + offset] << 16);
+            buttonState.accelerometer.SensorTimestamp =
+                (static_cast<uint32_t>(ButtonStates[28 + offset])) |
+                (static_cast<uint32_t>(ButtonStates[29 + offset]) << 8) |
+                static_cast<uint32_t>(ButtonStates[30 + offset] << 16);
 
-            buttonState.battery.State = (BatteryState)((uint8_t)(ButtonStates[53 + offset] & 0xF0) >> 4);
-            buttonState.battery.Level = min((int)((ButtonStates[53 + offset] & 0x0F) * 10 + 5), 100);
+            buttonState.battery.State =
+                (BatteryState)((uint8_t)(ButtonStates[53 + offset] & 0xF0) >>
+                               4);
+            buttonState.battery.Level =
+                min((int)((ButtonStates[53 + offset] & 0x0F) * 10 + 5), 100);
 
             buttonState.PathIdentifier = path;
 
@@ -854,7 +968,8 @@ public:
                 outReport[2] = CurSettings.VibrationType;
                 if (bt_initialized == false)
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // doesn't always work without sleep
+                    std::this_thread::sleep_for(std::chrono::milliseconds(
+                        500)); // doesn't always work without sleep
                     outReport[3] = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x40;
                     bt_initialized = true;
                 }
@@ -919,7 +1034,7 @@ public:
         else
         {
             Connected = false;
-        }      
+        }
     }
 
     const char *GetPath()
@@ -1104,7 +1219,6 @@ public:
                                               NULL,
                                               &channelConverter);
 
-
                 if (channelConverterResult != MA_SUCCESS)
                 {
                     cout << "Creating channel converter failed!" << endl;
@@ -1130,14 +1244,12 @@ public:
                     cout << "Audio device intialized" << endl;
                 }
 
-
                 ma_engine_config config = ma_engine_config_init();
                 //config.pContext = &context;
                 config.pPlaybackDeviceID = &pPlaybackInfos[deviceIndex].id;
                 config.channels = 0;
                 config.sampleRate = 48000;
                 config.monoExpansionMode = ma_mono_expansion_mode_duplicate;
-
 
                 result = ma_engine_init(&config, &engine);
                 if (result != MA_SUCCESS)
@@ -1150,19 +1262,18 @@ public:
                 }
 
                 ma_engine_set_volume(&engine, 100);
-                AudioInitialized = true;               
+                ma_device_set_master_volume(&device, 1);
+                AudioInitialized = true;
             }
         }
     }
 
-    bool PlayHaptics(const char* WavFileLocation)
+    bool PlayHaptics(const char *WavFileLocation)
     {
         if (connectionType == Feature::USB)
         {
-            ma_result soundplay = ma_engine_play_sound(
-                &engine,
-                WavFileLocation,
-                NULL);
+            ma_result soundplay =
+                ma_engine_play_sound(&engine, WavFileLocation, NULL);
 
             if (soundplay == MA_SUCCESS)
             {
@@ -1172,7 +1283,6 @@ public:
             {
                 cout << (ma_result)soundplay << endl;
             }
-
         }
 
         return false;
@@ -1206,7 +1316,7 @@ public:
                     ma_context_uninit(&context);
                     ma_device_uninit(&device);
                     ma_engine_uninit(&engine);
-                    AudioInitialized = false;  
+                    AudioInitialized = false;
                 }
 
                 hid_device_info *info = hid_get_device_info(handle);
@@ -1260,9 +1370,22 @@ public:
     {
         SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
         SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
-        CurSettings.Features = Feature::FeatureType::LetGo;
-        UseRumbleNotHaptics(false);
-        Write();
+
+        if (Connected)
+        {
+            if (connectionType == Feature::USB)
+                CurSettings.Features = Feature::FeatureType::LetGo;
+            else
+            {
+                // Return to blue lightbar if bluetooth
+                SetPlayerLED(0);
+                SetLightbar(0, 0, 255);
+            }
+
+            UseRumbleNotHaptics(false);
+            Write();
+        }
+
         if (AudioInitialized)
         {
             ma_context_uninit(&context);
@@ -1294,10 +1417,17 @@ public:
         }
     }
 
+    void SetMicrophoneVolume(int Volume) {
+        CurSettings.MicrophoneVolume = Volume;
+    }
+
     void SetPlayerLED(uint8_t Player)
     {
         switch (Player)
         {
+        case 0:
+            CurSettings.PlayerLED_Bitmask = 0x00;
+            break;
         case 1:
             CurSettings.PlayerLED_Bitmask = 0x04;
             break;
@@ -1339,13 +1469,13 @@ public:
     }
 
     void SetLeftTrigger(Trigger::TriggerMode triggerMode,
-                         uint8_t Force1,
-                         uint8_t Force2,
-                         uint8_t Force3,
-                         uint8_t Force4,
-                         uint8_t Force5,
-                         uint8_t Force6,
-                         uint8_t Force7)
+                        uint8_t Force1,
+                        uint8_t Force2,
+                        uint8_t Force3,
+                        uint8_t Force4,
+                        uint8_t Force5,
+                        uint8_t Force6,
+                        uint8_t Force7)
     {
         CurSettings.LeftTriggerMode = triggerMode;
         CurSettings.LeftTriggerForces[0] = Force1;

@@ -32,7 +32,7 @@ DualSenseY (v2) is a C++ application that enables advanced control and visualiza
 
 1. Clone the repository and ensure dependencies are installed.
 2. Build the project using CMake or a suitable build system.
-3. Run the executable to open the DSX Client window.
+3. Run the executable to open the DualSenseY window.
 
 ## Usage
 

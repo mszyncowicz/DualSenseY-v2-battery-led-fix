@@ -28,12 +28,6 @@ DualSenseY (v2) is a C++ application that enables advanced control and visualiza
   - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation
   - **Windows Only**: Requires `IMMDeviceEnumerator` and `IAudioMeterInformation` for audio integration.
 
-## Build Instructions
-
-1. Clone the repository and ensure dependencies are installed.
-2. Build the project using CMake or a suitable build system.
-3. Run the executable to open the DualSenseY window.
-
 ## Usage
 
 1. Start DualSenseY.exe, and select the desired DualSense controller.

@@ -25,14 +25,8 @@ DualSenseY (v2) is a C++ application that enables advanced control and visualiza
   - [GLFW](https://www.glfw.org/)
   - [OpenGL](https://www.opengl.org/)
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing
-  - [ViGEm](https://vigem.org/) for controller emulation
+  - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation
   - **Windows Only**: Requires `IMMDeviceEnumerator` and `IAudioMeterInformation` for audio integration.
-
-## Build Instructions
-
-1. Clone the repository and ensure dependencies are installed.
-2. Build the project using CMake or a suitable build system.
-3. Run the executable to open the DSX Client window.
 
 ## Usage
 

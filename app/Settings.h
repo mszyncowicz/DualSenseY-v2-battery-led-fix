@@ -15,6 +15,7 @@ public:
     bool MicScreenshot = false;
     bool MicFunc = false;
     bool RumbleToAT = false;
+    bool BatteryLightbar = false;
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {
@@ -29,6 +30,7 @@ public:
         j["UseUDP"] = UseUDP;
         j["MicScreenshot"] = MicScreenshot;
         j["MicFunc"] = MicFunc;
+        j["BatteryLightbar"] = BatteryLightbar;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
         return j;
     }
@@ -48,6 +50,7 @@ public:
         if (j.contains("UseUDP"))           j.at("UseUDP").get_to(settings.UseUDP);
         if (j.contains("MicScreenshot"))    j.at("MicScreenshot").get_to(settings.MicScreenshot);
         if (j.contains("MicFunc"))          j.at("MicFunc").get_to(settings.MicFunc);
+        if (j.contains("BatteryLightbar"))          j.at("BatteryLightbar").get_to(settings.BatteryLightbar);
         if (j.contains("emuStatus"))        j.at("emuStatus").get_to(settings.emuStatus);
 
         return settings;

@@ -5,6 +5,17 @@
 #include <fstream> 
 
 namespace Config {
+    class AppConfig {
+        std::vector<std::pair<std::string, std::string>> DefaultConfigs;
+
+        nlohmann::json to_json() const {
+            nlohmann::json j;
+            j["DefaultConfigs"] = DefaultConfigs;
+                  
+            return j;
+        }
+    };
+
     static void WriteToFile(Settings &settings) {
         nlohmann::json j = settings.to_json();
         OPENFILENAMEW ofn;

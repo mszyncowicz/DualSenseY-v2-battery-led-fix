@@ -9,6 +9,14 @@ namespace MyUtils {
         return "";
     }
 
+    std::string GetLocalFolderPath() {
+        char path[MAX_PATH];
+        if (SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path) == S_OK) {
+            return std::string(path);
+        }
+        return "";
+    }
+
     std::string currentDateTime()
     {
         std::time_t now = std::time(nullptr);

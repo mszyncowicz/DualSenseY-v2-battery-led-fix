@@ -261,11 +261,10 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                                       settings.ControllerInput.LeftTriggerForces[5],
                                       settings.ControllerInput.LeftTriggerForces[6]);
 
-            controller.SetLightbar(settings.ControllerInput.Red, settings.ControllerInput.Green, settings.ControllerInput.Blue);
-
             if (settings.AudioToLED)
             {
                 AudioToLEDfunc(settings);
+                controller.SetLightbar(settings.ControllerInput.Red, settings.ControllerInput.Green, settings.ControllerInput.Blue);
             }
 
             if (settings.DiscoMode)
@@ -304,6 +303,24 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                             if (led[2] <= 0) colorState = 0;
                             break;
                     }
+            }
+
+            if (settings.BatteryLightbar) {
+                int batteryLevel = controller.State.battery.Level;
+
+                if (batteryLevel > 75) {
+                    // High battery, set LED to green
+                    controller.SetLightbar(0, 255, 0);
+                } else if (batteryLevel > 50) {
+                    // Medium-high battery, set LED to yellow
+                    controller.SetLightbar(255, 255, 0);
+                } else if (batteryLevel > 25) {
+                    // Medium-low battery, set LED to orange
+                    controller.SetLightbar(255, 165, 0);
+                } else {
+                    // Low battery, set LED to red
+                    controller.SetLightbar(255, 0, 0);
+                }
             }
 
             if (settings.MicScreenshot) {
@@ -441,6 +458,13 @@ int main(int, char **)
     vector<const char*> ControllerID = DualsenseUtils::EnumerateControllerIDs();
     int ControllerCount = DualsenseUtils::GetControllerCount();
     std::chrono::high_resolution_clock::time_point LastControllerCheck = std::chrono::high_resolution_clock::now();
+
+    // get config
+    filesystem::create_directories(MyUtils::GetLocalFolderPath() + "\\DualSenseY");
+    std::ifstream configFile(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\Config.txt");
+    if (configFile.good()) {
+
+    }
 
     InitializeAudioEndpoint();
 
@@ -614,6 +638,7 @@ int main(int, char **)
                             udpServer.Battery = DualSense[i].State.battery.Level;               
                             s.AudioToLED = false;
                             s.DiscoMode = false;
+                            s.BatteryLightbar = false;
                             s.RumbleToAT = false;
                             s.ControllerInput.Red = udpSettings.ControllerInput.Red;
                             s.ControllerInput.Green = udpSettings.ControllerInput.Green;
@@ -663,7 +688,7 @@ int main(int, char **)
                                     if (ImGui::CollapsingHeader("LED")) {
                                         ImGui::Separator();
 
-                                        if (!s.DiscoMode) {
+                                        if (!s.DiscoMode && !s.BatteryLightbar) {
                                             if (ImGui::Checkbox("Audio to LED", &s.AudioToLED)) {
                                                 if (!s.AudioToLED) {
                                                     s.ControllerInput.Red = 0;
@@ -673,12 +698,15 @@ int main(int, char **)
                                             }
                                         }
 
-                                        if (!s.AudioToLED) {
+                                        if (!s.AudioToLED && !s.BatteryLightbar) {
                                             ImGui::Checkbox("Disco Mode", &s.DiscoMode);
                                         }
 
+                                        if (!s.DiscoMode && !s.AudioToLED) {
+                                            ImGui::Checkbox("Lightbar battery status", &s.BatteryLightbar);
+                                        }
 
-                                        if (!s.AudioToLED && !s.DiscoMode) {
+                                        if (!s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar) {
                                             ImGui::SliderInt("Red",
                                                 &s.ControllerInput.Red,
                                                 0,
@@ -1044,7 +1072,6 @@ int main(int, char **)
                                         s.emuStatus = None;
                                     }
                                 }
-
 
                                 if (ImGui::Button("Hide real controller"))
                                 {

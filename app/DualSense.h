@@ -702,6 +702,7 @@ private:
     uint8_t connectionType;
     bool Running = false;
     const wchar_t *DefaultError = L"Success";
+    volatile const wchar_t *error = L"";
     int res;
     const char *path;
     wstring lastKnownParent;
@@ -901,7 +902,7 @@ public:
 
     bool Write()
     {
-        const wchar_t *error = hid_error(handle);
+        error = hid_error(handle);
 
         if (error == DefaultError)
         {
@@ -1028,7 +1029,7 @@ public:
                     (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
 
                 res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
-                const wchar_t *error = hid_error(handle);
+                error = hid_error(handle);
             }
         }
         else
@@ -1444,7 +1445,7 @@ public:
             CurSettings.PlayerLED_Bitmask = 0x02 | 0x04 | 0x10;
             break;
         default:
-            CurSettings.playerLED = Feature::PLAYER_OFF;
+            CurSettings.PlayerLED_Bitmask = 0x00;
             break;
         }
     }

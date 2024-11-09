@@ -1,3 +1,6 @@
+### ⚠️ STILL IN DEVELOPMENT! ⚠️
+## IF YOU FIND THIS VERSION UNSTABLE OR NOT WORKING CORRECTLY YOU CAN GO BACK TO [OLD ONE](https://github.com/WujekFoliarz/DualSenseY) 
+
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
 ### Discord → https://discord.gg/AFYvxf282U
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz

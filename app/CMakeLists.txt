@@ -8,6 +8,13 @@ SET(CMAKE_C_FLAGS_DEBUG "-O0")
 STRING(REPLACE "-O2" "-Od" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
 add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h")
 set_property(TARGET "DualSenseY" PROPERTY VS_DPI_AWARE "PerMonitor")
+
+include(FetchContent)
+FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+                         GIT_TAG bb01c8db702fb41e5497aee9c0559ddf4bf13749) # Replace with your desired git commit from: https://github.com/libcpr/cpr/releases
+FetchContent_MakeAvailable(cpr)
+
+target_link_libraries("DualSenseY" PRIVATE cpr::cpr)
 target_link_libraries("DualSenseY" PRIVATE fmt::fmt-header-only)
 target_link_libraries("DualSenseY" PRIVATE glfw)
 target_link_libraries("DualSenseY" PRIVATE OpenGL::GL)

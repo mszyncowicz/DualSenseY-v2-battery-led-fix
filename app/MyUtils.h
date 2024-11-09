@@ -18,6 +18,7 @@
 #include <ShellAPI.h>
 #include <tchar.h>
 #include <algorithm>
+#include <cpr/cpr.h>
 
 namespace MyUtils {
     std::string GetImagesFolderPath();

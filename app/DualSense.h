@@ -558,6 +558,7 @@ public:
 int GetControllerCount()
 {
     int i = 0;
+    // DualSense
     hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
     hid_device_info *cur = info;
 
@@ -567,8 +568,20 @@ int GetControllerCount()
         i++;
     }
 
+    // DualSense Edge
+    hid_device_info *info2 = hid_enumerate(0x054c, 0x0df2);
+    hid_device_info *cur2 = info;
+
+    while (cur2)
+    {
+        cur2 = cur2->next;
+        i++;
+    }
+
     hid_free_enumeration(cur);
     hid_free_enumeration(info);
+    hid_free_enumeration(cur2);
+    hid_free_enumeration(info2);
 
     return i;
 }
@@ -577,7 +590,9 @@ vector<const char *> EnumerateControllerIDs()
 {
     std::vector<const char *> v;
     hid_device_info *initial = hid_enumerate(0x054c, 0x0ce6);
+    hid_device_info *initialEdge = hid_enumerate(0x054c, 0x0df2);
 
+    // DualSense
     if (initial != NULL)
     {
         hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
@@ -599,7 +614,32 @@ vector<const char *> EnumerateControllerIDs()
         v.push_back("");
         return v;
     }
+
+    // DualSense Edge
+    if (initialEdge != NULL)
+    {
+        hid_device_info *info = hid_enumerate(0x054c, 0x0df2);
+        hid_device_info *cur = info;
+
+        while (cur)
+        {
+            v.push_back(cur->path);
+            cur = cur->next;
+        }
+
+        hid_free_enumeration(initial);
+        hid_free_enumeration(cur);
+        return v;
+    }
+    else
+    {
+        hid_free_enumeration(initial);
+        v.push_back("");
+        return v;
+    }
 }
+
+
 
 enum Reconnect_Result
 {

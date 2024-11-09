@@ -1,3 +1,5 @@
+const int VERSION = 1;
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -394,19 +396,19 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 int rightForces[3] = { 0 };
 
                 // set frequency
-                if (settings.lrumble < 25)
-                    leftForces[0] = settings.lrumble;
+                if (settings.rrumble < 25)
+                    leftForces[0] = settings.rrumble;
                 else
                     leftForces[0] = 25;
 
-                if(settings.rrumble < 25)
-                    rightForces[0] = settings.rrumble;
+                if(settings.lrumble < 25)
+                    rightForces[0] = settings.lrumble;
                 else
                     rightForces[0] = 25;
 
                 // set power
-                leftForces[1] = settings.lrumble;
-                rightForces[1] = settings.rrumble;
+                leftForces[1] = settings.rrumble; 
+                rightForces[1] = settings.lrumble; // Left motor is usually used for guns so yes these are swapped on purpose
 
                 // set static threshold
                 leftForces[2] = 20;
@@ -671,9 +673,30 @@ void setTaskbarIcon(GLFWwindow* window) {
 int main(int, char **)
 {
     ShowWindow(GetConsoleWindow(), SW_HIDE);
+
+    bool UpdateAvailable = false;
+    try {
+        std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
+        int version = stoi(response);
+
+        if (version > VERSION) {
+            cout << "Update available!" << endl;
+            UpdateAvailable = true;
+        }
+        else {
+            cout << "Application is up-to-date!" << endl;
+        }
+    }
+    catch (...) {
+        cout << "Version check failed" << endl;
+    }
+  
     Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
     if (appConfig.ElevateOnStartup) {
         ElevateNow();
+    }
+    else {
+        cout << "Not elevating" << endl;
     }
 
     bool WasElevated = IsRunAsAdministrator();
@@ -709,10 +732,11 @@ int main(int, char **)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
 
+    string title = "DualSenseY - Version " + std::to_string(VERSION);
     // Create window with graphics context
     auto *window = glfwCreateWindow(static_cast<std::int32_t>(1200),
                                     static_cast<std::int32_t>(900),
-                                    "DualSenseY",
+                                    title.c_str(),
                                     nullptr,
                                     nullptr);
     if (window == nullptr)
@@ -967,6 +991,17 @@ int main(int, char **)
                         {
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
                             ImGui::Text("Controller No. %d | Connection type: %s | Battery level: %d%%", i+1, bt_or_usb ,DualSense[i].State.battery.Level);
+
+                            if (UpdateAvailable) {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Install latest update")) {
+                                     if(filesystem::exists("Updater.exe")) {
+                                        system("start Updater.exe");
+                                        _exit(0);
+                                     }
+                                }
+                            }
+
                             ImGui::Separator();
 
                             if (!udpServer.isActive || !s.UseUDP)

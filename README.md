@@ -1,42 +1,53 @@
 # DualSenseY
 
-DualSenseY (v2) is a C++ application that enables advanced control and visualization for DualSense controllers. Using ImGui for its UI and leveraging libraries for audio and controller emulation, DualSenseY provides features like LED color customization, adaptive trigger configuration, and audio-based haptic feedback.
+**DualSenseY** is a powerful tool designed for controlling and customizing Sony DualSense (PS5) controllers on Windows. It features advanced capabilities for LED control, adaptive trigger configuration, haptics, microphone controls, and even screen capture functionality via the controller's microphone button.
 
 ## Features
 
-- **LED Control**: Customize the RGB colors on the DualSense LED bar or use special modes:
-  - **Disco Mode**: Cycles through colors in a smooth transition.
-  - **Audio to LED**: Syncs LED brightness with audio peak values for visual feedback.
+- **LED Customization**:
+  - Set custom RGB values for the controller’s LED light bar.
+  - Enable **Disco Mode** for animated color transitions.
+  - Sync the LED color with audio levels using **Audio to LED**.
+  - Display **Battery Status** with color-coded LED indicators.
+
+- **Adaptive Trigger Control**:
+  - Customize the left and right triggers with various feedback modes, including **Rigid**, **Pulse**, and **Calibration**.
+  - Enable **Rumble to Adaptive Triggers** for synchronized trigger feedback.
   
-- **Adaptive Trigger Configuration**: Provides customizable force feedback for the DualSense adaptive triggers, with various force modes like rigid, pulse, and calibration.
+- **Haptic Feedback**:
+  - Control left and right motor rumble levels for traditional haptic feedback.
+  - Enable **Audio to Haptics** for haptic feedback generated from system audio (USB-only).
+  
+- **Touchpad Visualization**:
+  - Display real-time touch inputs and coordinates on the controller’s touchpad.
 
-- **Haptic Feedback**: Supports standard rumble controls and audio-to-haptics, which generates feedback based on system audio. (Available only in USB mode.)
+- **Microphone Button Functionality**:
+  - **Screenshot Capture**: Take screenshots with a single press of the microphone button.
+  - **Mic Function Emulation**: Toggle microphone LED and volume with button presses.
 
-- **Touchpad Visualization**: Displays real-time touch input on the controller's touchpad, including touch coordinates and packet number.
+- **Controller Emulation**:
+  - Emulate as an **Xbox 360** or **DualShock 4** controller using ViGEmBus.
+  - **Hide/Show Real Controller** with Hidhide integration, allowing you to manage visibility in games and other applications.
 
-- **Controller Emulation**: Offers DS4 and Xbox 360 emulation using ViGEm, allowing the DualSense to be recognized as an alternative controller in other software.
-
-- **UDP Connectivity**: Integrates UDP communication for remote control or synchronization with other applications.
+- **UDP Connectivity**:
+  - Use UDP to control settings remotely and synchronize with other software or devices.
 
 ## Requirements (For programmers)
 
-- **Libraries**:
-  - [Dear ImGui](https://github.com/ocornut/imgui)
-  - [GLFW](https://www.glfw.org/)
-  - [OpenGL](https://www.opengl.org/)
-  - [miniaudio](https://github.com/mackron/miniaudio) for audio processing
-  - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation
-  - **Windows Only**: Requires `IMMDeviceEnumerator` and `IAudioMeterInformation` for audio integration.
+- **Libraries**
+  - [Dear ImGui](https://github.com/ocornut/imgui) for the graphical interface.
+  - [GLFW](https://www.glfw.org/) and **OpenGL** for rendering.
+  - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
+  - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation.
+  - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage
 
-1. Start DualSenseY.exe, and select the desired DualSense controller.
-2. Use the LED and adaptive trigger controls to customize your experience.
-3. Enable **Audio to LED** or **Disco Mode** under the "LED" section.
-4. For haptics, select **Audio to Haptics** to experience feedback based on system audio.
-5. To switch to emulation mode, choose between DS4 and Xbox 360 under "Controller Emulation."
-
-## Notes
-
-- **Emulation** requires the ViGEmBus driver. Install it if not already present.
-- **Haptic Feedback** features are unavailable when using Bluetooth.
+1. **Start DualSenseY** and connect your DualSense controller.
+2. **Select Controller**: Choose the controller you want to configure from the dropdown list.
+3. **Configure LED, Haptics, and Adaptive Triggers**:
+4. **Microphone Controls**: Use the microphone button for screenshots or muting the built-in microphone.
+5. **Controller Emulation**: Switch between Xbox 360 and DualShock 4 emulation modes as needed.
+6. **Save/Load Configurations**:
+   - Save your current configuration as a file or load a previous configuration.
+   - Set default configurations for specific ports.

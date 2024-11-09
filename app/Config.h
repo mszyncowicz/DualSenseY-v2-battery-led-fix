@@ -6,15 +6,49 @@
 
 namespace Config {
     class AppConfig {
-        std::vector<std::pair<std::string, std::string>> DefaultConfigs;
+    public:
+        bool ElevateOnStartup = false;
 
         nlohmann::json to_json() const {
             nlohmann::json j;
-            j["DefaultConfigs"] = DefaultConfigs;
-                  
+            j["ElevateOnStartup"] = ElevateOnStartup;
+        
             return j;
         }
+
+        static AppConfig from_json(const nlohmann::json& j) {
+            AppConfig appconfig;
+
+            if (j.contains("ElevateOnStartup"))       j.at("ElevateOnStartup").get_to(appconfig.ElevateOnStartup);
+            
+            return appconfig;
+        }
     };
+
+    static void WriteAppConfigToFile(AppConfig &config) {
+        nlohmann::json j = config.to_json();
+
+        ofstream file("AppConfig.txt");
+        if (file.is_open()) {
+            file << j.dump(4); 
+            file.close();
+        }
+    }
+
+    static AppConfig ReadAppConfigFromFile() {
+        AppConfig appconfig;
+        nlohmann::json j;
+        ifstream file("AppConfig.txt");
+
+        if (file.is_open()) {
+            j = j.parse(file); 
+            file.close();
+            appconfig = appconfig.from_json(j);
+            return appconfig;
+        }
+
+        return appconfig;
+    }
 
     static void WriteToFile(Settings &settings) {
         nlohmann::json j = settings.to_json();
@@ -42,8 +76,22 @@ namespace Config {
         }
     }
 
-    static Settings ReadFromFile() {
+    static Settings ReadFromFile(std::string filename) {
+        Settings settings;
+        nlohmann::json j;
+        ifstream file(filename);
 
+        if (file.is_open()) {
+            j = j.parse(file); 
+            file.close();
+            settings = settings.from_json(j);
+            return settings;
+        }
+
+        return settings;
+    }
+
+    static std::string GetConfigPath() {
         OPENFILENAMEW ofn;
 
         char szFileName[MAX_PATH] = "";
@@ -61,18 +109,8 @@ namespace Config {
         GetOpenFileNameW(&ofn);
         wstring ws( ofn.lpstrFile ); 
         string filename = string( ws.begin(), ws.end() );
-        Settings settings;
-        nlohmann::json j;
-        ifstream file(filename);
 
-        if (file.is_open()) {
-            j = j.parse(file); 
-            file.close();
-            settings = settings.from_json(j);
-            return settings;
-        }
-
-        return settings;
+        return filename;
     }
 }
 

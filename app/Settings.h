@@ -12,10 +12,16 @@ public:
     string lmodestr = "Off";
     string rmodestr = "Off";
     bool UseUDP = false;
+    bool CurrentlyUsingUDP = false;
     bool MicScreenshot = false;
     bool MicFunc = false;
     bool RumbleToAT = false;
     bool BatteryLightbar = false;
+    bool TouchpadToMouse = false;
+    bool X360Shortcut = false;
+    bool DS4Shortcut = false;
+    bool StopEmuShortcut = false;
+    float swipeThreshold = 0.50f;
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {
@@ -30,7 +36,13 @@ public:
         j["UseUDP"] = UseUDP;
         j["MicScreenshot"] = MicScreenshot;
         j["MicFunc"] = MicFunc;
+        j["RumbleToAT"] = RumbleToAT;
         j["BatteryLightbar"] = BatteryLightbar;
+        j["swipeThreshold"] = swipeThreshold;
+        j["TouchpadToMouse"] = TouchpadToMouse;
+        j["X360Shortcut"] = X360Shortcut;
+        j["DS4Shortcut"] = DS4Shortcut;
+        j["StopEmuShortcut"] = StopEmuShortcut;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
         return j;
     }
@@ -50,7 +62,13 @@ public:
         if (j.contains("UseUDP"))           j.at("UseUDP").get_to(settings.UseUDP);
         if (j.contains("MicScreenshot"))    j.at("MicScreenshot").get_to(settings.MicScreenshot);
         if (j.contains("MicFunc"))          j.at("MicFunc").get_to(settings.MicFunc);
+        if (j.contains("RumbleToAT"))          j.at("RumbleToAT").get_to(settings.RumbleToAT);
         if (j.contains("BatteryLightbar"))          j.at("BatteryLightbar").get_to(settings.BatteryLightbar);
+        if (j.contains("swipeThreshold"))          j.at("swipeThreshold").get_to(settings.swipeThreshold);
+        if (j.contains("TouchpadToMouse"))          j.at("TouchpadToMouse").get_to(settings.TouchpadToMouse);
+        if (j.contains("X360Shortcut"))          j.at("X360Shortcut").get_to(settings.X360Shortcut);
+        if (j.contains("DS4Shortcut"))          j.at("DS4Shortcut").get_to(settings.DS4Shortcut);
+        if (j.contains("StopEmuShortcut"))          j.at("StopEmuShortcut").get_to(settings.StopEmuShortcut);
         if (j.contains("emuStatus"))        j.at("emuStatus").get_to(settings.emuStatus);
 
         return settings;

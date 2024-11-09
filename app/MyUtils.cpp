@@ -1,4 +1,6 @@
 #include "MyUtils.h"
+#include <errno.h>
+#define SYSERROR()  errno
 
 namespace MyUtils {
     std::string GetImagesFolderPath() {
@@ -24,6 +26,49 @@ namespace MyUtils {
         char buf[100];
         std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", nowTm);
         return buf;
+    }
+
+    std::string sanitizeFileName(const std::string& input) {
+        std::string sanitized = input;
+        const std::string invalidChars = "\\/:*?\"<>|";
+
+        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [&](char c) {
+            return invalidChars.find(c) != std::string::npos;
+            }), sanitized.end());
+
+        return sanitized;
+    }
+
+    bool GetConfigPathForController(std::string &Path, std::string ControllerID) {
+        std::ifstream configFile(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\DefaultConfigs\\" + sanitizeFileName(ControllerID));
+        if (configFile.good()) {
+            getline(configFile, Path);
+            configFile.close();
+            return true;
+        }
+        else {
+            std::cerr<<"Failed to open file : "<<SYSERROR()<<std::endl;
+            return false;
+        }
+    }
+
+    bool WriteDefaultConfigPath(std::string Path, std::string ControllerID) {
+        std::filesystem::create_directories(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\DefaultConfigs");
+        std::ofstream configFile(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\DefaultConfigs\\" + sanitizeFileName(ControllerID));
+        if (configFile.is_open()) {
+            configFile << Path;
+            configFile.close();
+            return true;
+        }
+        else {
+            std::cerr<<"Failed to open file : "<<SYSERROR()<<std::endl;
+            return false;
+        }
+    }
+
+    void RemoveConfig(std::string ControllerID) {
+        std::string path = MyUtils::GetLocalFolderPath() + "\\DualSenseY\\DefaultConfigs\\" + sanitizeFileName(ControllerID);
+        std::remove(path.c_str());
     }
 
     std::string currentDateTimeWMS()

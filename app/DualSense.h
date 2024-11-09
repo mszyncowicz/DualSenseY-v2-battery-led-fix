@@ -279,11 +279,14 @@ struct Battery
 class ButtonState
 {
 public:
-    bool square, triangle, circle, cross, DpadUp, DpadDown, DpadLeft, DpadRight,
-        L1, L3, R1, R3, R2Btn, L2Btn, share, options, ps, touchBtn, micBtn;
-    uint8_t L2, R2;
-    int RX, RY, LX, LY, TouchPacketNum;
-    const char *PathIdentifier;
+    bool square = false, triangle = false, circle = false, cross = false, 
+     DpadUp = false, DpadDown = false, DpadLeft = false, DpadRight = false,
+     L1 = false, L3 = false, R1 = false, R3 = false, R2Btn = false, 
+     L2Btn = false, share = false, options = false, ps = false, 
+     touchBtn = false, micBtn = false;
+    uint8_t L2 = 0, R2 = 0;
+    int RX = 0, RY = 0, LX = 0, LY = 0, TouchPacketNum = 0;
+    const char* PathIdentifier = nullptr;
     Touchpad trackPadTouch0;
     Touchpad trackPadTouch1;
     Gyro gyro;
@@ -896,7 +899,32 @@ public:
         }
         else
         {
+            ButtonState buttonState;
             Connected = false;
+            buttonState.square = false;
+            buttonState.triangle = false;
+            buttonState.circle = false;
+            buttonState.cross = false;
+            buttonState.DpadUp = false;
+            buttonState.DpadDown = false;
+            buttonState.DpadLeft = false;
+            buttonState.DpadRight = false;
+            buttonState.L1 = false;
+            buttonState.L3 = false;
+            buttonState.R1 = false;
+            buttonState.R3 = false;
+            buttonState.R2Btn = false;
+            buttonState.L2Btn = false;
+            buttonState.share = false;
+            buttonState.options = false;
+            buttonState.ps = false;
+            buttonState.touchBtn = false;
+            buttonState.micBtn = false;
+            buttonState.L2 = 0;
+            buttonState.R2 = 0;
+            buttonState.trackPadTouch0.IsActive = false;
+            buttonState.trackPadTouch1.IsActive = false;
+            State = buttonState;
         }
     }
 
@@ -1381,6 +1409,7 @@ public:
                 // Return to blue lightbar if bluetooth
                 SetPlayerLED(0);
                 SetLightbar(0, 0, 255);
+                SetMicrophoneLED(false, false);
             }
 
             UseRumbleNotHaptics(false);

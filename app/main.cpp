@@ -2,14 +2,13 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
-#include <filesystem>
-#include <iostream>
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
 #include <GLFW/glfw3.h>
 
+#include "MyUtils.h"
 #include "DualSense.h"
 #include "ControllerEmulation.h"
 #include "IMMNotificationClient.h"
@@ -17,18 +16,9 @@
 #include "miniaudio.h"
 #include "Config.h"
 #include "UDP.h"
-#include "MyUtils.h"
 #include "Settings.h"
-#include <audioclient.h>
-#include <chrono>
-#include <ctime>
-#include <ratio>
-#include <deque>
-#include <endpointvolume.h>
-#include <mmdeviceapi.h>
-#include <mutex>
-#include <thread>
-#include <windows.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -38,17 +28,47 @@
 
 static void glfw_error_callback(int error, const char *description);
 
-#include <windows.h>
-#include <string>
-
 deque<Dualsense> DualSense;
-std::mutex buffer_mutex;
 std::atomic<bool> stop_thread{false}; // Flag to signal the thread to stop
 
 NotificationClient *client;
 IMMDeviceEnumerator *deviceEnumerator = nullptr;
 IMMDevice *device = nullptr;
 IAudioMeterInformation *meterInfo = nullptr;
+
+void StartHidHideRequest(std::string ID, std::string arg) {
+    STARTUPINFO si;
+                                        PROCESS_INFORMATION pi;
+
+                                        ZeroMemory(&si, sizeof(si));
+                                        si.cb = sizeof(si);
+                                        ZeroMemory(&pi, sizeof(pi));
+
+                                        string arg1 = string("\"") + ID + string("\"");
+                                        string arg2 = " \""+arg+ "\" ";
+                                        string command = "utilities\\hidhide_service_request.exe " + arg1 + arg2;
+
+                                        if (CreateProcess(NULL,   // No module name (use command line)
+                                            (LPSTR)command.c_str(),        // Command line
+                                            NULL,            // Process handle not inheritable
+                                            NULL,            // Thread handle not inheritable
+                                            FALSE,          // Set handle inheritance to FALSE
+                                            0,              // No creation flags
+                                            NULL,           // Use parent's environment block
+                                            NULL,           // Use parent's starting directory 
+                                            &si,            // Pointer to STARTUPINFO structure
+                                            &pi)            // Pointer to PROCESS_INFORMATION structure
+                                            ) {
+                                            // Close process and thread handles. 
+                                            CloseHandle(pi.hProcess);
+                                            CloseHandle(pi.hThread);
+                                        }
+}
+
+void RunAsyncHidHideRequest(std::string ID, std::string arg) {
+    std::thread asyncThread(StartHidHideRequest, ID, arg);
+    asyncThread.detach();  // Detach the thread to run independently
+}
 
 void InitializeAudioEndpoint()
 {
@@ -79,6 +99,14 @@ string WStringToString(const wstring& wstr)
 	return str;
 }
 
+void MoveCursor(int x, int y)
+{
+    POINT p;
+    if (GetCursorPos(&p)) {
+        SetCursorPos(p.x + x, p.y + y);
+    }
+}
+
 float GetCurrentAudioPeak()
 {
     if (client->DeviceChanged)
@@ -105,22 +133,6 @@ float GetCurrentAudioPeak()
     }
 }
 
-bool AudioToLEDfunc(Settings &f)
-{
-    if (f.AudioToLED)
-    {
-        int peak = static_cast<int>(GetCurrentAudioPeak() * 500);
-        f.ControllerInput.Red = peak;
-        f.ControllerInput.Green = peak;
-        f.ControllerInput.Blue = peak;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
 void readControllerState(Dualsense &controller)
 {
     while (!stop_thread)
@@ -130,11 +142,22 @@ void readControllerState(Dualsense &controller)
     }
 }
 
+void Tooltip(const char* text) {
+    ImGui::SameLine();
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(text);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
     ViGEm v;
     v.InitializeVigembus();
-    EmuStatus curStatus = None;
 
     while (!stop_thread)
     {
@@ -147,52 +170,49 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 continue;
             }
 
-            if (curStatus == None && settings.emuStatus == X360)
+            if (settings.emuStatus == X360)
             {
                 v.StartX360();
-                curStatus = X360;
-            }
-            else if (curStatus == None && settings.emuStatus == DS4)
-            {
-                v.StartDS4();
-                curStatus = DS4;
-            }
-            else if (curStatus != None && settings.emuStatus == None)
-            {
-                v.RemoveController();
-                curStatus = None;
-            }
-
-            if (curStatus == X360)
-            {
                 v.UpdateX360(controller.State);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
             }
-            else if (curStatus == DS4)
+            else if (settings.emuStatus == DS4)
             {
+                v.StartDS4();
                 v.UpdateDS4(controller.State);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
-                if (v.Red > 0 || v.Green > 0 || v.Blue > 0)
-                {
-                    settings.ControllerInput.Red = v.Red;
-                    settings.ControllerInput.Green = v.Green;
-                    settings.ControllerInput.Blue = v.Blue;
+                if(!settings.CurrentlyUsingUDP){
+                    if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
+                        controller.SetLightbar(v.Red, v.Green, v.Blue);
+                    }
                 }
+            }
+            else {
+                v.RemoveController();
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         else
         {
-            if (settings.emuStatus != None) {
-                curStatus = None;
-                v.RemoveController();
-            }
+            v.RemoveController();
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
+}
+
+void MouseClick(DWORD flag, DWORD mouseData = 0)
+{
+    // Simulate mouse left button down
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.mouseData = mouseData;
+    input.mi.dwFlags = flag;  // Left button down
+    input.mi.time = 0;
+    input.mi.dwExtraInfo = 0;
+    SendInput(1, &input, sizeof(INPUT));
 }
 
 void writeControllerState(Dualsense &controller, Settings &settings)
@@ -202,73 +222,208 @@ void writeControllerState(Dualsense &controller, Settings &settings)
 
     // DISCO MODE VARIABLES
     int colorState = 0; // 0 = red to yellow, 1 = yellow to green, 2 = green to cyan, etc.
+    int colorStateBattery = 0;
+    int colorStateX360EMU = 0;
     uint8_t led[3];
     int step = 5; 
     led[0] = 255;
     led[1] = 0;
     led[2] = 0;
+    int x360emuanimation = 0;
     bool lastMic = false;
     bool mic = false;
+    float touchpadLastX = 0;
+    float touchpadLastY = 0;
+    float touchpad1LastY = 0;
+    bool wasTouching = false;
+    bool wasTouching1 = false;
+    bool wasTouchpadClicked = false;
+    bool X360animationplayed = false;
+    bool X360readyfornew = false;
+    int steps[] = {1, -1, 1, -1,1, -1, 1, -1,1, -1, 1, -1};
+    int limits[] = {255, 0, 255, 0,255, 0, 255, 0,255, 0, 255, 0};
+    int direction = 1; // 1 for increasing, -1 for decreasing
 
     while (!stop_thread)
     {
-        if (controller.Connected)
+        if (true)
         {
-            controller.SetLightbar(settings.ControllerInput.Red,
-                                   settings.ControllerInput.Green,
-                                   settings.ControllerInput.Blue);
+            if (settings.emuStatus == X360 && !X360animationplayed) {
+                if (colorStateX360EMU < 20) {
+                    x360emuanimation += direction * step;
 
-            if (settings.RumbleToAT) {
-                settings.ControllerInput.LeftTriggerMode = Trigger::Pulse_B;
-                settings.ControllerInput.RightTriggerMode = Trigger::Pulse_B;
+                    // Reverse direction when reaching the upper or lower limits
+                    if (x360emuanimation >= 255) {
+                        x360emuanimation = 255; // Clamp to the max value
+                        direction = -1;          // Change to decreasing
+                        colorStateX360EMU++;
+                    } else if (x360emuanimation <= 0) {
+                        x360emuanimation = 0;    // Clamp to the min value
+                        direction = 1;           // Change to increasing
+                        colorStateX360EMU++;
+                    }
+                } else {
+                    X360animationplayed = true;
+                }
+
+                controller.SetLightbar(0, x360emuanimation, 0);
+            }
+            else if (settings.emuStatus == X360 && X360readyfornew) {
+                X360animationplayed = false;
+            }
+
+            if(settings.emuStatus == None && X360animationplayed) {
+                X360readyfornew = true;             
+                x360emuanimation = 0;
+                colorStateX360EMU = 0;
+            }
+            else if (settings.emuStatus == None && !X360animationplayed) {
+                X360animationplayed = true;
+            }
+
+            if (settings.emuStatus != X360 && settings.X360Shortcut && controller.State.micBtn && controller.State.DpadLeft) {
+                X360animationplayed = false;
+                X360readyfornew = true;
+                RunAsyncHidHideRequest(controller.GetPath(), "hide");
+                settings.emuStatus = X360;
+            }
+
+            if (settings.emuStatus != DS4 && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
+                RunAsyncHidHideRequest(controller.GetPath(), "hide");
+                settings.emuStatus = DS4;
+                controller.SetLightbar(0, 0, 64);
+            }
+
+            if (settings.emuStatus != None && settings.StopEmuShortcut && controller.State.micBtn && controller.State.DpadDown) {
+                RunAsyncHidHideRequest(controller.GetPath(), "show");
+                settings.emuStatus = None;
+            }
+
+            if (settings.TouchpadToMouse && controller.State.trackPadTouch0.IsActive) {
+                if (controller.State.touchBtn && !wasTouchpadClicked && controller.State.trackPadTouch0.X <= 1000) {
+                    MouseClick(MOUSEEVENTF_LEFTDOWN);
+                    wasTouchpadClicked = true;
+                }
+                else if (!controller.State.touchBtn && wasTouchpadClicked && controller.State.trackPadTouch0.X <= 1000) {
+                    MouseClick(MOUSEEVENTF_LEFTUP);
+                    wasTouchpadClicked = false;
+                }
+
+                if (controller.State.touchBtn && !wasTouchpadClicked && controller.State.trackPadTouch0.X >= 1001) {
+                    MouseClick(MOUSEEVENTF_RIGHTDOWN);
+                    wasTouchpadClicked = true;
+                }
+                else if (!controller.State.touchBtn && wasTouchpadClicked && controller.State.trackPadTouch0.X >= 1001) {
+                    MouseClick(MOUSEEVENTF_RIGHTUP);
+                    wasTouchpadClicked = false;
+                }
+
+                // If it wasn't previously touching, start tracking movement
+                if (!wasTouching) {
+                    touchpadLastX = controller.State.trackPadTouch0.X;
+                    touchpadLastY = controller.State.trackPadTouch0.Y;
+                }
+
+                if (!wasTouching1) {
+                    touchpad1LastY = controller.State.trackPadTouch1.Y;
+                }
+
+                float normalizedX = controller.State.trackPadTouch0.X;
+                float normalizedY = controller.State.trackPadTouch0.Y;
+
+                float deltaX = normalizedX - touchpadLastX;
+                float deltaY = normalizedY - touchpadLastY;
+                float delta1Y = touchpad1LastY - controller.State.trackPadTouch1.Y;
+
+                if (controller.State.trackPadTouch1.IsActive) {
+                    wasTouching1 = true;
+                    if (fabs(delta1Y) > 5.0f) {
+                        MouseClick(MOUSEEVENTF_WHEEL, static_cast<int>(delta1Y * 2));
+                    }
+
+                    touchpad1LastY = controller.State.trackPadTouch1.Y;
+                }
+                else {
+                    wasTouching1 = false;
+                }
+
+                if (fabs(deltaX) > settings.swipeThreshold || fabs(deltaY) > settings.swipeThreshold) {
+
+                    MoveCursor(deltaX * settings.swipeThreshold, deltaY * settings.swipeThreshold);
+                }
+
+                // Update the last touchpad position
+                touchpadLastX = normalizedX;
+                touchpadLastY = normalizedY;
+                
+                // Mark that the touchpad is active
+                wasTouching = true;
+            } else {
+                // Reset the touch state when the touchpad is no longer active
+                wasTouching = false;
+            }
+            
+            if(!settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
+            {
+                controller.SetLightbar(settings.ControllerInput.Red,settings.ControllerInput.Green,settings.ControllerInput.Blue);
+            }
+
+            if (!settings.RumbleToAT && !settings.CurrentlyUsingUDP) {
+               controller.SetRightTrigger(
+                    settings.ControllerInput.RightTriggerMode,
+                    settings.ControllerInput.RightTriggerForces[0],
+                    settings.ControllerInput.RightTriggerForces[1],
+                    settings.ControllerInput.RightTriggerForces[2],
+                    settings.ControllerInput.RightTriggerForces[3],
+                    settings.ControllerInput.RightTriggerForces[4],
+                    settings.ControllerInput.RightTriggerForces[5],
+                    settings.ControllerInput.RightTriggerForces[6]);
+
+                controller.SetLeftTrigger(settings.ControllerInput.LeftTriggerMode,
+                    settings.ControllerInput.LeftTriggerForces[0],
+                    settings.ControllerInput.LeftTriggerForces[1],
+                    settings.ControllerInput.LeftTriggerForces[2],
+                    settings.ControllerInput.LeftTriggerForces[3],
+                    settings.ControllerInput.LeftTriggerForces[4],
+                    settings.ControllerInput.LeftTriggerForces[5],
+                    settings.ControllerInput.LeftTriggerForces[6]);
+            }
+
+            if (settings.RumbleToAT && !settings.CurrentlyUsingUDP) {
+                int leftForces[3] = { 0 };
+                int rightForces[3] = { 0 };
 
                 // set frequency
                 if (settings.lrumble < 25)
-                    settings.ControllerInput.LeftTriggerForces[0] = settings.lrumble;
+                    leftForces[0] = settings.lrumble;
                 else
-                    settings.ControllerInput.LeftTriggerForces[0] = 25;
+                    leftForces[0] = 25;
 
                 if(settings.rrumble < 25)
-                    settings.ControllerInput.RightTriggerForces[0] = settings.rrumble;
+                    rightForces[0] = settings.rrumble;
                 else
-                    settings.ControllerInput.RightTriggerForces[0] = 25;
+                    rightForces[0] = 25;
 
                 // set power
-                settings.ControllerInput.LeftTriggerForces[1] = settings.lrumble;
-                settings.ControllerInput.RightTriggerForces[1] = settings.rrumble;
+                leftForces[1] = settings.lrumble;
+                rightForces[1] = settings.rrumble;
 
                 // set static threshold
-                settings.ControllerInput.LeftTriggerForces[2] = 20;
-                settings.ControllerInput.RightTriggerForces[2] = 20;
+                leftForces[2] = 20;
+                rightForces[2] = 20;
+
+                controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
+                controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
             }
 
-            controller.SetRightTrigger(
-                                      settings.ControllerInput.RightTriggerMode,
-                                      settings.ControllerInput.RightTriggerForces[0],
-                                      settings.ControllerInput.RightTriggerForces[1],
-                                      settings.ControllerInput.RightTriggerForces[2],
-                                      settings.ControllerInput.RightTriggerForces[3],
-                                      settings.ControllerInput.RightTriggerForces[4],
-                                      settings.ControllerInput.RightTriggerForces[5],
-                                      settings.ControllerInput.RightTriggerForces[6]);
-
-            controller.SetLeftTrigger(settings.ControllerInput.LeftTriggerMode,
-                                      settings.ControllerInput.LeftTriggerForces[0],
-                                      settings.ControllerInput.LeftTriggerForces[1],
-                                      settings.ControllerInput.LeftTriggerForces[2],
-                                      settings.ControllerInput.LeftTriggerForces[3],
-                                      settings.ControllerInput.LeftTriggerForces[4],
-                                      settings.ControllerInput.LeftTriggerForces[5],
-                                      settings.ControllerInput.LeftTriggerForces[6]);
-
-            if (settings.AudioToLED)
+            if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
             {
-                AudioToLEDfunc(settings);
-                controller.SetLightbar(settings.ControllerInput.Red, settings.ControllerInput.Green, settings.ControllerInput.Blue);
+                int peak = static_cast<int>(GetCurrentAudioPeak() * 500);
+                controller.SetLightbar(peak,peak,peak);
             }
 
-            if (settings.DiscoMode)
-            {
+            if (settings.DiscoMode && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
+            {               
                 controller.SetLightbar(led[0], led[1], led[2]);
 
                 switch (colorState)
@@ -305,26 +460,37 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     }
             }
 
-            if (settings.BatteryLightbar) {
+            if (settings.BatteryLightbar && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed) {
                 int batteryLevel = controller.State.battery.Level;
 
-                if (batteryLevel > 75) {
-                    // High battery, set LED to green
-                    controller.SetLightbar(0, 255, 0);
-                } else if (batteryLevel > 50) {
-                    // Medium-high battery, set LED to yellow
-                    controller.SetLightbar(255, 255, 0);
-                } else if (batteryLevel > 25) {
-                    // Medium-low battery, set LED to orange
-                    controller.SetLightbar(255, 165, 0);
-                } else {
-                    // Low battery, set LED to red
-                    controller.SetLightbar(255, 0, 0);
+                if(batteryLevel > 20)
+                {
+                    batteryLevel = std::max<int>(0, std::min<int>(100, batteryLevel));
+
+                    int red = (100 - batteryLevel) * 255 / 100;
+                    int green = batteryLevel * 255 / 100;
+                    int blue = 0;
+                    controller.SetLightbar(red, green, blue);
                 }
+                else {
+                    switch (colorStateBattery) {
+                    case 0:
+                        led[0] += step;
+                        if (led[0] == 255) colorStateBattery = 1;
+                        break;
+                    case 1:
+                        led[0] -= step;
+                        if (led[0] == 0) colorStateBattery = 0;
+                        break;
+                    }
+
+                    controller.SetLightbar(led[0], 0, 0);
+                }
+
             }
 
             if (settings.MicScreenshot) {
-                if (controller.State.micBtn && !lastMic) {
+                if (controller.State.micBtn && !lastMic && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp) {
                     controller.PlayHaptics("sounds/screenshot.wav");
                     MyUtils::TakeScreenShot();
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -336,7 +502,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
 
             if (settings.MicFunc) {
-                if (controller.State.micBtn && !lastMic) {
+                if (!controller.State.micBtn && lastMic) {
                     if (!mic) {
                         controller.SetMicrophoneLED(true, false);
                         controller.SetMicrophoneVolume(0);
@@ -347,8 +513,11 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                         controller.SetMicrophoneVolume(80);
                         mic = false;
                     }
+                    lastMic = false;
+                }
+                else if (controller.State.micBtn && !lastMic) {
                     lastMic = true;
-                }            
+                }
             }
 
             if (!controller.State.micBtn && lastMic) {
@@ -368,12 +537,102 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
 
             controller.SetRumble(settings.lrumble, settings.rrumble);
-            controller.Write();
+
+            if(controller.Connected)
+                controller.Write();
         }
         std::this_thread::sleep_for(std::chrono::microseconds(25));
     }
 }
 
+BOOL IsRunAsAdministrator()
+{
+    BOOL fIsRunAsAdmin = FALSE;
+    DWORD dwError = ERROR_SUCCESS;
+    PSID pAdministratorsGroup = NULL;
+
+    // Allocate and initialize a SID of the administrators group.
+    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+    if (!AllocateAndInitializeSid(
+        &NtAuthority, 
+        2, 
+        SECURITY_BUILTIN_DOMAIN_RID, 
+        DOMAIN_ALIAS_RID_ADMINS, 
+        0, 0, 0, 0, 0, 0, 
+        &pAdministratorsGroup))
+    {
+        dwError = GetLastError();
+        goto Cleanup;
+    }
+
+    // Determine whether the SID of administrators group is enabled in 
+    // the primary access token of the process.
+    if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin))
+    {
+        dwError = GetLastError();
+        goto Cleanup;
+    }
+
+Cleanup:
+    // Centralized cleanup for all allocated resources.
+    if (pAdministratorsGroup)
+    {
+        FreeSid(pAdministratorsGroup);
+        pAdministratorsGroup = NULL;
+    }
+
+    // Throw the error if something failed in the function.
+    if (ERROR_SUCCESS != dwError)
+    {
+        throw dwError;
+    }
+
+    return fIsRunAsAdmin;
+}
+
+void ElevateNow()
+{
+    BOOL bAlreadyRunningAsAdministrator = FALSE;
+    try
+    {
+        bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
+    }
+    catch(...)
+    {
+        std::cout << "Failed to determine if application was running with admin rights" << std::endl;
+        DWORD dwErrorCode = GetLastError();
+        TCHAR szMessage[256];
+        _stprintf_s(szMessage, ARRAYSIZE(szMessage), _T("Error code returned was 0x%08lx"), dwErrorCode);
+        std::cout << szMessage << std::endl;
+    }
+
+    if (!bAlreadyRunningAsAdministrator)
+    {
+        wchar_t szPath[MAX_PATH];
+        if (GetModuleFileNameW(NULL, szPath, ARRAYSIZE(szPath)))
+        {
+            // Launch itself as admin
+            SHELLEXECUTEINFOW sei = { sizeof(sei) };
+            sei.lpVerb = L"runas";
+            sei.lpFile = szPath;
+            sei.hwnd = NULL;
+            sei.nShow = SW_NORMAL;
+
+            if (!ShellExecuteExW(&sei))
+            {
+                DWORD dwError = GetLastError();
+                if (dwError == ERROR_CANCELLED)
+                {
+                    std::cout << "End user did not allow elevation" << std::endl;
+                }
+            }
+            else
+            {
+                _exit(1);  // Quit itself
+            }
+        }
+    }
+}
 
 float CalculateScaleFactor(int screenWidth, int screenHeight) {
     // Choose a baseline resolution, e.g., 1920x1080
@@ -388,11 +647,39 @@ float CalculateScaleFactor(int screenWidth, int screenHeight) {
     return (widthScale + heightScale) / 1.2f;
 }
 
+void setTaskbarIcon(GLFWwindow* window) {
+    int width, height, nrChannels;
+    unsigned char* img = stbi_load("utilities/icon.png", &width, &height, &nrChannels, 4);
+    
+    if (img) {
+        GLFWimage icon;
+        icon.width = width;
+        icon.height = height;
+        icon.pixels = img;
+
+        // Set the window icon
+        glfwSetWindowIcon(window, 1, &icon);
+
+        // Free the image memory after setting the icon
+        stbi_image_free(img);
+    } else {
+        // Handle error loading image
+        printf("Failed to load icon\n");
+    }
+}
 
 int main(int, char **)
 {
-    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-    ShowWindow(GetConsoleWindow(), SW_RESTORE);
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
+    if (appConfig.ElevateOnStartup) {
+        ElevateNow();
+    }
+
+    bool WasElevated = IsRunAsAdministrator();
+
+    //SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -459,13 +746,6 @@ int main(int, char **)
     int ControllerCount = DualsenseUtils::GetControllerCount();
     std::chrono::high_resolution_clock::time_point LastControllerCheck = std::chrono::high_resolution_clock::now();
 
-    // get config
-    filesystem::create_directories(MyUtils::GetLocalFolderPath() + "\\DualSenseY");
-    std::ifstream configFile(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\Config.txt");
-    if (configFile.good()) {
-
-    }
-
     InitializeAudioEndpoint();
 
     UDP udpServer;
@@ -473,6 +753,8 @@ int main(int, char **)
     
     ImGuiIO &io = ImGui::GetIO();
     ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Roboto-Bold.ttf", 15.0f, NULL, io.Fonts->GetGlyphRangesDefault()); 
+
+    setTaskbarIcon(window);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -486,9 +768,7 @@ int main(int, char **)
         ImVec2 window_size = io.DisplaySize;
 
         // Set window flags to remove the ability to resize, move, or close the window
-        ImGuiWindowFlags window_flags =
-            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
 
         // Begin the "Main" window and set its size and position
         ImGui::SetNextWindowSize(window_size);
@@ -496,7 +776,6 @@ int main(int, char **)
             ImVec2(0, 0)); // Position at the top-left corner
 
         const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
         int screenWidth = mode->width;
         int screenHeight = mode->height;
 
@@ -592,13 +871,26 @@ int main(int, char **)
                         if (x.Connected)
                         {
                             DualSense.emplace_back(x);
+
+                            // Read default config if present
+                            std::string configPath = "";
+                            MyUtils::GetConfigPathForController(configPath, id);
                             Settings s;
+                            if (configPath != "") {
+                                s = Config::ReadFromFile(configPath);
+                                if (s.emuStatus != None) {
+                                    RunAsyncHidHideRequest(id, "hide");
+                                }
+                            }
+
                             ControllerSettings.emplace_back(s);
                             ControllerSettings.back().ControllerInput.ID = id;
+
                             if (firstController)
                             {
                                 ControllerSettings.back().UseUDP = true;
                                 firstController = false;
+                                CurrentController = id;
                             }
 
                             readThreads.emplace_back(readControllerState,
@@ -634,36 +926,32 @@ int main(int, char **)
                                 preUDP = s.ControllerInput;
                                 firstTimeUDP = false;
                             }
+                            s.CurrentlyUsingUDP = true;
                             Settings udpSettings = udpServer.GetSettings();
                             udpServer.Battery = DualSense[i].State.battery.Level;               
-                            s.AudioToLED = false;
-                            s.DiscoMode = false;
-                            s.BatteryLightbar = false;
-                            s.RumbleToAT = false;
-                            s.ControllerInput.Red = udpSettings.ControllerInput.Red;
-                            s.ControllerInput.Green = udpSettings.ControllerInput.Green;
-                            s.ControllerInput.Blue = udpSettings.ControllerInput.Blue;
-                            s.ControllerInput.LeftTriggerForces[0] = udpSettings.ControllerInput.LeftTriggerForces[0];
-                            s.ControllerInput.LeftTriggerForces[1] = udpSettings.ControllerInput.LeftTriggerForces[1];
-                            s.ControllerInput.LeftTriggerForces[2] = udpSettings.ControllerInput.LeftTriggerForces[2];
-                            s.ControllerInput.LeftTriggerForces[3] = udpSettings.ControllerInput.LeftTriggerForces[3];
-                            s.ControllerInput.LeftTriggerForces[4] = udpSettings.ControllerInput.LeftTriggerForces[4];
-                            s.ControllerInput.LeftTriggerForces[5] = udpSettings.ControllerInput.LeftTriggerForces[5];
-                            s.ControllerInput.LeftTriggerForces[6] = udpSettings.ControllerInput.LeftTriggerForces[6];
-                            s.ControllerInput.LeftTriggerMode = udpSettings.ControllerInput.LeftTriggerMode;
+                            DualSense[i].SetLightbar(udpSettings.ControllerInput.Red, udpSettings.ControllerInput.Green, udpSettings.ControllerInput.Blue);
+                            DualSense[i].SetLeftTrigger(udpSettings.ControllerInput.LeftTriggerMode,
+                                udpSettings.ControllerInput.LeftTriggerForces[0],
+                                udpSettings.ControllerInput.LeftTriggerForces[1],
+                                udpSettings.ControllerInput.LeftTriggerForces[2],
+                                udpSettings.ControllerInput.LeftTriggerForces[3],
+                                udpSettings.ControllerInput.LeftTriggerForces[4],
+                                udpSettings.ControllerInput.LeftTriggerForces[5],
+                                udpSettings.ControllerInput.LeftTriggerForces[6]);
 
-                            s.ControllerInput.RightTriggerForces[0] = udpSettings.ControllerInput.RightTriggerForces[0];
-                            s.ControllerInput.RightTriggerForces[1] = udpSettings.ControllerInput.RightTriggerForces[1];
-                            s.ControllerInput.RightTriggerForces[2] = udpSettings.ControllerInput.RightTriggerForces[2];
-                            s.ControllerInput.RightTriggerForces[3] = udpSettings.ControllerInput.RightTriggerForces[3];
-                            s.ControllerInput.RightTriggerForces[4] = udpSettings.ControllerInput.RightTriggerForces[4];
-                            s.ControllerInput.RightTriggerForces[5] = udpSettings.ControllerInput.RightTriggerForces[5];
-                            s.ControllerInput.RightTriggerForces[6] = udpSettings.ControllerInput.RightTriggerForces[6];
-                            s.ControllerInput.RightTriggerMode = udpSettings.ControllerInput.RightTriggerMode;
+                            DualSense[i].SetRightTrigger(udpSettings.ControllerInput.RightTriggerMode,
+                                udpSettings.ControllerInput.RightTriggerForces[0],
+                                udpSettings.ControllerInput.RightTriggerForces[1],
+                                udpSettings.ControllerInput.RightTriggerForces[2],
+                                udpSettings.ControllerInput.RightTriggerForces[3],
+                                udpSettings.ControllerInput.RightTriggerForces[4],
+                                udpSettings.ControllerInput.RightTriggerForces[5],
+                                udpSettings.ControllerInput.RightTriggerForces[6]);
 
                             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
                             if ((Now - udpServer.LastTime) > 8s) {
                                 udpServer.isActive = false;
+                                s.CurrentlyUsingUDP = false;
                                 firstTimeUDP = true;
                                 s.ControllerInput = preUDP;
                             }
@@ -687,23 +975,20 @@ int main(int, char **)
                                 {
                                     if (ImGui::CollapsingHeader("LED")) {
                                         ImGui::Separator();
-
+                                   
                                         if (!s.DiscoMode && !s.BatteryLightbar) {
-                                            if (ImGui::Checkbox("Audio to LED", &s.AudioToLED)) {
-                                                if (!s.AudioToLED) {
-                                                    s.ControllerInput.Red = 0;
-                                                    s.ControllerInput.Green = 0;
-                                                    s.ControllerInput.Blue = 0;
-                                                }
-                                            }
+                                            ImGui::Checkbox("Audio to LED", &s.AudioToLED);
+                                            Tooltip("Sync the lightbar with audio levels.");                                         
                                         }
 
                                         if (!s.AudioToLED && !s.BatteryLightbar) {
-                                            ImGui::Checkbox("Disco Mode", &s.DiscoMode);
+                                            ImGui::Checkbox("Disco Mode", &s.DiscoMode);                                          
+                                            Tooltip("Animated color transition, gaymers' favourite.");
                                         }
 
                                         if (!s.DiscoMode && !s.AudioToLED) {
                                             ImGui::Checkbox("Lightbar battery status", &s.BatteryLightbar);
+                                            Tooltip("Display Battery Status with color-coded LED indicators.");
                                         }
 
                                         if (!s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar) {
@@ -731,7 +1016,7 @@ int main(int, char **)
                             if (ImGui::CollapsingHeader("Adaptive Triggers"))
                             {
                                 ImGui::Checkbox("Rumble to Adaptive Triggers", &s.RumbleToAT);
-
+                                Tooltip("Translates rumble vibrations to adaptive triggers, really good in games that don't support them natively");
                                 ImGui::Separator();
 
                                 if(!s.RumbleToAT)
@@ -916,20 +1201,10 @@ int main(int, char **)
                             if (ImGui::CollapsingHeader("Haptic Feedback"))
                             {
                                 ImGui::Text("Standard rumble");
-                                ImGui::SameLine();
-                                ImGui::TextDisabled("(?)");
-                                if (ImGui::BeginItemTooltip())
-                                {
-                                    ImGui::PushTextWrapPos(
-                                        ImGui::GetFontSize() * 35.0f);
-                                    ImGui::TextUnformatted(
-                                        "Controls standard rumble values of "
-                                        "your dualsense.\nThis is what your "
-                                        "controller does to emulate DualShock "
-                                        "4 rumble motors.");
-                                    ImGui::PopTextWrapPos();
-                                    ImGui::EndTooltip();
-                                }
+                                Tooltip("Controls standard rumble values of "
+                                    "your dualsense.\nThis is what your "
+                                    "controller does to emulate DualShock "
+                                    "4 rumble motors.");
                                 ImGui::SliderInt("Left \"Motor\"",
                                                  &s.lrumble,
                                                  0,
@@ -952,7 +1227,7 @@ int main(int, char **)
 
                                         string id = WStringToString(DualSense[i].GetKnownAudioParentInstanceID());
                                         string arg1 = string("\"") + id + string("\"");
-                                        string command = "AudioPassthrough.exe " + arg1;
+                                        string command = "utilities\\AudioPassthrough.exe " + arg1;
 
                                         if (CreateProcess(NULL,   // No module name (use command line)
                                             (LPSTR)command.c_str(),        // Command line
@@ -1025,25 +1300,27 @@ int main(int, char **)
                                         DualSense[i].State.trackPadTouch0.Y,
                                         DualSense[i].State.trackPadTouch1.X,
                                         DualSense[i].State.trackPadTouch1.Y);
-                                    
+
+                                    ImGui::Checkbox("Touchpad to mouse", &s.TouchpadToMouse);
+                                    Tooltip("Use dualsense touchpad like a laptop touchpad");
+                                    ImGui::SliderFloat("Sensitivity", &s.swipeThreshold, 0.01f, 3.0f);
                             }
 
                             if (ImGui::CollapsingHeader("Microphone button")) {
                                 ImGui::Checkbox("Take screenshot", &s.MicScreenshot);
+                                Tooltip("Takes screenshot on mic button click. It's saved to your clipboard and your Pictures directory");
+
                                 ImGui::Checkbox("Real functionality", &s.MicFunc);
+                                Tooltip("Mimics microphone button functionality from the PS5, only works on this controller's microphone.");
+
                                 if (!s.MicFunc) {
                                     DualSense[i].SetMicrophoneLED(false, false);
                                     DualSense[i].SetMicrophoneVolume(80);
                                 }
-                                ImGui::SameLine();
-                                ImGui::TextDisabled("(?)");
-                                if (ImGui::BeginItemTooltip())
-                                {
-                                    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                                    ImGui::TextUnformatted("Mimics microphone button functionality from the PS5, only works on this controller's microphone.");
-                                    ImGui::PopTextWrapPos();
-                                    ImGui::EndTooltip();
-                                }
+
+                                ImGui::Checkbox("Left D-pad + Mic button = X360 Controller Emulation", &s.X360Shortcut);
+                                ImGui::Checkbox("Right D-pad + Mic button = DS4 Emulation", &s.DS4Shortcut);
+                                ImGui::Checkbox("Down D-pad + Mic button = Stop emulation", &s.StopEmuShortcut);
                             }
 
                             if (ImGui::CollapsingHeader("Controller emulation (DS4/X360)"))
@@ -1052,16 +1329,14 @@ int main(int, char **)
                                 {
                                     if (ImGui::Button("Start X360 emulation"))
                                     {
-                                        s.emuStatus = X360;
+                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                        s.emuStatus = X360;                                      
                                     }
                                     ImGui::SameLine();
                                     if (ImGui::Button("Start DS4 emulation"))
                                     {
-                                        s.AudioToLED = false;
-                                        s.DiscoMode = false;
-                                        s.ControllerInput.Red = 0;
-                                        s.ControllerInput.Green = 0;
-                                        s.ControllerInput.Blue = 255;
+                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                        DualSense[i].SetLightbar(0, 0, 64);
                                         s.emuStatus = DS4;
                                     }
                                 }
@@ -1069,39 +1344,52 @@ int main(int, char **)
                                 {
                                     if (ImGui::Button("Stop Emulation"))
                                     {
+                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
                                         s.emuStatus = None;
                                     }
                                 }
-
-                                if (ImGui::Button("Hide real controller"))
+                                
+                                if (!WasElevated)                               
                                 {
-                                    string arg1 = string("\"") + DualSense[i].GetPath() + string("\"");
-                                    string arg2 = " \"hide\"";
-                                    string finalarg = "hidhide_service_request.exe " + arg1 + arg2;
-                                    cout << finalarg << endl;
-                                    int retCode = system(finalarg.c_str());
+                                    ImGui::Text("Application is not running as administrator, real controller will not be hidden from other apps durning controller emulation");
                                 }
-                                ImGui::SameLine();
-                                if (ImGui::Button("Restore real controller"))
-                                {
-                                    string arg1 = string("\"") + DualSense[i].GetPath() + string("\"");
-                                    string arg2 = " \"show\"";
-                                    string finalarg = "start hidhide_service_request.exe " + arg1 + arg2;
-                                    cout << finalarg << endl;
-                                    int retCode = system(finalarg.c_str());
+                                else {
+                                    ImGui::Text("Controller will be hidden only if HidHide Driver is installed");
                                 }
-                                ImGui::Text("IMPORTANT: UAC prompt should appear in your taskbar when you hide/show\n           please run it to unfreeze the application");
                             }
 
                             if (ImGui::CollapsingHeader("Config")) {
                                 if (ImGui::Button("Save current configuration")) {
                                     Config::WriteToFile(s);
                                 }
+                                Tooltip("Saves current values to a file");
 
                                 if (ImGui::Button("Load configuration")) {
-                                    s = Config::ReadFromFile();
-                                    s.ControllerInput.ID = DualSense[i].GetPath();
+                                    std::string configPath = Config::GetConfigPath();
+                                    if (configPath != "") {
+                                        s = Config::ReadFromFile(configPath);
+                                        s.ControllerInput.ID = DualSense[i].GetPath();
+                                    }                                   
                                 }
+                                Tooltip("Loads config of your choice");
+
+                                if (ImGui::Button("Set default config for this port")) {
+                                    std::string configPath = Config::GetConfigPath();
+                                    if (configPath != "") {
+                                        MyUtils::WriteDefaultConfigPath(configPath, DualSense[i].GetPath());
+                                    }                                   
+                                }
+                                Tooltip("Sets default config for this port. When you connect the controller, it will automatically load the config you've selected.");
+
+                                if (ImGui::Button("Remove default config")) {
+                                   MyUtils::RemoveConfig(DualSense[i].GetPath());
+                                }
+                                Tooltip("Clicking this instantly removes default config from this port");
+
+                                if (ImGui::Checkbox("Run as administrator", &appConfig.ElevateOnStartup)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip("Runs the app as administrator on startup, requires restart");
                             }                         
                         }
                     }
@@ -1143,6 +1431,13 @@ int main(int, char **)
         if (thread.joinable())
         {
             thread.join();
+        }
+    }
+
+    if(WasElevated)
+    {
+        for (Dualsense& ds : DualSense) {
+            StartHidHideRequest(ds.GetPath(), "show");
         }
     }
 

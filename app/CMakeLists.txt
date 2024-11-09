@@ -6,7 +6,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE "/Od /Zi")
 SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
 SET(CMAKE_C_FLAGS_DEBUG "-O0")
 STRING(REPLACE "-O2" "-Od" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
-add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" )
+add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h")
 set_property(TARGET "DualSenseY" PROPERTY VS_DPI_AWARE "PerMonitor")
 target_link_libraries("DualSenseY" PRIVATE fmt::fmt-header-only)
 target_link_libraries("DualSenseY" PRIVATE glfw)
@@ -18,6 +18,9 @@ target_link_libraries("DualSenseY" PRIVATE setupapi cfgmgr32)
 target_link_libraries("DualSenseY" PRIVATE setupapi ViGEmClient)
 target_link_libraries("DualSenseY" PRIVATE nlohmann_json)
 
+#if(WIN32)
+    #add_executable("DualSenseY" WIN32 icon.rc)
+#endif()
 
 target_set_warnings(
     TARGET

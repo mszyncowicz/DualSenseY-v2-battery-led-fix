@@ -675,8 +675,8 @@ public:
 
     static void StartFakeDSXProcess()
     {
-        if(filesystem::exists("DSX.exe")) {
-            system("start /B DSX.exe");
+        if(filesystem::exists("utilities\\DSX.exe")) {
+            system("start /B utilities\\DSX.exe");
         }
         else {
             cout << "DSX.exe is not present" << endl;

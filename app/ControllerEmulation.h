@@ -67,21 +67,26 @@ public:
 
     void RemoveController()
     {
-        vigem_target_remove(client, x360);
-        vigem_target_remove(client, ds4);
+        if (vigem_target_is_attached(x360)) {
+            vigem_target_remove(client, x360);
+            vigem_target_x360_unregister_notification(x360);
+        }
+
+        if (vigem_target_is_attached(ds4)) {
+            vigem_target_remove(client, ds4);        
+            vigem_target_ds4_unregister_notification(ds4);
+        }    
     }
 
     bool StartX360()
     {
         if (working)
         {
-            RemoveController();
-            vigem_target_add(client, x360);
-            vigem_target_x360_register_notification(client,
-                                                    x360,
-                                                    notification,
-                                                    this);
-            return true;
+            if(!vigem_target_is_attached(x360)){
+                vigem_target_add(client, x360);
+                vigem_target_x360_register_notification(client, x360, notification, this);
+                return true;
+            }
         }
 
         return false;
@@ -91,13 +96,11 @@ public:
     {
         if (working)
         {
-            RemoveController();
-            vigem_target_add(client, ds4);
-            vigem_target_ds4_register_notification(client,
-                                                   ds4,
-                                                   EVT_VIGEM_DS4_NOTIFICATION,
-                                                   this);
-            return true;
+            if (!vigem_target_is_attached(ds4)) {
+                vigem_target_add(client, ds4);         
+                vigem_target_ds4_register_notification(client,ds4,EVT_VIGEM_DS4_NOTIFICATION, this);
+                return true;
+            }
         }
 
         return false;

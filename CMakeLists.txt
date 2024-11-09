@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28)
 
 project(
     "DualSenseY"
-    VERSION 6.3
+    VERSION 1.0
     LANGUAGES C CXX)
 
 # Global CMake variables are set here

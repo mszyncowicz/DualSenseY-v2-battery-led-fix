@@ -1,3 +1,7 @@
+### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
+### Discord → https://discord.gg/AFYvxf282U
+### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz
+
 # DualSenseY
 
 **DualSenseY** is a powerful tool designed for controlling and customizing Sony DualSense (PS5) controllers on Windows. It features advanced capabilities for LED control, adaptive trigger configuration, haptics, microphone controls, and even screen capture functionality via the controller's microphone button.

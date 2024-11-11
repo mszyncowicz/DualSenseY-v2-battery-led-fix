@@ -3,6 +3,70 @@
 #define SYSERROR()  errno
 
 namespace MyUtils {
+    std::string GetExecutablePath() {
+    char buffer[MAX_PATH];
+    HMODULE hModule = GetModuleHandle(NULL); // Get handle of current module
+    if (hModule != NULL) {
+        // Get the full path of the executable
+        GetModuleFileName(hModule, buffer, sizeof(buffer));
+        return std::string(buffer); // Return as std::string
+    }
+    return ""; // Return an empty string if failed
+    }
+
+    std::string GetExecutableFolderPath() {
+        char buffer[MAX_PATH];
+        HMODULE hModule = GetModuleHandle(NULL); // Get handle of current module
+        if (hModule != NULL) {
+            // Get the full path of the executable
+            GetModuleFileName(hModule, buffer, sizeof(buffer));
+
+            // Convert to std::string for easier manipulation
+            std::string exePath(buffer);
+
+            // Find the last occurrence of the path separator
+            std::string::size_type pos = exePath.find_last_of("\\/");
+            if (pos != std::string::npos) {
+                // Return the substring up to the last separator
+                return exePath.substr(0, pos);
+            }
+        }
+        return ""; // Return an empty string if failed
+    }
+
+    void AddToStartup() {
+        std::string progPath = GetExecutablePath(); // Update this path
+        HKEY hkey;
+    
+        // Create or open the registry key
+        long createStatus = RegCreateKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", &hkey);
+        if (createStatus == ERROR_SUCCESS) {
+            // Set the value in the registry
+            long status = RegSetValueEx(hkey, "DualSenseY", 0, REG_SZ, (BYTE*)progPath.c_str(), (progPath.size() + 1) * sizeof(wchar_t));
+            RegCloseKey(hkey); // Close the key
+        }
+    }
+
+    void RemoveFromStartup() {
+        HKEY hkey;
+
+        // Open the registry key
+        long openStatus = RegOpenKey(HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", &hkey);
+        if (openStatus == ERROR_SUCCESS) {
+            // Delete the specified value from the registry
+            long deleteStatus = RegDeleteValue(hkey, "DualSenseY");
+            RegCloseKey(hkey); // Close the key
+
+            if (deleteStatus == ERROR_SUCCESS) {
+                std::cout << "Successfully removed from startup: " << "DualSenseY" << std::endl;
+            } else {
+                std::cerr << "Failed to remove registry value. It may not exist." << std::endl;
+            }
+        } else {
+            std::cerr << "Failed to open registry key." << std::endl;
+        }
+    }
+
     std::string GetImagesFolderPath() {
         char path[MAX_PATH];
         if (SHGetFolderPathA(NULL, CSIDL_MYPICTURES, NULL, 0, path) == S_OK) {
@@ -24,7 +88,7 @@ namespace MyUtils {
         std::time_t now = std::time(nullptr);
         std::tm *nowTm = std::localtime(&now);
         char buf[100];
-        std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", nowTm);
+        std::strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S %p", nowTm);
         return buf;
     }
 

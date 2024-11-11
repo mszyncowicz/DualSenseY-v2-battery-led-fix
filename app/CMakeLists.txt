@@ -6,7 +6,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE "/Od /Zi")
 SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
 SET(CMAKE_C_FLAGS_DEBUG "-O0")
 STRING(REPLACE "-O2" "-Od" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
-add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h")
+add_executable("DualSenseY" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h" "icon.ico")
 set_property(TARGET "DualSenseY" PROPERTY VS_DPI_AWARE "PerMonitor")
 
 include(FetchContent)
@@ -24,6 +24,14 @@ target_link_libraries("DualSenseY" PRIVATE "hidapi_winapi")
 target_link_libraries("DualSenseY" PRIVATE setupapi cfgmgr32)
 target_link_libraries("DualSenseY" PRIVATE setupapi ViGEmClient)
 target_link_libraries("DualSenseY" PRIVATE nlohmann_json)
+target_link_libraries("DualSenseY" PRIVATE "tray")
+
+#--------------------------------------------------------------------
+# Hide the console window in visual studio projects - Release
+#--------------------------------------------------------------------
+if(MSVC)
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+endif()
 
 #if(WIN32)
     #add_executable("DualSenseY" WIN32 icon.rc)

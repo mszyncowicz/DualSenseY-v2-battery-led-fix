@@ -19,8 +19,14 @@
 #include <tchar.h>
 #include <algorithm>
 #include <cpr/cpr.h>
+#include <tray.hpp>
+
 
 namespace MyUtils {
+    std::string GetExecutablePath();
+    std::string GetExecutableFolderPath();
+    void AddToStartup();
+    void RemoveFromStartup();
     std::string GetImagesFolderPath();
     std::string GetLocalFolderPath();
     std::string currentDateTime();

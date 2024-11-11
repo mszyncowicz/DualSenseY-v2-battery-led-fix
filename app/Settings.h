@@ -21,6 +21,10 @@ public:
     bool X360Shortcut = false;
     bool DS4Shortcut = false;
     bool StopEmuShortcut = false;
+    bool SwapTriggersRumbleToAT = false;
+    int MaxRumbleToATIntensity = 255;
+    int MaxRumbleToATFrequency = 25;
+    bool SwapTriggersShortcut = false;
     float swipeThreshold = 0.50f;
     EmuStatus emuStatus = None;
 
@@ -43,6 +47,10 @@ public:
         j["X360Shortcut"] = X360Shortcut;
         j["DS4Shortcut"] = DS4Shortcut;
         j["StopEmuShortcut"] = StopEmuShortcut;
+        j["SwapTriggersRumbleToAT"] = SwapTriggersRumbleToAT;
+        j["MaxRumbleToATIntensity"] = MaxRumbleToATIntensity;
+        j["MaxRumbleToATFrequency"] = MaxRumbleToATFrequency;
+        j["SwapTriggersShortcut"] = SwapTriggersShortcut;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
         return j;
     }
@@ -69,6 +77,10 @@ public:
         if (j.contains("X360Shortcut"))          j.at("X360Shortcut").get_to(settings.X360Shortcut);
         if (j.contains("DS4Shortcut"))          j.at("DS4Shortcut").get_to(settings.DS4Shortcut);
         if (j.contains("StopEmuShortcut"))          j.at("StopEmuShortcut").get_to(settings.StopEmuShortcut);
+        if (j.contains("SwapTriggersRumbleToAT"))          j.at("SwapTriggersRumbleToAT").get_to(settings.SwapTriggersRumbleToAT);
+        if (j.contains("MaxRumbleToATIntensity"))          j.at("MaxRumbleToATIntensity").get_to(settings.MaxRumbleToATIntensity);
+        if (j.contains("MaxRumbleToATFrequency"))          j.at("MaxRumbleToATFrequency").get_to(settings.MaxRumbleToATFrequency);
+        if (j.contains("SwapTriggersShortcut"))          j.at("SwapTriggersShortcut").get_to(settings.SwapTriggersShortcut);
         if (j.contains("emuStatus"))        j.at("emuStatus").get_to(settings.emuStatus);
 
         return settings;

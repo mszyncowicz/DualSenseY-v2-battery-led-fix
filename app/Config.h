@@ -8,11 +8,19 @@ namespace Config {
     class AppConfig {
     public:
         bool ElevateOnStartup = false;
+        bool HideToTray = false;
+        bool ShowWindow = true;
+        bool HideWindowOnStartup = false;
+        bool RunWithWindows = false;
 
         nlohmann::json to_json() const {
             nlohmann::json j;
             j["ElevateOnStartup"] = ElevateOnStartup;
-        
+            j["HideToTray"] = HideToTray;
+            //j["ShowWindow"] = ShowWindow;
+            j["HideWindowOnStartup"] = HideWindowOnStartup;
+            j["RunWithWindows"] = RunWithWindows;
+
             return j;
         }
 
@@ -20,7 +28,11 @@ namespace Config {
             AppConfig appconfig;
 
             if (j.contains("ElevateOnStartup"))       j.at("ElevateOnStartup").get_to(appconfig.ElevateOnStartup);
-            
+            if (j.contains("HideToTray"))       j.at("HideToTray").get_to(appconfig.HideToTray);
+            //if (j.contains("ShowWindow"))       j.at("ShowWindow").get_to(appconfig.ShowWindow);
+            if (j.contains("HideWindowOnStartup"))       j.at("HideWindowOnStartup").get_to(appconfig.HideWindowOnStartup);
+            if (j.contains("RunWithWindows"))       j.at("RunWithWindows").get_to(appconfig.RunWithWindows);
+
             return appconfig;
         }
     };
@@ -28,7 +40,8 @@ namespace Config {
     static void WriteAppConfigToFile(AppConfig &config) {
         nlohmann::json j = config.to_json();
 
-        ofstream file("AppConfig.txt");
+        std::string fileLocation = MyUtils::GetExecutableFolderPath() + "\\AppConfig.txt";
+        ofstream file(fileLocation);
         if (file.is_open()) {
             file << j.dump(4); 
             file.close();
@@ -38,7 +51,8 @@ namespace Config {
     static AppConfig ReadAppConfigFromFile() {
         AppConfig appconfig;
         nlohmann::json j;
-        ifstream file("AppConfig.txt");
+        std::string fileLocation = MyUtils::GetExecutableFolderPath() + "\\AppConfig.txt";
+        ifstream file(fileLocation);
 
         if (file.is_open()) {
             j = j.parse(file); 

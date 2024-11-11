@@ -108,16 +108,18 @@ public:
     {
         sockaddr_in clientAddr{};
         int clientAddrSize = sizeof(clientAddr);
-        char recvBuffer[1024];
 
         while (serverOn)
         {
+           
+            char recvBuffer[10000];
             int bytesReceived = recvfrom(clientSocket,
                                          recvBuffer,
                                          sizeof(recvBuffer),
                                          0,
                                          (SOCKADDR *)&clientAddr,
                                          &clientAddrSize);
+
             if (bytesReceived == SOCKET_ERROR)
             {
                 std::cerr << "recvfrom failed.\n";
@@ -127,6 +129,7 @@ public:
             LastTime = std::chrono::high_resolution_clock::now();
 
             std::string packetString(recvBuffer, bytesReceived);
+            
             newPacket = true;
 
             UDPResponse response{"DSX Received UDP Instructions",
@@ -135,6 +138,8 @@ public:
                                  Battery};
 
             std::string responseStr = response.toJSON();
+            //cout << responseStr << endl;
+
             sendto(clientSocket,
                    responseStr.c_str(),
                    responseStr.size(),
@@ -145,6 +150,7 @@ public:
             // Here, you would parse the packetString manually if needed
             isActive = true;
             nlohmann::json data = nlohmann::json::parse(packetString);
+            cout << data << endl;
 
             for (auto &instr : data["instructions"])
             {
@@ -671,6 +677,8 @@ public:
                 }
             }
         }
+
+        cout << "Server stopped!" << endl;
     }
 
     static void StartFakeDSXProcess()

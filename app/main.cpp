@@ -1,4 +1,4 @@
-const int VERSION = 1;
+const int VERSION = 2;
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -27,6 +27,8 @@ const int VERSION = 1;
 #pragma comment(lib, "legacy_stdio_definitions")
 
 #endif
+
+//#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
 static void glfw_error_callback(int error, const char *description);
 
@@ -233,6 +235,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
     led[2] = 0;
     int x360emuanimation = 0;
     bool lastMic = false;
+    bool lastMic2 = false;
     bool mic = false;
     float touchpadLastX = 0;
     float touchpadLastY = 0;
@@ -281,6 +284,14 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
             else if (settings.emuStatus == None && !X360animationplayed) {
                 X360animationplayed = true;
+            }
+
+            if (controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && !lastMic2) {
+                settings.SwapTriggersRumbleToAT = settings.SwapTriggersRumbleToAT ? settings.SwapTriggersRumbleToAT = false : settings.SwapTriggersRumbleToAT = true;
+                lastMic2 = true;
+            }
+            else if(!controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && lastMic2){
+                lastMic2 = false;
             }
 
             if (settings.emuStatus != X360 && settings.X360Shortcut && controller.State.micBtn && controller.State.DpadLeft) {
@@ -396,19 +407,19 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 int rightForces[3] = { 0 };
 
                 // set frequency
-                if (settings.rrumble < 25)
-                    leftForces[0] = settings.rrumble;
+                if (!settings.SwapTriggersRumbleToAT && settings.lrumble < 25 || settings.SwapTriggersRumbleToAT && settings.rrumble < 25)
+                    leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.rrumble) : min(settings.MaxRumbleToATFrequency, settings.lrumble);
                 else
-                    leftForces[0] = 25;
+                    leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
 
-                if(settings.lrumble < 25)
-                    rightForces[0] = settings.lrumble;
+                if(!settings.SwapTriggersRumbleToAT && settings.rrumble < 25 || settings.SwapTriggersRumbleToAT && settings.lrumble < 25)
+                    rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.lrumble) : min(settings.MaxRumbleToATFrequency, settings.rrumble);
                 else
-                    rightForces[0] = 25;
+                    rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
 
                 // set power
-                leftForces[1] = settings.rrumble; 
-                rightForces[1] = settings.lrumble; // Left motor is usually used for guns so yes these are swapped on purpose
+                leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, settings.rrumble) : min(settings.MaxRumbleToATIntensity,settings.lrumble); 
+                rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,settings.lrumble) : min(settings.MaxRumbleToATIntensity,settings.rrumble);
 
                 // set static threshold
                 leftForces[2] = 20;
@@ -513,6 +524,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     else{
                         controller.SetMicrophoneLED(false, false);
                         controller.SetMicrophoneVolume(80);
+
                         mic = false;
                     }
                     lastMic = false;
@@ -670,10 +682,27 @@ void setTaskbarIcon(GLFWwindow* window) {
     }
 }
 
+static bool IsMinimized = false;
+void window_iconify_callback(GLFWwindow* window, int iconified) {
+    if (iconified) {
+        IsMinimized = true;
+    } else {
+        IsMinimized = false;
+    }
+}
+
+void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
+    tray.addEntry(Tray::Button("Show window", [&] {
+        AppConfig.ShowWindow = true;
+    }));
+
+    tray.run();
+}
+
 int main(int, char **)
 {
     ShowWindow(GetConsoleWindow(), SW_HIDE);
-
+    BOOL WINAPI FreeConsole(VOID);
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -698,6 +727,10 @@ int main(int, char **)
     else {
         cout << "Not elevating" << endl;
     }
+
+    Tray::Tray tray("test", "utilities\\icon.ico");
+    std::thread trayThread(mTray, std::ref(tray), std::ref(appConfig));
+    trayThread.detach();
 
     bool WasElevated = IsRunAsAdministrator();
 
@@ -754,6 +787,7 @@ int main(int, char **)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
+    
 
     auto &style = ImGui::GetStyle();
     style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(1.0, 1.0, 1.0, 1.0);
@@ -779,9 +813,31 @@ int main(int, char **)
     ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Roboto-Bold.ttf", 15.0f, NULL, io.Fonts->GetGlyphRangesDefault()); 
 
     setTaskbarIcon(window);
+    glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    bool WindowHiddenOnStartup = false;
+
+    
+
+    if (appConfig.HideWindowOnStartup) {
+        IsMinimized = true;
+        WindowHiddenOnStartup = true;
+        appConfig.ShowWindow = false;
+    }
 
     while (!glfwWindowShouldClose(window))
     {
+        if (IsMinimized && appConfig.HideToTray || IsMinimized && !appConfig.HideToTray && appConfig.HideWindowOnStartup && WindowHiddenOnStartup) {
+            glfwHideWindow(window);
+            WindowHiddenOnStartup = false;       
+        }
+
+        if (appConfig.ShowWindow) {
+            glfwFocusWindow(window);
+            glfwRestoreWindow(window);
+            appConfig.ShowWindow = false;
+            IsMinimized = false;
+        }
+
         start_cycle();
         ImGui::NewFrame();
 
@@ -1052,6 +1108,18 @@ int main(int, char **)
                             {
                                 ImGui::Checkbox("Rumble to Adaptive Triggers", &s.RumbleToAT);
                                 Tooltip("Translates rumble vibrations to adaptive triggers, really good in games that don't support them natively");
+
+                                if (s.RumbleToAT) {
+                                    ImGui::Checkbox("Swap triggers", &s.SwapTriggersRumbleToAT);
+                                    Tooltip("Sets left motor to right trigger and right motor to left trigger");
+
+                                    ImGui::SliderInt("Max intensity", &s.MaxRumbleToATIntensity, 0, 255);
+                                    Tooltip("Sets maximum trigger vibration sensitivity for Rumble To Adaptive Triggers option");
+
+                                    ImGui::SliderInt("Max frequency", &s.MaxRumbleToATFrequency, 0, 25);
+                                    Tooltip("Sets maximum trigger vibration frequency for Rumble To Adaptive Triggers option");
+                                }
+
                                 ImGui::Separator();
 
                                 if(!s.RumbleToAT)
@@ -1353,6 +1421,7 @@ int main(int, char **)
                                     DualSense[i].SetMicrophoneVolume(80);
                                 }
 
+                                ImGui::Checkbox("Up D-pad + Mic button = Swap triggers in \"Rumble To AT\" option", &s.SwapTriggersShortcut);
                                 ImGui::Checkbox("Left D-pad + Mic button = X360 Controller Emulation", &s.X360Shortcut);
                                 ImGui::Checkbox("Right D-pad + Mic button = DS4 Emulation", &s.DS4Shortcut);
                                 ImGui::Checkbox("Down D-pad + Mic button = Stop emulation", &s.StopEmuShortcut);
@@ -1425,6 +1494,28 @@ int main(int, char **)
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
                                 Tooltip("Runs the app as administrator on startup, requires restart");
+
+                                if (ImGui::Checkbox("Hide to tray", &appConfig.HideToTray)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip("Hides this window after minimizing, to restore, right click on the icon in tray and click \"Show window\"");
+
+                                if (ImGui::Checkbox("Hide window on startup", &appConfig.HideWindowOnStartup)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip("Hides this window on startup");
+
+                                if (ImGui::Checkbox("Run with Windows", &appConfig.RunWithWindows)) {
+                                    if (appConfig.RunWithWindows) {
+                                        MyUtils::AddToStartup();
+                                    }
+                                    else {
+                                        MyUtils::RemoveFromStartup();
+                                    }
+
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip("Runs application on startup");
                             }                         
                         }
                     }

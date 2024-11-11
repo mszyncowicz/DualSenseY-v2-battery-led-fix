@@ -46,6 +46,8 @@
   - [GLFW](https://www.glfw.org/) and **OpenGL** for rendering.
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
   - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation.
+  - [libcpr](https://github.com/libcpr/cpr)
+  - [traypp](https://github.com/Soundux/traypp)
   - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage

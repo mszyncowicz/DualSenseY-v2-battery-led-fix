@@ -1,3 +1,6 @@
+### ⚠️ STILL IN DEVELOPMENT! ⚠️
+## IF YOU FIND THIS VERSION UNSTABLE OR NOT WORKING CORRECTLY YOU CAN GO BACK TO [OLD ONE](https://github.com/WujekFoliarz/DualSenseY/releases/tag/6.2) 
+
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
 ### Discord → https://discord.gg/AFYvxf282U
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz
@@ -43,6 +46,8 @@
   - [GLFW](https://www.glfw.org/) and **OpenGL** for rendering.
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
   - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation.
+  - [libcpr](https://github.com/libcpr/cpr)
+  - [traypp](https://github.com/Soundux/traypp)
   - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage

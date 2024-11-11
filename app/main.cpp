@@ -1,4 +1,4 @@
-const int VERSION = 2;
+const int VERSION = 3;
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"

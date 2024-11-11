@@ -606,13 +606,11 @@ vector<const char *> EnumerateControllerIDs()
 
         hid_free_enumeration(initial);
         hid_free_enumeration(cur);
-        return v;
     }
     else
     {
         hid_free_enumeration(initial);
         v.push_back("");
-        return v;
     }
 
     // DualSense Edge
@@ -629,14 +627,15 @@ vector<const char *> EnumerateControllerIDs()
 
         hid_free_enumeration(initial);
         hid_free_enumeration(cur);
-        return v;
     }
     else
     {
-        hid_free_enumeration(initial);
+        hid_free_enumeration(initialEdge);
         v.push_back("");
-        return v;
     }
+
+
+    return v;
 }
 
 

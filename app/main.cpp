@@ -1,4 +1,4 @@
-const int VERSION = 3;
+const int VERSION = 4;
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -267,11 +267,11 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                         direction = 1;           // Change to increasing
                         colorStateX360EMU++;
                     }
+
+                    controller.SetLightbar(0, x360emuanimation, 0);
                 } else {
                     X360animationplayed = true;
-                }
-
-                controller.SetLightbar(0, x360emuanimation, 0);
+                }          
             }
             else if (settings.emuStatus == X360 && X360readyfornew) {
                 X360animationplayed = false;

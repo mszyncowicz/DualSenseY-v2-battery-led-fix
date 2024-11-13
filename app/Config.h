@@ -12,6 +12,7 @@ namespace Config {
         bool ShowWindow = true;
         bool HideWindowOnStartup = false;
         bool RunWithWindows = false;
+        std::string Language = "pl";
 
         nlohmann::json to_json() const {
             nlohmann::json j;
@@ -20,6 +21,7 @@ namespace Config {
             //j["ShowWindow"] = ShowWindow;
             j["HideWindowOnStartup"] = HideWindowOnStartup;
             j["RunWithWindows"] = RunWithWindows;
+            j["Language"] = Language;
 
             return j;
         }
@@ -32,6 +34,7 @@ namespace Config {
             //if (j.contains("ShowWindow"))       j.at("ShowWindow").get_to(appconfig.ShowWindow);
             if (j.contains("HideWindowOnStartup"))       j.at("HideWindowOnStartup").get_to(appconfig.HideWindowOnStartup);
             if (j.contains("RunWithWindows"))       j.at("RunWithWindows").get_to(appconfig.RunWithWindows);
+            if (j.contains("Language"))       j.at("Language").get_to(appconfig.Language);
 
             return appconfig;
         }

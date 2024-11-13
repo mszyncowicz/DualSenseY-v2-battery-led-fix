@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cpr/cpr.h>
 #include <tray.hpp>
-
+#include <nlohmann/json.hpp>
 
 namespace MyUtils {
     std::string GetExecutablePath();

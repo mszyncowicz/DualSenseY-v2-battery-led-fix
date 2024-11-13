@@ -1,4 +1,4 @@
-const int VERSION = 4;
+const int VERSION = 5;
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -19,6 +19,7 @@ const int VERSION = 4;
 #include "Config.h"
 #include "UDP.h"
 #include "Settings.h"
+#include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -703,6 +704,7 @@ int main(int, char **)
 {
     ShowWindow(GetConsoleWindow(), SW_HIDE);
     BOOL WINAPI FreeConsole(VOID);
+
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -734,8 +736,16 @@ int main(int, char **)
 
     bool WasElevated = IsRunAsAdministrator();
 
-    //SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    // Write default english to file
+    Strings enStrings;
+    nlohmann::json enJson = enStrings.to_json();
+    filesystem::create_directories(MyUtils::GetExecutableFolderPath() + "\\localizations\\");
+    std::ofstream EnglishFILE(MyUtils::GetExecutableFolderPath() + "\\localizations\\en.json");  
+    EnglishFILE << enJson.dump(4);
+    EnglishFILE.close();
+    enJson.clear();
     
+    Strings strings = ReadStringsFromFile(appConfig.Language); // Load language file
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -796,11 +806,12 @@ int main(int, char **)
     vector<thread> readThreads;  // Store the threads for each controller
     vector<thread> writeThreads; // Audio to LED threads
     vector<thread> emuThreads;
-    const char *CurrentController = "";
+    std::string CurrentController = "";
     bool firstController = true;
     bool firstTimeUDP = true;
     DualsenseUtils::InputFeatures preUDP;
-    vector<const char*> ControllerID = DualsenseUtils::EnumerateControllerIDs();
+    vector<std::string> ControllerID = DualsenseUtils::EnumerateControllerIDs();
+
     int ControllerCount = DualsenseUtils::GetControllerCount();
     std::chrono::high_resolution_clock::time_point LastControllerCheck = std::chrono::high_resolution_clock::now();
 
@@ -810,13 +821,37 @@ int main(int, char **)
     udpServer.StartFakeDSXProcess();
     
     ImGuiIO &io = ImGui::GetIO();
-    ImFont* font_title = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Roboto-Bold.ttf", 15.0f, NULL, io.Fonts->GetGlyphRangesDefault()); 
+
+    std::vector<const char*> languageItems;
+    for (const auto& lang : languages) {
+        languageItems.push_back(lang.c_str());
+    }
+    int selectedLanguageIndex = 0;
+
+    // set language index
+    for (int i = 0; i < languages.size(); i++) {
+        if (languages[i] == appConfig.Language) {
+            selectedLanguageIndex = i;
+            break;
+        }
+    }
+
+    if (appConfig.Language == "jp")    
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 17.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    else {
+        static const ImWchar polishGlyphRange[] = {
+        0x0020, 0x00FF, // Basic Latin + Latin Supplement
+        0x0100, 0x017F, // Latin Extended-A
+        0x0180, 0x024F, // Latin Extended-B (if you need even more coverage)
+        0 };
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
+    }
+       
 
     setTaskbarIcon(window);
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
     bool WindowHiddenOnStartup = false;
-
-    
+  
 
     if (appConfig.HideWindowOnStartup) {
         IsMinimized = true;
@@ -866,21 +901,22 @@ int main(int, char **)
         {
             // Limit these functions for better CPU usage 
             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
-            if ((Now - LastControllerCheck) > 1s) {
+            if ((Now - LastControllerCheck) > 3s) {
                 LastControllerCheck = std::chrono::high_resolution_clock::now();
+                ControllerID.clear();
                 ControllerID = DualsenseUtils::EnumerateControllerIDs();
                 ControllerCount = DualsenseUtils::GetControllerCount();
             }
             
-            if (ImGui::BeginCombo("##", CurrentController))
+            if (ImGui::BeginCombo("##", CurrentController.c_str()))
             {
                 for (int n = 0; n < ControllerID.size(); n++)
                 {
-                    if (strcmp(ControllerID[n], "") != 0) {
+                    if (ControllerID[n] != "") {
                         bool is_selected = (CurrentController == ControllerID[n]);
-                        if (ImGui::Selectable(ControllerID[n], is_selected))
+                        if (ImGui::Selectable(ControllerID[n].c_str(), is_selected))
                         {
-                            CurrentController = ControllerID[n];
+                            CurrentController = ControllerID[n].c_str();
                         }
                         if (is_selected)
                             ImGui::SetItemDefaultFocus();
@@ -893,7 +929,7 @@ int main(int, char **)
             if (!udpServer.isActive)
             {
                 ImGui::SameLine();
-            ImGui::Text("UDP Status: Inactive");
+            ImGui::Text(std::string(strings.UDPStatus + ": " + strings.Inactive).c_str());
             ImGui::SameLine();
             static float color[3] = {255, 0, 0};
             ImGui::ColorEdit3("##",
@@ -911,7 +947,7 @@ int main(int, char **)
             else
             {
                 ImGui::SameLine();
-            ImGui::Text("UDP Status: Active");
+            ImGui::Text(std::string(strings.UDPStatus + ": " + strings.Active).c_str());
             ImGui::SameLine();
             static float color[3] = {0, 255, 0};
             ImGui::ColorEdit3("##",
@@ -928,13 +964,13 @@ int main(int, char **)
             }
                       
             int nloop = 0;
-            for (const char *id : ControllerID)
+            for (std::string &id : ControllerID)
             {
                 bool IsPresent = false;
 
                 for (Dualsense &ds : DualSense)
                 {
-                    if (strcmp(id, ds.GetPath()) == 0)
+                    if (id == ds.GetPath())
                     {
                         IsPresent = true;
                         break;
@@ -946,8 +982,8 @@ int main(int, char **)
                 }
 
                 if (!IsPresent)
-                {                
-                        Dualsense x = Dualsense(id);
+                {
+                        Dualsense x = Dualsense(id.c_str());
                         if (x.Connected)
                         {
                             DualSense.emplace_back(x);
@@ -970,8 +1006,10 @@ int main(int, char **)
                             {
                                 ControllerSettings.back().UseUDP = true;
                                 firstController = false;
-                                CurrentController = id;
+                                CurrentController = id.c_str();
                             }
+
+                            cout << " NIGGER : " << id << endl;
 
                             readThreads.emplace_back(readControllerState,
                                                      std::ref(DualSense.back()));
@@ -1039,18 +1077,18 @@ int main(int, char **)
                     }
                 }
 
-                if (strcmp(DualSense[i].GetPath(), CurrentController) == 0 && DualSense[i].Connected)
+                if (DualSense[i].GetPath() == CurrentController && DualSense[i].Connected)
                 {                  
                     for (Settings &s : ControllerSettings)
                     {
-                        if (strcmp(s.ControllerInput.ID.c_str(), CurrentController) == 0)
+                        if (s.ControllerInput.ID == CurrentController)
                         {
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
-                            ImGui::Text("Controller No. %d | Connection type: %s | Battery level: %d%%", i+1, bt_or_usb ,DualSense[i].State.battery.Level);
+                            ImGui::Text("%s %d | %s: %s | %s: %d%%", strings.ControllerNumberText.c_str(),i+1, strings.USBorBTconnectionType.c_str(), bt_or_usb, strings.BatteryLevel.c_str(), DualSense[i].State.battery.Level);
 
                             if (UpdateAvailable) {
                                 ImGui::SameLine();
-                                if (ImGui::Button("Install latest update")) {
+                                if (ImGui::Button(strings.InstallLatestUpdate.c_str())) {
                                      if(filesystem::exists("Updater.exe")) {
                                         system("start Updater.exe");
                                         _exit(0);
@@ -1064,34 +1102,34 @@ int main(int, char **)
                             {
                                 if(s.emuStatus != DS4)
                                 {
-                                    if (ImGui::CollapsingHeader("LED")) {
+                                    if (ImGui::CollapsingHeader(strings.LedSection.c_str())) {
                                         ImGui::Separator();
                                    
                                         if (!s.DiscoMode && !s.BatteryLightbar) {
-                                            ImGui::Checkbox("Audio to LED", &s.AudioToLED);
-                                            Tooltip("Sync the lightbar with audio levels.");                                         
+                                            ImGui::Checkbox(strings.AudioToLED.c_str(), &s.AudioToLED);
+                                            Tooltip(strings.Tooltip_AudioToLED.c_str());                                         
                                         }
 
                                         if (!s.AudioToLED && !s.BatteryLightbar) {
-                                            ImGui::Checkbox("Disco Mode", &s.DiscoMode);                                          
-                                            Tooltip("Animated color transition, gaymers' favourite.");
+                                            ImGui::Checkbox(strings.DiscoMode.c_str(), &s.DiscoMode);                                          
+                                            Tooltip(strings.Tooltip_DiscoMode.c_str());
                                         }
 
                                         if (!s.DiscoMode && !s.AudioToLED) {
-                                            ImGui::Checkbox("Lightbar battery status", &s.BatteryLightbar);
-                                            Tooltip("Display Battery Status with color-coded LED indicators.");
+                                            ImGui::Checkbox(strings.BatteryLightbar.c_str(), &s.BatteryLightbar);
+                                            Tooltip(strings.Tooltip_BatteryLightbar.c_str());
                                         }
 
                                         if (!s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar) {
-                                            ImGui::SliderInt("Red",
+                                            ImGui::SliderInt(strings.LED_Red.c_str(),
                                                 &s.ControllerInput.Red,
                                                 0,
                                                 255);
-                                            ImGui::SliderInt("Green",
+                                            ImGui::SliderInt(strings.LED_Green.c_str(),
                                                 &s.ControllerInput.Green,
                                                 0,
                                                 255);
-                                            ImGui::SliderInt("Blue",
+                                            ImGui::SliderInt(strings.LED_Blue.c_str(),
                                                 &s.ControllerInput.Blue,
                                                 0,
                                                 255);
@@ -1101,30 +1139,30 @@ int main(int, char **)
                                     }
                                 }
                                 else {
-                                    ImGui::Text("LED settings are unavailable while emulating DualShock 4");
+                                    ImGui::Text(strings.LED_DS4_Unavailable.c_str());
                                 }
 
-                            if (ImGui::CollapsingHeader("Adaptive Triggers"))
+                            if (ImGui::CollapsingHeader(strings.AdaptiveTriggers.c_str()))
                             {
-                                ImGui::Checkbox("Rumble to Adaptive Triggers", &s.RumbleToAT);
-                                Tooltip("Translates rumble vibrations to adaptive triggers, really good in games that don't support them natively");
+                                ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
+                                Tooltip(strings.Tooltip_RumbleToAT.c_str());
 
                                 if (s.RumbleToAT) {
-                                    ImGui::Checkbox("Swap triggers", &s.SwapTriggersRumbleToAT);
-                                    Tooltip("Sets left motor to right trigger and right motor to left trigger");
+                                    ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
+                                    Tooltip(strings.Tooltip_SwapTriggersRumbleToAT.c_str());
 
-                                    ImGui::SliderInt("Max intensity", &s.MaxRumbleToATIntensity, 0, 255);
-                                    Tooltip("Sets maximum trigger vibration sensitivity for Rumble To Adaptive Triggers option");
+                                    ImGui::SliderInt(strings.MaxIntensity.c_str(), &s.MaxRumbleToATIntensity, 0, 255);
+                                    Tooltip(strings.Tooltip_MaxIntensity.c_str());
 
-                                    ImGui::SliderInt("Max frequency", &s.MaxRumbleToATFrequency, 0, 25);
-                                    Tooltip("Sets maximum trigger vibration frequency for Rumble To Adaptive Triggers option");
+                                    ImGui::SliderInt(strings.MaxFrequency.c_str(), &s.MaxRumbleToATFrequency, 0, 25);
+                                    Tooltip(strings.Tooltip_MaxFrequency.c_str());
                                 }
 
                                 ImGui::Separator();
 
                                 if(!s.RumbleToAT)
                                 {
-                                    if (ImGui::BeginCombo("Left Trigger Mode",
+                                    if (ImGui::BeginCombo(strings.LeftTriggerMode.c_str(),
                                         s.lmodestr.c_str())) {
                                         if (ImGui::Selectable("Off", false)) {
                                             s.lmodestr = "Off";
@@ -1179,38 +1217,38 @@ int main(int, char **)
 
                                         ImGui::EndCombo();
                                     }
-                                    ImGui::SliderInt("LT Force 1",
+                                    ImGui::SliderInt("LT 1",
                                         &s.ControllerInput.LeftTriggerForces[0],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 2",
+                                    ImGui::SliderInt("LT 2",
                                         &s.ControllerInput.LeftTriggerForces[1],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 3",
+                                    ImGui::SliderInt("LT 3",
                                         &s.ControllerInput.LeftTriggerForces[2],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 4",
+                                    ImGui::SliderInt("LT 4",
                                         &s.ControllerInput.LeftTriggerForces[3],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 5",
+                                    ImGui::SliderInt("LT 5",
                                         &s.ControllerInput.LeftTriggerForces[4],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 6",
+                                    ImGui::SliderInt("LT 6",
                                         &s.ControllerInput.LeftTriggerForces[5],
                                         0,
                                         255);
-                                    ImGui::SliderInt("LT Force 7",
+                                    ImGui::SliderInt("LT 7",
                                         &s.ControllerInput.LeftTriggerForces[6],
                                         0,
                                         255);
 
                                     ImGui::Spacing();
 
-                                    if (ImGui::BeginCombo("Right Trigger Mode",
+                                    if (ImGui::BeginCombo(strings.RightTriggerMode.c_str(),
                                         s.rmodestr.c_str())) {
                                         if (ImGui::Selectable("Off", false)) {
                                             s.rmodestr = "Off";
@@ -1264,31 +1302,31 @@ int main(int, char **)
                                         }
                                         ImGui::EndCombo();
                                     }
-                                    ImGui::SliderInt("RT Force 1",
+                                    ImGui::SliderInt("RT 1",
                                         &s.ControllerInput.RightTriggerForces[0],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 2",
+                                    ImGui::SliderInt("RT 2",
                                         &s.ControllerInput.RightTriggerForces[1],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 3",
+                                    ImGui::SliderInt("RT 3",
                                         &s.ControllerInput.RightTriggerForces[2],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 4",
+                                    ImGui::SliderInt("RT 4",
                                         &s.ControllerInput.RightTriggerForces[3],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 5",
+                                    ImGui::SliderInt("RT 5",
                                         &s.ControllerInput.RightTriggerForces[4],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 6",
+                                    ImGui::SliderInt("RT 6",
                                         &s.ControllerInput.RightTriggerForces[5],
                                         0,
                                         255);
-                                    ImGui::SliderInt("RT Force 7",
+                                    ImGui::SliderInt("RT 7",
                                         &s.ControllerInput.RightTriggerForces[6],
                                         0,
                                         255);
@@ -1297,29 +1335,26 @@ int main(int, char **)
                             }
                             }
                             else {
-                                ImGui::Text("LED and Adaptive Trigger settings are unavailable while UDP is active");
+                                ImGui::Text(strings.LEDandATunavailableUDP.c_str());
                             }
                             
 
-                            if (ImGui::CollapsingHeader("Haptic Feedback"))
+                            if (ImGui::CollapsingHeader(strings.HapticFeedback.c_str()))
                             {
-                                ImGui::Text("Standard rumble");
-                                Tooltip("Controls standard rumble values of "
-                                    "your dualsense.\nThis is what your "
-                                    "controller does to emulate DualShock "
-                                    "4 rumble motors.");
-                                ImGui::SliderInt("Left \"Motor\"",
+                                ImGui::Text(strings.StandardRumble.c_str());
+                                Tooltip(strings.Tooltip_HapticFeedback.c_str());
+                                ImGui::SliderInt(strings.LeftMotor.c_str(),
                                                  &s.lrumble,
                                                  0,
                                                  255);
-                                ImGui::SliderInt("Right \"Motor\"",
+                                ImGui::SliderInt(strings.RightMotor.c_str(),
                                                  &s.rrumble,
                                                  0,
                                                  255);
 
                                 if (DualSense[i].GetConnectionType() == Feature::USB)
                                 {
-                                    if (ImGui::Button("Start [Audio To Haptics]"))
+                                    if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
                                     {
                                         STARTUPINFO si;
                                         PROCESS_INFORMATION pi;
@@ -1356,19 +1391,19 @@ int main(int, char **)
                                     {
                                         ImGui::PushTextWrapPos(
                                         ImGui::GetFontSize() * 35.0f);
-                                        ImGui::TextUnformatted("Creates haptic feedback from your system audio.");
+                                        ImGui::TextUnformatted(strings.Tooltip_StartAudioToHaptics.c_str());
                                         ImGui::PopTextWrapPos();
                                         ImGui::EndTooltip();
                                     }
                                 }
                                 else
                                 {
-                                    ImGui::Text("Haptic Feedback features are unavailable in Bluetooth mode.");
+                                    ImGui::Text(strings.HapticsUnavailable.c_str());
                                 }
                               
                             }
 
-                            if (ImGui::CollapsingHeader("Touchpad"))
+                            if (ImGui::CollapsingHeader(strings.Touchpad.c_str()))
                             {
                                     // Define the touchpad's preview size in the UI
                                     ImVec2 touchpadSize(300 * io.FontGlobalScale, 140* io.FontGlobalScale);  // Adjusted to keep a similar aspect ratio (1920:900)
@@ -1397,47 +1432,51 @@ int main(int, char **)
                                             drawList->AddCircleFilled(touchPos, 6.0f * io.FontGlobalScale, IM_COL32(255, 0, 0, 255));  // Red circle for active touch
                                     }
                                     ImGui::SameLine();
-                                    ImGui::Text("General data:\nTouch packet number: %d\n\nTouch 1:\nX: %d\nY: %d\n\nTouch 2:\nX: %d\nY: %d",
+                                    ImGui::Text("%s:\n%s: %d\n\n%s 1:\nX: %d\nY: %d\n\n%s 2:\nX: %d\nY: %d",
+                                        strings.GeneralData.c_str(),
+                                        strings.TouchPacketNum.c_str(),
                                         DualSense[i].State.TouchPacketNum,
+                                        strings.Touch.c_str(),                                       
                                         DualSense[i].State.trackPadTouch0.X,
                                         DualSense[i].State.trackPadTouch0.Y,
+                                        strings.Touch.c_str(), 
                                         DualSense[i].State.trackPadTouch1.X,
                                         DualSense[i].State.trackPadTouch1.Y);
 
-                                    ImGui::Checkbox("Touchpad to mouse", &s.TouchpadToMouse);
-                                    Tooltip("Use dualsense touchpad like a laptop touchpad");
-                                    ImGui::SliderFloat("Sensitivity", &s.swipeThreshold, 0.01f, 3.0f);
+                                    ImGui::Checkbox(strings.TouchpadToMouse.c_str(), &s.TouchpadToMouse);
+                                    Tooltip(strings.Tooltip_TouchpadToMouse.c_str());
+                                    ImGui::SliderFloat(strings.Sensitivity.c_str(), &s.swipeThreshold, 0.01f, 3.0f);
                             }
 
-                            if (ImGui::CollapsingHeader("Microphone button")) {
-                                ImGui::Checkbox("Take screenshot", &s.MicScreenshot);
-                                Tooltip("Takes screenshot on mic button click. It's saved to your clipboard and your Pictures directory");
+                            if (ImGui::CollapsingHeader(strings.MicButton.c_str())) {
+                                ImGui::Checkbox(strings.TakeScreenshot.c_str(), &s.MicScreenshot);
+                                Tooltip(strings.Tooltip_TakeScreenshot.c_str());
 
-                                ImGui::Checkbox("Real functionality", &s.MicFunc);
-                                Tooltip("Mimics microphone button functionality from the PS5, only works on this controller's microphone.");
+                                ImGui::Checkbox(strings.RealMicFunctionality.c_str(), &s.MicFunc);
+                                Tooltip(strings.Tooltip_RealMicFunctionality.c_str());
 
                                 if (!s.MicFunc) {
                                     DualSense[i].SetMicrophoneLED(false, false);
                                     DualSense[i].SetMicrophoneVolume(80);
                                 }
 
-                                ImGui::Checkbox("Up D-pad + Mic button = Swap triggers in \"Rumble To AT\" option", &s.SwapTriggersShortcut);
-                                ImGui::Checkbox("Left D-pad + Mic button = X360 Controller Emulation", &s.X360Shortcut);
-                                ImGui::Checkbox("Right D-pad + Mic button = DS4 Emulation", &s.DS4Shortcut);
-                                ImGui::Checkbox("Down D-pad + Mic button = Stop emulation", &s.StopEmuShortcut);
+                                ImGui::Checkbox(strings.SwapTriggersShortcut.c_str(), &s.SwapTriggersShortcut);
+                                ImGui::Checkbox(strings.X360Shortcut.c_str(), &s.X360Shortcut);
+                                ImGui::Checkbox(strings.DS4Shortcut.c_str(), &s.DS4Shortcut);
+                                ImGui::Checkbox(strings.StopEmuShortcut.c_str(), &s.StopEmuShortcut);
                             }
 
-                            if (ImGui::CollapsingHeader("Controller emulation (DS4/X360)"))
+                            if (ImGui::CollapsingHeader(strings.EmulationHeader.c_str()))
                             {
                                 if (s.emuStatus == None)
                                 {
-                                    if (ImGui::Button("Start X360 emulation"))
+                                    if (ImGui::Button(strings.X360emu.c_str()))
                                     {
                                         RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         s.emuStatus = X360;                                      
                                     }
                                     ImGui::SameLine();
-                                    if (ImGui::Button("Start DS4 emulation"))
+                                    if (ImGui::Button(strings.DS4emu.c_str()))
                                     {
                                         RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         DualSense[i].SetLightbar(0, 0, 64);
@@ -1446,7 +1485,7 @@ int main(int, char **)
                                 }
                                 else
                                 {
-                                    if (ImGui::Button("Stop Emulation"))
+                                    if (ImGui::Button(strings.STOPemu.c_str()))
                                     {
                                         RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
                                         s.emuStatus = None;
@@ -1455,57 +1494,65 @@ int main(int, char **)
                                 
                                 if (!WasElevated)                               
                                 {
-                                    ImGui::Text("Application is not running as administrator, real controller will not be hidden from other apps durning controller emulation");
+                                    ImGui::Text(strings.ControllerEmuUserMode.c_str());
                                 }
                                 else {
-                                    ImGui::Text("Controller will be hidden only if HidHide Driver is installed");
+                                    ImGui::Text(strings.ControllerEmuAppAsAdmin.c_str());
                                 }
                             }
 
-                            if (ImGui::CollapsingHeader("Config")) {
-                                if (ImGui::Button("Save current configuration")) {
+                            if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
+                                ImGui::SetNextItemWidth(120.0f);
+                                if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
+                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];
+                                    strings = ReadStringsFromFile(selectedLanguage);
+                                    appConfig.Language = selectedLanguage;
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+
+                                if (ImGui::Button(strings.SaveConfig.c_str())) {
                                     Config::WriteToFile(s);
                                 }
-                                Tooltip("Saves current values to a file");
+                                Tooltip(strings.Tooltip_SaveConfig.c_str());
 
-                                if (ImGui::Button("Load configuration")) {
+                                if (ImGui::Button(strings.LoadConfig.c_str())) {
                                     std::string configPath = Config::GetConfigPath();
                                     if (configPath != "") {
                                         s = Config::ReadFromFile(configPath);
                                         s.ControllerInput.ID = DualSense[i].GetPath();
                                     }                                   
                                 }
-                                Tooltip("Loads config of your choice");
+                                Tooltip(strings.Tooltip_LoadConfig.c_str());
 
-                                if (ImGui::Button("Set default config for this port")) {
+                                if (ImGui::Button(strings.SetDefaultConfig.c_str())) {
                                     std::string configPath = Config::GetConfigPath();
                                     if (configPath != "") {
                                         MyUtils::WriteDefaultConfigPath(configPath, DualSense[i].GetPath());
                                     }                                   
                                 }
-                                Tooltip("Sets default config for this port. When you connect the controller, it will automatically load the config you've selected.");
+                                Tooltip(strings.Tooltip_SetDefaultConfig.c_str());
 
-                                if (ImGui::Button("Remove default config")) {
+                                if (ImGui::Button(strings.RemoveDefaultConfig.c_str())) {
                                    MyUtils::RemoveConfig(DualSense[i].GetPath());
                                 }
-                                Tooltip("Clicking this instantly removes default config from this port");
+                                Tooltip(strings.Tooltip_RemoveDefaultConfig.c_str());
 
-                                if (ImGui::Checkbox("Run as administrator", &appConfig.ElevateOnStartup)) {
+                                if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                                Tooltip("Runs the app as administrator on startup, requires restart");
+                                Tooltip(strings.Tooltip_RunAsAdmin.c_str());
 
-                                if (ImGui::Checkbox("Hide to tray", &appConfig.HideToTray)) {
+                                if (ImGui::Checkbox(strings.HideToTray.c_str() , &appConfig.HideToTray)) {
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                                Tooltip("Hides this window after minimizing, to restore, right click on the icon in tray and click \"Show window\"");
+                                Tooltip(strings.Tooltip_HideToTray.c_str());
 
-                                if (ImGui::Checkbox("Hide window on startup", &appConfig.HideWindowOnStartup)) {
+                                if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                                Tooltip("Hides this window on startup");
+                                Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
 
-                                if (ImGui::Checkbox("Run with Windows", &appConfig.RunWithWindows)) {
+                                if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
                                     if (appConfig.RunWithWindows) {
                                         MyUtils::AddToStartup();
                                     }
@@ -1515,7 +1562,7 @@ int main(int, char **)
 
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                                Tooltip("Runs application on startup");
+                                Tooltip(strings.RunWithWindows.c_str());                               
                             }                         
                         }
                     }

@@ -286,7 +286,7 @@ public:
      touchBtn = false, micBtn = false;
     uint8_t L2 = 0, R2 = 0;
     int RX = 0, RY = 0, LX = 0, LY = 0, TouchPacketNum = 0;
-    const char* PathIdentifier = nullptr;
+    std::string PathIdentifier = "";
     Touchpad trackPadTouch0;
     Touchpad trackPadTouch1;
     Gyro gyro;
@@ -570,7 +570,7 @@ int GetControllerCount()
 
     // DualSense Edge
     hid_device_info *info2 = hid_enumerate(0x054c, 0x0df2);
-    hid_device_info *cur2 = info;
+    hid_device_info *cur2 = info2;
 
     while (cur2)
     {
@@ -586,58 +586,40 @@ int GetControllerCount()
     return i;
 }
 
-vector<const char *> EnumerateControllerIDs()
+std::vector<std::string> EnumerateControllerIDs()
 {
-    std::vector<const char *> v;
+    std::vector<std::string> v; // Use std::string to manage memory automatically
     hid_device_info *initial = hid_enumerate(0x054c, 0x0ce6);
     hid_device_info *initialEdge = hid_enumerate(0x054c, 0x0df2);
 
     // DualSense
     if (initial != NULL)
     {
-        hid_device_info *info = hid_enumerate(0x054c, 0x0ce6);
-        hid_device_info *cur = info;
-
-        while (cur)
+        hid_device_info *current = initial; // Use a temporary pointer to iterate
+        while (current)
         {
-            v.push_back(cur->path);
-            cur = cur->next;
+            // Copying path into std::string to ensure proper memory management
+            v.push_back(current->path); // emplace_back constructs the string in place
+            current = current->next;
         }
-
-        hid_free_enumeration(initial);
-        hid_free_enumeration(cur);
-    }
-    else
-    {
-        hid_free_enumeration(initial);
-        v.push_back("");
+        hid_free_enumeration(initial); // Free the original head
     }
 
     // DualSense Edge
     if (initialEdge != NULL)
     {
-        hid_device_info *info = hid_enumerate(0x054c, 0x0df2);
-        hid_device_info *cur = info;
-
-        while (cur)
+        hid_device_info *currentEdge = initialEdge; // Use a temporary pointer for iteration
+        while (currentEdge)
         {
-            v.push_back(cur->path);
-            cur = cur->next;
+            // Copying path into std::string to ensure proper memory management
+            v.push_back(currentEdge->path); // emplace_back constructs the string in place
+            currentEdge = currentEdge->next;
         }
-
-        hid_free_enumeration(initial);
-        hid_free_enumeration(cur);
+        hid_free_enumeration(initialEdge); // Free the original head
     }
-    else
-    {
-        hid_free_enumeration(initialEdge);
-        v.push_back("");
-    }
-
 
     return v;
 }
-
 
 
 enum Reconnect_Result
@@ -745,8 +727,8 @@ private:
     bool Running = false;
     const wchar_t *DefaultError = L"Success";
     volatile const wchar_t *error = L"";
-    int res;
-    const char *path;
+    int res = 0;
+    std::string path = "";
     wstring lastKnownParent;
     hid_device *handle;
     bool bt_initialized = false;
@@ -765,7 +747,7 @@ private:
 public:
     bool Connected = false;
     ButtonState State;
-    Dualsense(const char *Path = "")
+    Dualsense(std::string Path = "")
     {
         if (Path != "")
         {
@@ -776,7 +758,7 @@ public:
                 std::cerr << "HIDAPI initialization failed!" << std::endl;
             }
 
-            handle = hid_open_path(Path);
+            handle = hid_open_path(Path.c_str());
 
             if (!handle)
             {
@@ -1105,7 +1087,7 @@ public:
         }
     }
 
-    const char *GetPath()
+    std::string GetPath()
     {
         return path;
     }
@@ -1363,7 +1345,7 @@ public:
             bt_initialized = false;
             if (SamePort && path != "")
             {
-                handle = hid_open_path(path);
+                handle = hid_open_path(path.c_str());
             }
             else
             {

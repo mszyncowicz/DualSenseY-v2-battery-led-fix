@@ -1,4 +1,4 @@
-const int VERSION = 5;
+const int VERSION = 6;
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -29,8 +29,6 @@ const int VERSION = 5;
 
 #endif
 
-//#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
-
 static void glfw_error_callback(int error, const char *description);
 
 deque<Dualsense> DualSense;
@@ -43,31 +41,34 @@ IAudioMeterInformation *meterInfo = nullptr;
 
 void StartHidHideRequest(std::string ID, std::string arg) {
     STARTUPINFO si;
-                                        PROCESS_INFORMATION pi;
+    PROCESS_INFORMATION pi;
 
-                                        ZeroMemory(&si, sizeof(si));
-                                        si.cb = sizeof(si);
-                                        ZeroMemory(&pi, sizeof(pi));
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW; // Use this flag to control window visibility
+    si.wShowWindow = SW_HIDE;          // Set to SW_HIDE to prevent the window from showing
 
-                                        string arg1 = string("\"") + ID + string("\"");
-                                        string arg2 = " \""+arg+ "\" ";
-                                        string command = "utilities\\hidhide_service_request.exe " + arg1 + arg2;
+    ZeroMemory(&pi, sizeof(pi));
 
-                                        if (CreateProcess(NULL,   // No module name (use command line)
-                                            (LPSTR)command.c_str(),        // Command line
-                                            NULL,            // Process handle not inheritable
-                                            NULL,            // Thread handle not inheritable
-                                            FALSE,          // Set handle inheritance to FALSE
-                                            0,              // No creation flags
-                                            NULL,           // Use parent's environment block
-                                            NULL,           // Use parent's starting directory 
-                                            &si,            // Pointer to STARTUPINFO structure
-                                            &pi)            // Pointer to PROCESS_INFORMATION structure
-                                            ) {
-                                            // Close process and thread handles. 
-                                            CloseHandle(pi.hProcess);
-                                            CloseHandle(pi.hThread);
-                                        }
+    std::string arg1 = "\"" + ID + "\"";
+    std::string arg2 = " \"" + arg + "\" ";
+    std::string command = "utilities\\hidhide_service_request.exe " + arg1 + arg2;
+
+    if (CreateProcess(NULL,              // No module name (use command line)
+                      (LPSTR)command.c_str(), // Command line
+                      NULL,               // Process handle not inheritable
+                      NULL,               // Thread handle not inheritable
+                      FALSE,              // Set handle inheritance to FALSE
+                      0,                  // No creation flags
+                      NULL,               // Use parent's environment block
+                      NULL,               // Use parent's starting directory 
+                      &si,                // Pointer to STARTUPINFO structure
+                      &pi)                // Pointer to PROCESS_INFORMATION structure
+       ) {
+        // Close process and thread handles. 
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+    }
 }
 
 void RunAsyncHidHideRequest(std::string ID, std::string arg) {
@@ -143,7 +144,7 @@ void readControllerState(Dualsense &controller)
     while (!stop_thread)
     {
         controller.Read(); // Perform the read operation
-        std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 }
 
@@ -700,11 +701,9 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
     tray.run();
 }
 
-int main(int, char **)
+int main()
 {
-    ShowWindow(GetConsoleWindow(), SW_HIDE);
-    BOOL WINAPI FreeConsole(VOID);
-
+    FreeConsole();
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;

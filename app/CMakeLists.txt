@@ -26,17 +26,6 @@ target_link_libraries("DualSenseY" PRIVATE setupapi ViGEmClient)
 target_link_libraries("DualSenseY" PRIVATE nlohmann_json)
 target_link_libraries("DualSenseY" PRIVATE "tray")
 
-#--------------------------------------------------------------------
-# Hide the console window in visual studio projects - Release
-#--------------------------------------------------------------------
-if(MSVC)
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-endif()
-
-#if(WIN32)
-    #add_executable("DualSenseY" WIN32 icon.rc)
-#endif()
-
 target_set_warnings(
     TARGET
     "DualSenseY"

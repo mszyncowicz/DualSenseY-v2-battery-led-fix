@@ -1009,8 +1009,6 @@ int main(int, char **)
                                 CurrentController = id.c_str();
                             }
 
-                            cout << " NIGGER : " << id << endl;
-
                             readThreads.emplace_back(readControllerState,
                                                      std::ref(DualSense.back()));
 

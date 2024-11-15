@@ -12,6 +12,10 @@
 
 ## Features
 
+- **Multiplayer**
+   - Easily connect any amount of DualSense controllers, not found in other free apps
+   - Run Xbox 360/DualShock 4 controller emulation on any of them with ease and consistency
+
 - **LED Customization**:
   - Set custom RGB values for the controller’s LED light bar.
   - Enable **Disco Mode** for animated color transitions.

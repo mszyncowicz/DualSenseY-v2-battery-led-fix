@@ -10,7 +10,13 @@
   "ExpandedNodes": [
     "",
     "\\app",
-    "\\cmake"
+    "\\cmake",
+    "\\curl",
+    "\\curl\\projects",
+    "\\curl\\projects\\Windows",
+    "\\curl\\projects\\Windows\\VC12",
+    "\\curl\\projects\\Windows\\VC12\\src"
   ],
+  "SelectedNode": "\\CMakeLists.txt",
   "PreviewInSolutionExplorer": false
 }

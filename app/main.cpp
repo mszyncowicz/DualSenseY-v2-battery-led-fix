@@ -197,6 +197,11 @@ PVIGEM_CLIENT VigemClient;
 ViGEm *v = nullptr;
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
+    PVIGEM_TARGET x360 = vigem_target_x360_alloc();
+    PVIGEM_TARGET ds4 = vigem_target_ds4_alloc();
+    Output output;
+    bool isEmulating360 = true;
+
     while (!stop_thread)
     {
         if (controller.Connected)
@@ -210,37 +215,42 @@ void writeEmuController(Dualsense &controller, Settings &settings)
 
             if (settings.emuStatus == X360)
             {
-                v->StartX360();
-                v->UpdateX360(controller.State);
-                settings.lrumble = v->rotors.lrotor;
-                settings.rrumble = v->rotors.rrotor;
+                v->StartX360(x360, output);
+                v->UpdateX360(x360,controller.State);
+                settings.lrumble = output.lrotor;
+                settings.rrumble = output.rrotor;
             }
             else if (settings.emuStatus == DS4)
             {
-                v->StartDS4();
-                v->UpdateDS4(controller.State);
-                settings.lrumble = v->rotors.lrotor;
-                settings.rrumble = v->rotors.rrotor;
+                v->StartDS4(ds4, output);
+                v->UpdateDS4(ds4,controller.State);
+                settings.lrumble = output.lrotor;
+                settings.rrumble = output.rrotor;
                 if(!settings.CurrentlyUsingUDP){
-                    if (v->Red > 0 || v->Green > 0 || v->Blue > 0) {
-                        controller.SetLightbar(v->Red, v->Green, v->Blue);
+                    if (output.R > 0 || output.G > 0 || output.B > 0) {
+                        controller.SetLightbar(output.R, output.G,output.B);
                     }
                 }
             }
             else {
-                v->RemoveController();
+                v->RemoveController(x360);
+                v->RemoveController(ds4);
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         else
         {
-            v->RemoveController();
+            v->RemoveController(x360);
+            v->RemoveController(ds4);
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
 
-    v->RemoveController();
+    v->RemoveController(x360);
+    v->RemoveController(ds4);
+    vigem_target_free(x360);
+    vigem_target_free(ds4);
 }
 
 void MouseClick(DWORD flag, DWORD mouseData = 0)

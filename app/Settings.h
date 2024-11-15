@@ -16,6 +16,7 @@ public:
     bool MicScreenshot = false;
     bool MicFunc = false;
     bool RumbleToAT = false;
+    bool RumbleToAT_RigidMode = false;
     bool BatteryLightbar = false;
     bool TouchpadToMouse = false;
     bool X360Shortcut = false;
@@ -41,6 +42,7 @@ public:
         j["MicScreenshot"] = MicScreenshot;
         j["MicFunc"] = MicFunc;
         j["RumbleToAT"] = RumbleToAT;
+        j["RumbleToAT_RigidMode"] = RumbleToAT_RigidMode;
         j["BatteryLightbar"] = BatteryLightbar;
         j["swipeThreshold"] = swipeThreshold;
         j["TouchpadToMouse"] = TouchpadToMouse;
@@ -71,6 +73,7 @@ public:
         if (j.contains("MicScreenshot"))    j.at("MicScreenshot").get_to(settings.MicScreenshot);
         if (j.contains("MicFunc"))          j.at("MicFunc").get_to(settings.MicFunc);
         if (j.contains("RumbleToAT"))          j.at("RumbleToAT").get_to(settings.RumbleToAT);
+        if (j.contains("RumbleToAT_RigidMode"))          j.at("RumbleToAT_RigidMode").get_to(settings.RumbleToAT_RigidMode);
         if (j.contains("BatteryLightbar"))          j.at("BatteryLightbar").get_to(settings.BatteryLightbar);
         if (j.contains("swipeThreshold"))          j.at("swipeThreshold").get_to(settings.swipeThreshold);
         if (j.contains("TouchpadToMouse"))          j.at("TouchpadToMouse").get_to(settings.TouchpadToMouse);

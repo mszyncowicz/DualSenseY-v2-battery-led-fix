@@ -6,6 +6,7 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string RumbleToAT_RigidMode = "Rigid trigger mode";
     std::string ControllerNumberText = "Controller No.";
     std::string USBorBTconnectionType = "Connection type";
     std::string BatteryLevel = "Battery level";
@@ -68,6 +69,7 @@ public:
     std::string RunWithWindows = "Run with Windows";
 
     // Tooltips
+    std::string Tooltip_RumbleToAT_RigidMode = "Sets rigid trigger effect";
     std::string Tooltip_RumbleToAT =
         "Translates rumble vibrations to adaptive triggers, really good in "
         "games that don't support them natively";
@@ -122,6 +124,8 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["Tooltip_RumbleToAT_RigidMode"] = Tooltip_RumbleToAT_RigidMode;
+        j["RumbleToAT_RigidMode"] = RumbleToAT_RigidMode;
         j["ControllerNumberText"] = ControllerNumberText;
         j["USBorBTconnectionType"] = USBorBTconnectionType;
         j["BatteryLevel"] = BatteryLevel;
@@ -212,6 +216,12 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("Tooltip_RumbleToAT_RigidMode"))
+            j.at("Tooltip_RumbleToAT_RigidMode").get_to(strings.Tooltip_RumbleToAT_RigidMode);
+
+        if (j.contains("RumbleToAT_RigidMode"))
+            j.at("RumbleToAT_RigidMode").get_to(strings.RumbleToAT_RigidMode);
 
         if (j.contains("ControllerNumberText"))
             j.at("ControllerNumberText").get_to(strings.ControllerNumberText);

@@ -108,11 +108,11 @@ public:
     {
         sockaddr_in clientAddr{};
         int clientAddrSize = sizeof(clientAddr);
+        char recvBuffer[1024];
 
         while (serverOn)
         {
-           
-            char recvBuffer[10000];
+                      
             int bytesReceived = recvfrom(clientSocket,
                                          recvBuffer,
                                          sizeof(recvBuffer),

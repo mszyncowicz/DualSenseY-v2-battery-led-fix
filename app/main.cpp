@@ -1,4 +1,4 @@
-const int VERSION = 7;
+const int VERSION = 8;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -99,6 +99,36 @@ void InitializeAudioEndpoint()
                      (void **)&meterInfo);
 }
 
+void DeinitializeAudioEndpoint()
+{
+    if (meterInfo)
+    {
+        meterInfo->Release();
+        meterInfo = nullptr;
+    }
+
+    if (device)
+    {
+        device->Release();
+        device = nullptr;
+    }
+
+    if (client)
+    {
+        deviceEnumerator->UnregisterEndpointNotificationCallback(client);
+        delete client;
+        client = nullptr;
+    }
+
+    if (deviceEnumerator)
+    {
+        deviceEnumerator->Release();
+        deviceEnumerator = nullptr;
+    }
+
+    CoUninitialize();
+}
+
 string WStringToString(const wstring& wstr)
 {
 	string str;
@@ -163,16 +193,15 @@ void Tooltip(const char* text) {
     }
 }
 
+PVIGEM_CLIENT VigemClient;
+ViGEm *v = nullptr;
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
-    ViGEm v;
-    v.InitializeVigembus();
-
     while (!stop_thread)
     {
         if (controller.Connected)
         {
-            if (settings.emuStatus != None && !v.isWorking())
+            if (settings.emuStatus != None && !v->isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
                 settings.emuStatus = None;
@@ -181,35 +210,37 @@ void writeEmuController(Dualsense &controller, Settings &settings)
 
             if (settings.emuStatus == X360)
             {
-                v.StartX360();
-                v.UpdateX360(controller.State);
-                settings.lrumble = v.rotors.lrotor;
-                settings.rrumble = v.rotors.rrotor;
+                v->StartX360();
+                v->UpdateX360(controller.State);
+                settings.lrumble = v->rotors.lrotor;
+                settings.rrumble = v->rotors.rrotor;
             }
             else if (settings.emuStatus == DS4)
             {
-                v.StartDS4();
-                v.UpdateDS4(controller.State);
-                settings.lrumble = v.rotors.lrotor;
-                settings.rrumble = v.rotors.rrotor;
+                v->StartDS4();
+                v->UpdateDS4(controller.State);
+                settings.lrumble = v->rotors.lrotor;
+                settings.rrumble = v->rotors.rrotor;
                 if(!settings.CurrentlyUsingUDP){
-                    if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
-                        controller.SetLightbar(v.Red, v.Green, v.Blue);
+                    if (v->Red > 0 || v->Green > 0 || v->Blue > 0) {
+                        controller.SetLightbar(v->Red, v->Green, v->Blue);
                     }
                 }
             }
             else {
-                v.RemoveController();
+                v->RemoveController();
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         else
         {
-            v.RemoveController();
+            v->RemoveController();
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
+
+    v->RemoveController();
 }
 
 void MouseClick(DWORD flag, DWORD mouseData = 0)
@@ -411,27 +442,41 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 int leftForces[3] = { 0 };
                 int rightForces[3] = { 0 };
 
-                // set frequency
-                if (!settings.SwapTriggersRumbleToAT && settings.lrumble < 25 || settings.SwapTriggersRumbleToAT && settings.rrumble < 25)
-                    leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.rrumble) : min(settings.MaxRumbleToATFrequency, settings.lrumble);
-                else
-                    leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                if (settings.RumbleToAT_RigidMode) {
+                    // stiffness
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? settings.rrumble : settings.lrumble;
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? settings.lrumble : settings.rrumble;
 
-                if(!settings.SwapTriggersRumbleToAT && settings.rrumble < 25 || settings.SwapTriggersRumbleToAT && settings.lrumble < 25)
-                    rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.lrumble) : min(settings.MaxRumbleToATFrequency, settings.rrumble);
-                else
-                    rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                    // set threshold
+                    leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.rrumble: 255 - settings.lrumble; 
+                    rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.lrumble : 255 - settings.rrumble;
 
-                // set power
-                leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, settings.rrumble) : min(settings.MaxRumbleToATIntensity,settings.lrumble); 
-                rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,settings.lrumble) : min(settings.MaxRumbleToATIntensity,settings.rrumble);
+                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0);
+                }
+                else {
+                    // set frequency
+                    if (!settings.SwapTriggersRumbleToAT && settings.lrumble < 25 || settings.SwapTriggersRumbleToAT && settings.rrumble < 25)
+                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.rrumble) : min(settings.MaxRumbleToATFrequency, settings.lrumble);
+                    else
+                        leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
 
-                // set static threshold
-                leftForces[2] = 20;
-                rightForces[2] = 20;
+                    if(!settings.SwapTriggersRumbleToAT && settings.rrumble < 25 || settings.SwapTriggersRumbleToAT && settings.lrumble < 25)
+                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.lrumble) : min(settings.MaxRumbleToATFrequency, settings.rrumble);
+                    else
+                        rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
 
-                controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
-                controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
+                    // set power
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, settings.rrumble) : min(settings.MaxRumbleToATIntensity,settings.lrumble); 
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,settings.lrumble) : min(settings.MaxRumbleToATIntensity,settings.rrumble);
+
+                    // set static threshold
+                    leftForces[2] = 20;
+                    rightForces[2] = 20;
+
+                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
+                }            
             }
 
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
@@ -706,7 +751,29 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
+    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetBreakAlloc(8428);
     FreeConsole();
+
+    VigemClient = vigem_alloc();
+        if (VigemClient == nullptr)
+        {
+            std::cerr << "Failed to allocate ViGEm Client!" << std::endl;
+        }
+        else {
+            const auto retval = vigem_connect(VigemClient);
+            if (!VIGEM_SUCCESS(retval))
+            {
+                std::cerr << "ViGEm Bus connection failed with error code: 0x" << std::hex << retval << std::endl;
+            }
+            else {
+                v = new ViGEm(VigemClient);
+            }
+        }
+
+       
+
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -931,7 +998,8 @@ int main()
             if (!udpServer.isActive)
             {
                 ImGui::SameLine();
-            ImGui::Text(std::string(strings.UDPStatus + ": " + strings.Inactive).c_str());
+                std::string udpStatusString = std::string(strings.UDPStatus + ": " + strings.Inactive);
+            ImGui::Text(udpStatusString.c_str());
             ImGui::SameLine();
             static float color[3] = {255, 0, 0};
             ImGui::ColorEdit3("##",
@@ -1151,11 +1219,16 @@ int main()
                                     ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
                                     Tooltip(strings.Tooltip_SwapTriggersRumbleToAT.c_str());
 
-                                    ImGui::SliderInt(strings.MaxIntensity.c_str(), &s.MaxRumbleToATIntensity, 0, 255);
-                                    Tooltip(strings.Tooltip_MaxIntensity.c_str());
+                                    ImGui::Checkbox(strings.RumbleToAT_RigidMode.c_str(), &s.RumbleToAT_RigidMode);
+                                    Tooltip(strings.Tooltip_RumbleToAT_RigidMode.c_str());
 
-                                    ImGui::SliderInt(strings.MaxFrequency.c_str(), &s.MaxRumbleToATFrequency, 0, 25);
-                                    Tooltip(strings.Tooltip_MaxFrequency.c_str());
+                                    if (!s.RumbleToAT_RigidMode) {                                      
+                                        ImGui::SliderInt(strings.MaxIntensity.c_str(), &s.MaxRumbleToATIntensity, 0, 255);
+                                        Tooltip(strings.Tooltip_MaxIntensity.c_str());
+
+                                        ImGui::SliderInt(strings.MaxFrequency.c_str(), &s.MaxRumbleToATFrequency, 0, 25);
+                                        Tooltip(strings.Tooltip_MaxFrequency.c_str());
+                                    }                                 
                                 }
 
                                 ImGui::Separator();
@@ -1615,7 +1688,12 @@ int main()
         }
     }
 
+    vigem_free(VigemClient);
     udpServer.Dispose();
+    if (trayThread.joinable())
+        trayThread.join();
+    tray.~Tray();
+   
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -1624,7 +1702,8 @@ int main()
     glfwTerminate();
     hid_exit();
 
-    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
+    DeinitializeAudioEndpoint();
+    delete v;
     //_CrtDumpMemoryLeaks();
 
     return 0;

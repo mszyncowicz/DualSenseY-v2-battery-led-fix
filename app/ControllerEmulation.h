@@ -27,40 +27,32 @@ public:
 class ViGEm
 {
 private:
-    PVIGEM_CLIENT client;
+    PVIGEM_CLIENT client = nullptr;
     bool wasEmulating360 = false;
     bool wasEmulatingDS4 = false;
+    bool wasStarted360 = false;
+    bool wasStartedDS4 = false;
     PVIGEM_TARGET x360 = vigem_target_x360_alloc();
     PVIGEM_TARGET ds4 = vigem_target_ds4_alloc();
     bool working = false;
 
 public:
+    ViGEm(PVIGEM_CLIENT &Client) {
+        client = Client;
+        if (client != nullptr) {
+            working = true;
+        }      
+    }
+
+    ~ViGEm() {
+        vigem_target_free(x360);
+        vigem_target_free(ds4);
+    }
+
     Rotors rotors;
     uint8_t Red = 0;
     uint8_t Green = 0;
     uint8_t Blue = 0;
-    bool InitializeVigembus()
-    {
-        client = vigem_alloc();
-        if (client == nullptr)
-        {
-            std::cerr << "Failed to allocate ViGEm Client!" << std::endl;
-            working = false;
-            return false;
-        }
-
-        const auto retval = vigem_connect(client);
-        if (!VIGEM_SUCCESS(retval))
-        {
-            std::cerr << "ViGEm Bus connection failed with error code: 0x"
-                      << std::hex << retval << std::endl;
-            working = false;
-            return false;
-        }
-
-        working = true;
-        return true;
-    }
 
     bool isWorking()
     {

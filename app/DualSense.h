@@ -928,32 +928,30 @@ public:
         }
         else
         {
-            ButtonState buttonState;
             Connected = false;
-            buttonState.square = false;
-            buttonState.triangle = false;
-            buttonState.circle = false;
-            buttonState.cross = false;
-            buttonState.DpadUp = false;
-            buttonState.DpadDown = false;
-            buttonState.DpadLeft = false;
-            buttonState.DpadRight = false;
-            buttonState.L1 = false;
-            buttonState.L3 = false;
-            buttonState.R1 = false;
-            buttonState.R3 = false;
-            buttonState.R2Btn = false;
-            buttonState.L2Btn = false;
-            buttonState.share = false;
-            buttonState.options = false;
-            buttonState.ps = false;
-            buttonState.touchBtn = false;
-            buttonState.micBtn = false;
-            buttonState.L2 = 0;
-            buttonState.R2 = 0;
-            buttonState.trackPadTouch0.IsActive = false;
-            buttonState.trackPadTouch1.IsActive = false;
-            State = buttonState;
+            State.square = false;
+            State.triangle = false;
+            State.circle = false;
+            State.cross = false;
+            State.DpadUp = false;
+            State.DpadDown = false;
+            State.DpadLeft = false;
+            State.DpadRight = false;
+            State.L1 = false;
+            State.L3 = false;
+            State.R1 = false;
+            State.R3 = false;
+            State.R2Btn = false;
+            State.L2Btn = false;
+            State.share = false;
+            State.options = false;
+            State.ps = false;
+            State.touchBtn = false;
+            State.micBtn = false;
+            State.L2 = 0;
+            State.R2 = 0;
+            State.trackPadTouch0.IsActive = false;
+            State.trackPadTouch1.IsActive = false;
         }
     }
 
@@ -1327,6 +1325,7 @@ public:
                 ma_engine_set_volume(&engine, 100);
                 ma_device_set_master_volume(&device, 1);
                 AudioInitialized = true;
+                CoUninitialize();
             }
         }
     }

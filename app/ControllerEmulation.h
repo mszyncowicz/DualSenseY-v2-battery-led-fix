@@ -28,6 +28,8 @@ class ViGEm
 {
 private:
     PVIGEM_CLIENT client;
+    bool wasEmulating360 = false;
+    bool wasEmulatingDS4 = false;
     PVIGEM_TARGET x360 = vigem_target_x360_alloc();
     PVIGEM_TARGET ds4 = vigem_target_ds4_alloc();
     bool working = false;
@@ -70,11 +72,13 @@ public:
         if (vigem_target_is_attached(x360)) {
             vigem_target_remove(client, x360);
             vigem_target_x360_unregister_notification(x360);
+            wasEmulating360 = false;
         }
 
         if (vigem_target_is_attached(ds4)) {
             vigem_target_remove(client, ds4);        
             vigem_target_ds4_unregister_notification(ds4);
+            wasEmulatingDS4 = false;
         }    
     }
 
@@ -82,9 +86,10 @@ public:
     {
         if (working)
         {
-            if(!vigem_target_is_attached(x360)){
+            if(!wasEmulating360){
                 vigem_target_add(client, x360);
                 vigem_target_x360_register_notification(client, x360, notification, this);
+                wasEmulating360 = true;
                 return true;
             }
         }
@@ -96,9 +101,10 @@ public:
     {
         if (working)
         {
-            if (!vigem_target_is_attached(ds4)) {
+            if (!wasEmulatingDS4) {
                 vigem_target_add(client, ds4);         
                 vigem_target_ds4_register_notification(client,ds4,EVT_VIGEM_DS4_NOTIFICATION, this);
+                wasEmulatingDS4 = true;
                 return true;
             }
         }

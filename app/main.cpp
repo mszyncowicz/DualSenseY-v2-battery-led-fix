@@ -1,5 +1,6 @@
-const int VERSION = 6;
+const int VERSION = 7;
 
+//#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -22,6 +23,8 @@ const int VERSION = 6;
 #include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+//#include <cstdlib>
+//#include <crtdbg.h>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -1608,6 +1611,7 @@ int main()
     {
         for (Dualsense& ds : DualSense) {
             StartHidHideRequest(ds.GetPath(), "show");
+            ds.~Dualsense();
         }
     }
 
@@ -1619,6 +1623,10 @@ int main()
     glfwDestroyWindow(window);
     glfwTerminate();
     hid_exit();
+
+    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG); 
+    //_CrtDumpMemoryLeaks();
+
     return 0;
 }
 

@@ -124,6 +124,8 @@ namespace Config {
         ofn.lpstrDefExt = (LPCWSTR)L"dscf";
 
         GetOpenFileNameW(&ofn);
+
+
         wstring ws( ofn.lpstrFile ); 
         string filename = string( ws.begin(), ws.end() );
 

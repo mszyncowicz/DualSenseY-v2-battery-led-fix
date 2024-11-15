@@ -8,8 +8,10 @@
     ]
   },
   "ExpandedNodes": [
-    ""
+    "",
+    "\\app",
+    "\\cmake"
   ],
-  "SelectedNode": "\\C:\\Users\\Igor\\Source\\Repos\\ImGuiProjectTemplate\\CMakeLists.txt\\CMakeLists.txt",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

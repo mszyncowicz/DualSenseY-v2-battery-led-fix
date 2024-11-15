@@ -603,6 +603,7 @@ std::vector<std::string> EnumerateControllerIDs()
             current = current->next;
         }
         hid_free_enumeration(initial); // Free the original head
+        hid_free_enumeration(current);
     }
 
     // DualSense Edge
@@ -616,6 +617,7 @@ std::vector<std::string> EnumerateControllerIDs()
             currentEdge = currentEdge->next;
         }
         hid_free_enumeration(initialEdge); // Free the original head
+        hid_free_enumeration(currentEdge);
     }
 
     return v;
@@ -823,7 +825,13 @@ public:
         {
             unsigned char ButtonStates[MAX_READ_LENGTH];
             ButtonState buttonState;
-            res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
+
+            try {
+                res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
+            }
+            catch (...) {
+                Connected = false;
+            }
 
             buttonState.LX = ButtonStates[1 + offset];
             buttonState.LY = ButtonStates[2 + offset];
@@ -1077,8 +1085,13 @@ public:
                 outReport[0x4D] =
                     (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
 
-                res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
-                error = hid_error(handle);
+                try {
+                    res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
+                    error = hid_error(handle);
+                }
+                catch(...){
+                    Connected = false;
+                }
             }
         }
         else
@@ -1361,11 +1374,10 @@ public:
             else
             {
                 Connected = true;
-                if (AudioInitialized)
-                {
-                    ma_context_uninit(&context);
+                if (AudioInitialized) {
                     ma_device_uninit(&device);
                     ma_engine_uninit(&engine);
+                    ma_context_uninit(&context);
                     AudioInitialized = false;
                 }
 
@@ -1437,11 +1449,11 @@ public:
             Write();
         }
 
-        if (AudioInitialized)
-        {
-            ma_context_uninit(&context);
+        if (AudioInitialized) {
             ma_device_uninit(&device);
             ma_engine_uninit(&engine);
+            ma_context_uninit(&context);
+            AudioInitialized = false;
         }
     };
 

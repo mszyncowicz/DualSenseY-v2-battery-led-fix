@@ -1,6 +1,6 @@
 #include "MyUtils.h"
 
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt"};
+std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr"};
 
 class Strings
 {

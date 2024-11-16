@@ -17,32 +17,55 @@ int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax)
     return clamp(static_cast<int>(scaledValue), newMin, newMax);
 }
 
-class Output
+class Rotors
 {
 public:
     int lrotor = 0;
     int rrotor = 0;
-    int R = 0;
-    int G = 0;
-    int B = 0;
 };
 
 class ViGEm
 {
 private:
-    PVIGEM_CLIENT client = nullptr;
+    PVIGEM_CLIENT client;
     bool wasEmulating360 = false;
     bool wasEmulatingDS4 = false;
-    bool wasStarted360 = false;
-    bool wasStartedDS4 = false;
+    PVIGEM_TARGET x360 = vigem_target_x360_alloc();
+    PVIGEM_TARGET ds4 = vigem_target_ds4_alloc();
     bool working = false;
 
 public:
-    ViGEm(PVIGEM_CLIENT &Client) {
-        client = Client;
-        if (client != nullptr) {
-            working = true;
-        }      
+    Rotors rotors;
+    uint8_t Red = 0;
+    uint8_t Green = 0;
+    uint8_t Blue = 0;
+    bool InitializeVigembus()
+    {
+        client = vigem_alloc();
+        if (client == nullptr)
+        {
+            std::cerr << "Failed to allocate ViGEm Client!" << std::endl;
+            working = false;
+            return false;
+        }
+
+        const auto retval = vigem_connect(client);
+        if (!VIGEM_SUCCESS(retval))
+        {
+            std::cerr << "ViGEm Bus connection failed with error code: 0x"
+                      << std::hex << retval << std::endl;
+            working = false;
+            return false;
+        }
+
+        working = true;
+        return true;
+    }
+
+    void Free() {
+        vigem_free(client);
+        vigem_target_free(x360);
+        vigem_target_free(ds4);
     }
 
     bool isWorking()
@@ -50,43 +73,56 @@ public:
         return working;
     }
 
-    void RemoveController(PVIGEM_TARGET &target)
+    void Remove360()
     {
-        if (vigem_target_is_attached(target)) {
-            vigem_target_remove(client, target);
-            vigem_target_x360_unregister_notification(target);
-            vigem_target_ds4_unregister_notification(target);
-        } 
+        if (vigem_target_is_attached(x360)) {
+            vigem_target_remove(client, x360);
+            vigem_target_x360_unregister_notification(x360);
+            wasEmulating360 = false;
+        }
     }
 
-    bool StartX360(PVIGEM_TARGET &target, Output &output)
+    void RemoveDS4() {
+        if (vigem_target_is_attached(ds4)) {
+            vigem_target_remove(client, ds4);        
+            vigem_target_ds4_unregister_notification(ds4);
+            wasEmulatingDS4 = false;
+        }    
+    }
+
+    bool StartX360()
     {
         if (working)
         {
-            vigem_target_add(client, target);
-            vigem_target_x360_register_notification(client, target, notification, &output);
-            return true;
+            if(!wasEmulating360){
+                vigem_target_add(client, x360);
+                vigem_target_x360_register_notification(client, x360, notification, this);
+                wasEmulating360 = true;
+                return true;
+            }
         }
 
         return false;
     }
 
-    bool StartDS4(PVIGEM_TARGET &target, Output &output)
+    bool StartDS4()
     {
         if (working)
         {
-            vigem_target_add(client, target);
-            vigem_target_ds4_register_notification(client,target,EVT_VIGEM_DS4_NOTIFICATION, &output);
-            return true;
-            
+            if (!wasEmulatingDS4) {
+                vigem_target_add(client, ds4);         
+                vigem_target_ds4_register_notification(client,ds4,EVT_VIGEM_DS4_NOTIFICATION, this);
+                wasEmulatingDS4 = true;
+                return true;
+            }
         }
 
         return false;
     }
 
-    bool UpdateX360(PVIGEM_TARGET &target, ButtonState state)
+    bool UpdateX360(ButtonState state)
     {
-        if (client && target)
+        if (client && x360)
         {
             XUSB_REPORT report;
             USHORT buttons = 0;
@@ -127,16 +163,16 @@ public:
             report.sThumbLY = ConvertRange(state.LY, 255, 0, -32767, 32766);
             report.sThumbRX = ConvertRange(state.RX, 0, 255, -32767, 32766);
             report.sThumbRY = ConvertRange(state.RY, 255, 0, -32767, 32766);
-            vigem_target_x360_update(client, target, report);
+            vigem_target_x360_update(client, x360, report);
             return true;
         }
 
         return false;
     }
 
-    bool UpdateDS4(PVIGEM_TARGET &target, ButtonState state)
+    bool UpdateDS4(ButtonState state)
     {
-        if (client && target)
+        if (client && ds4)
         {
             DS4_REPORT_EX report;
             report.Report.bThumbLX = state.LX;
@@ -220,7 +256,7 @@ public:
                     ? state.accelerometer.SensorTimestamp / 16
                     : 0;
 
-            vigem_target_ds4_update_ex(client, target, report);
+            vigem_target_ds4_update_ex(client, ds4, report);
             return true;
         }
 
@@ -234,12 +270,10 @@ public:
                                       UCHAR LedNumber,
                                       LPVOID UserData)
     {
-        Output *output = static_cast<Output *>(UserData);
-        if (output != nullptr)
-        {
-            output->lrotor = LargeMotor;
-            output->rrotor = SmallMotor;
-        }
+        ViGEm *vigemInstance = static_cast<ViGEm *>(UserData);
+
+        vigemInstance->rotors.lrotor = LargeMotor;
+        vigemInstance->rotors.rrotor = SmallMotor;
     }
 
     static VOID CALLBACK
@@ -250,14 +284,14 @@ public:
                                DS4_LIGHTBAR_COLOR LightbarColor,
                                LPVOID UserData)
     {
-        Output *output = static_cast<Output *>(UserData);
-        if (output != nullptr)
+        ViGEm *vigemInstance = static_cast<ViGEm *>(UserData);
+        if (vigemInstance != nullptr)
         {
-            output->lrotor = LargeMotor;
-            output->rrotor = SmallMotor;
-            output->R = LightbarColor.Red;
-            output->G = LightbarColor.Green;
-            output->B = LightbarColor.Blue;
+            vigemInstance->rotors.lrotor = LargeMotor;
+            vigemInstance->rotors.rrotor = SmallMotor;
+            vigemInstance->Red = LightbarColor.Red;
+            vigemInstance->Green = LightbarColor.Green;
+            vigemInstance->Blue = LightbarColor.Blue;
         }
     }
 };

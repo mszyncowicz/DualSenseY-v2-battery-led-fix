@@ -193,64 +193,68 @@ void Tooltip(const char* text) {
     }
 }
 
-PVIGEM_CLIENT VigemClient;
-ViGEm *v = nullptr;
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
-    PVIGEM_TARGET x360 = vigem_target_x360_alloc();
-    PVIGEM_TARGET ds4 = vigem_target_ds4_alloc();
-    Output output;
-    bool isEmulating360 = true;
+    ViGEm v;
+    v.InitializeVigembus();
+    EmuStatus curStatus = None;
 
     while (!stop_thread)
     {
         if (controller.Connected)
         {
-            if (settings.emuStatus != None && !v->isWorking())
+            if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
                 settings.emuStatus = None;
                 continue;
             }
 
+            if (curStatus != settings.emuStatus && settings.emuStatus != None) {
+                v.Remove360();
+                v.RemoveDS4();
+            }
+
             if (settings.emuStatus == X360)
             {
-                v->StartX360(x360, output);
-                v->UpdateX360(x360,controller.State);
-                settings.lrumble = output.lrotor;
-                settings.rrumble = output.rrotor;
+                v.RemoveDS4();
+                v.StartX360();
+                v.UpdateX360(controller.State);
+                settings.lrumble = v.rotors.lrotor;
+                settings.rrumble = v.rotors.rrotor;
+                curStatus = X360;
             }
             else if (settings.emuStatus == DS4)
             {
-                v->StartDS4(ds4, output);
-                v->UpdateDS4(ds4,controller.State);
-                settings.lrumble = output.lrotor;
-                settings.rrumble = output.rrotor;
+                v.Remove360();
+                v.StartDS4();
+                v.UpdateDS4(controller.State);
+                settings.lrumble = v.rotors.lrotor;
+                settings.rrumble = v.rotors.rrotor;
                 if(!settings.CurrentlyUsingUDP){
-                    if (output.R > 0 || output.G > 0 || output.B > 0) {
-                        controller.SetLightbar(output.R, output.G,output.B);
+                    if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
+                        controller.SetLightbar(v.Red, v.Green, v.Blue);
                     }
                 }
+                curStatus = DS4;
             }
             else {
-                v->RemoveController(x360);
-                v->RemoveController(ds4);
+                v.Remove360();
+                v.RemoveDS4();
+                curStatus = None;
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         else
         {
-            v->RemoveController(x360);
-            v->RemoveController(ds4);
+            v.Remove360();
+            v.RemoveDS4();
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
 
-    v->RemoveController(x360);
-    v->RemoveController(ds4);
-    vigem_target_free(x360);
-    vigem_target_free(ds4);
+    v.Free();
 }
 
 void MouseClick(DWORD flag, DWORD mouseData = 0)
@@ -597,18 +601,15 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             if (!controller.State.micBtn && lastMic) {
                 lastMic = false;
             }
-
-
-            controller.UseRumbleNotHaptics(false);
-
+      
             if (settings.lrumble > 0 || settings.rrumble > 0)
             {
                 controller.UseRumbleNotHaptics(true);
             }
-            if (settings.emuStatus != None)
-            {
-                controller.UseRumbleNotHaptics(true);
+            else {
+                controller.UseRumbleNotHaptics(false);
             }
+
 
             controller.SetRumble(settings.lrumble, settings.rrumble);
 
@@ -766,24 +767,7 @@ int main()
     //_CrtSetBreakAlloc(8428);
     FreeConsole();
 
-    VigemClient = vigem_alloc();
-        if (VigemClient == nullptr)
-        {
-            std::cerr << "Failed to allocate ViGEm Client!" << std::endl;
-        }
-        else {
-            const auto retval = vigem_connect(VigemClient);
-            if (!VIGEM_SUCCESS(retval))
-            {
-                std::cerr << "ViGEm Bus connection failed with error code: 0x" << std::hex << retval << std::endl;
-            }
-            else {
-                v = new ViGEm(VigemClient);
-            }
-        }
-
-       
-
+     
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -1570,7 +1554,7 @@ int main()
                                 {
                                     if (ImGui::Button(strings.STOPemu.c_str()))
                                     {
-                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                        StartHidHideRequest(DualSense[i].GetPath(), "show");
                                         s.emuStatus = None;
                                     }
                                 }
@@ -1698,7 +1682,6 @@ int main()
         }
     }
 
-    vigem_free(VigemClient);
     udpServer.Dispose();
     if (trayThread.joinable())
         trayThread.join();
@@ -1713,7 +1696,6 @@ int main()
     hid_exit();
 
     DeinitializeAudioEndpoint();
-    delete v;
     //_CrtDumpMemoryLeaks();
 
     return 0;

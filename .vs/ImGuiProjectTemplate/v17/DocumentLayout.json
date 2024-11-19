@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
@@ -11,8 +19,8 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Strings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -31,20 +39,12 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\UDP.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ControllerEmulation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\ControllerEmulation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex||{3B902123-F8A7-4915-9F01-361F908088D0}"
@@ -291,7 +291,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 18,
+          "SelectedChildIndex": 33,
           "Children": [
             {
               "$type": "Bookmark",
@@ -334,16 +334,8 @@
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}"
-            },
-            {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "MyUtils.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h",
               "RelativeDocumentMoniker": "app\\MyUtils.h",
@@ -355,7 +347,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "util.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h",
               "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h",
@@ -367,7 +359,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 4,
               "Title": "stb_image.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h",
               "RelativeDocumentMoniker": "app\\stb_image.h",
@@ -375,7 +367,8 @@
               "RelativeToolTip": "app\\stb_image.h",
               "ViewState": "AQIAALsFAAAAAAAAAAAwwMwFAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-18T20:16:16.885Z"
+              "WhenOpened": "2024-11-18T20:16:16.885Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -415,13 +408,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
               "RelativeDocumentMoniker": "app\\main.cpp",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
               "RelativeToolTip": "app\\main.cpp",
-              "ViewState": "AQIAAB0DAAAAAAAAAAAQwC0DAAAEAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAARAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-10-20T12:41:40.759Z",
               "EditorCaption": ""
@@ -512,7 +505,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "DualSense.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h",
               "RelativeDocumentMoniker": "app\\DualSense.h",
@@ -520,8 +513,7 @@
               "RelativeToolTip": "app\\DualSense.h",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAIkFAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-10-20T15:20:20.448Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-10-20T15:20:20.448Z"
             },
             {
               "$type": "Document",
@@ -609,7 +601,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "ControllerEmulation.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ControllerEmulation.h",
               "RelativeDocumentMoniker": "app\\ControllerEmulation.h",
@@ -621,19 +613,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 0,
               "Title": "Config.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h",
               "RelativeDocumentMoniker": "app\\Config.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h",
               "RelativeToolTip": "app\\Config.h",
-              "ViewState": "AQIAAGIAAAAAAAAAAAAewIAAAAAAAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA4AAAAiAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-02T12:22:06.999Z"
+              "WhenOpened": "2024-11-02T12:22:06.999Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "UDP.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\UDP.h",
               "RelativeDocumentMoniker": "app\\UDP.h",
@@ -669,13 +662,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "Strings.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h",
               "RelativeDocumentMoniker": "app\\Strings.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h",
               "RelativeToolTip": "app\\Strings.h",
-              "ViewState": "AQIAAEIAAAAAAAAAAAAAAEkAAADSAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAA0AAAAvAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-11-12T18:40:49.868Z",
               "EditorCaption": ""
@@ -718,7 +711,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "MyUtils.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp",
               "RelativeDocumentMoniker": "app\\MyUtils.cpp",
@@ -754,13 +747,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "Settings.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h",
               "RelativeDocumentMoniker": "app\\Settings.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h",
               "RelativeToolTip": "app\\Settings.h",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAFgAAABxAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAMAAAADAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-10-31T12:33:02.442Z",
               "EditorCaption": ""
@@ -1266,6 +1259,14 @@
               "ToolTip": "CMake Overview Pages",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2024-10-20T12:34:47.683Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{269a02dc-6af8-11d3-bdc4-00c04f688e50}"
             }
           ]
         }

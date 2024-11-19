@@ -12,7 +12,7 @@ namespace Config {
         bool ShowWindow = true;
         bool HideWindowOnStartup = false;
         bool RunWithWindows = false;
-        std::string Language = "pl";
+        std::string Language = "en";
 
         nlohmann::json to_json() const {
             nlohmann::json j;

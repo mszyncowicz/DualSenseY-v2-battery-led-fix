@@ -103,6 +103,23 @@ namespace MyUtils {
         return sanitized;
     }
 
+    int scaleFloatToInt(float input_float) {
+        const float max_float = 0.0500000f;
+        const int max_int = 255;
+    
+        // Ensure input is within the valid range
+        if (input_float < 0.0f) {
+            input_float = 0.0f;
+        } else if (input_float > max_float) {
+            input_float = max_float;
+        }
+
+        // Scale the float to an integer in the range [0, 255]
+        int scaled_int = static_cast<int>((input_float / max_float) * max_int);
+    
+        return scaled_int;
+    }
+
     bool GetConfigPathForController(std::string &Path, std::string ControllerID) {
         std::ifstream configFile(MyUtils::GetLocalFolderPath() + "\\DualSenseY\\DefaultConfigs\\" + sanitizeFileName(ControllerID));
         if (configFile.good()) {

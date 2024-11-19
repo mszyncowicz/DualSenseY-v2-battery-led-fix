@@ -6,6 +6,8 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string HapticsUnavailableNoAudioDevice = "Couldn't find the DualSense Wireless Controller speaker associated with this controller. Haptic feedback not available";
+    std::string HapticsToTriggers = "Haptics To Adaptive Triggers";
     std::string RumbleToAT_RigidMode = "Rigid trigger mode";
     std::string ControllerNumberText = "Controller No.";
     std::string USBorBTconnectionType = "Connection type";
@@ -33,7 +35,7 @@ public:
     std::string TouchpadToMouse = "Touchpad to mouse";
     std::string Active = "Active";
     std::string Inactive = "Inactive";
-    std::string RumbleToAT = "Rumble To AT";
+    std::string RumbleToAT = "Rumble To Adaptive Triggers";
     std::string SwapTriggersRumbleToAT = "Swap triggers";
     std::string MaxIntensity = "Max intensity";
     std::string MaxFrequency = "Max frequency";
@@ -69,6 +71,7 @@ public:
     std::string RunWithWindows = "Run with Windows";
 
     // Tooltips
+    std::string Tooltip_HapticsToTriggers = "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller (Ex. Zenless Zone Zero) or Audio To Haptics feature";
     std::string Tooltip_RumbleToAT_RigidMode = "Sets rigid trigger effect";
     std::string Tooltip_RumbleToAT =
         "Translates rumble vibrations to adaptive triggers, really good in "
@@ -124,6 +127,8 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["HapticsUnavailableNoAudioDevice"] = HapticsUnavailableNoAudioDevice;
+        j["HapticsToTriggers"] = HapticsToTriggers;
         j["Tooltip_RumbleToAT_RigidMode"] = Tooltip_RumbleToAT_RigidMode;
         j["RumbleToAT_RigidMode"] = RumbleToAT_RigidMode;
         j["ControllerNumberText"] = ControllerNumberText;
@@ -216,6 +221,12 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("HapticsUnavailableNoAudioDevice"))
+            j.at("HapticsUnavailableNoAudioDevice").get_to(strings.HapticsUnavailableNoAudioDevice);
+
+        if (j.contains("HapticsToTriggers"))
+            j.at("HapticsToTriggers").get_to(strings.HapticsToTriggers);
 
         if (j.contains("Tooltip_RumbleToAT_RigidMode"))
             j.at("Tooltip_RumbleToAT_RigidMode").get_to(strings.Tooltip_RumbleToAT_RigidMode);

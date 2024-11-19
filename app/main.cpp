@@ -1,6 +1,6 @@
-const int VERSION = 8;
+const int VERSION = 9;
 
-//#define _CRTDBG_MAP_ALLOC
+#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -23,8 +23,8 @@ const int VERSION = 8;
 #include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-//#include <cstdlib>
-//#include <crtdbg.h>
+#include <cstdlib>
+#include <crtdbg.h>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -431,7 +431,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 controller.SetLightbar(settings.ControllerInput.Red,settings.ControllerInput.Green,settings.ControllerInput.Blue);
             }
 
-            if (!settings.RumbleToAT && !settings.CurrentlyUsingUDP) {
+            if (!settings.RumbleToAT && !settings.HapticsToTriggers && !settings.CurrentlyUsingUDP) {
                controller.SetRightTrigger(
                     settings.ControllerInput.RightTriggerMode,
                     settings.ControllerInput.RightTriggerForces[0],
@@ -491,6 +491,52 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
                     controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
                 }            
+            }
+
+            if (settings.HapticsToTriggers && !settings.CurrentlyUsingUDP) {
+                Peaks peaks = controller.GetAudioPeaks();
+                int ScaledLeftActuator = MyUtils::scaleFloatToInt(peaks.LeftActuator);
+                int ScaledRightActuator = MyUtils::scaleFloatToInt(peaks.RightActuator);
+                int leftForces[3] = { 0 };
+                int rightForces[3] = { 0 };
+
+                if (settings.RumbleToAT_RigidMode) {
+                    // stiffness
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? settings.rrumble : settings.lrumble;
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? settings.lrumble : settings.rrumble;
+
+                    // set threshold
+                    leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.rrumble: 255 - settings.lrumble; 
+                    rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.lrumble : 255 - settings.rrumble;
+
+                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0);
+                }
+                else {
+                    //cout << ScaledLeftActuator << " | " << ScaledRightActuator << endl;
+
+                    // set frequency
+                    if (!settings.SwapTriggersRumbleToAT && ScaledLeftActuator < 25 || settings.SwapTriggersRumbleToAT && ScaledRightActuator < 25)
+                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, ScaledRightActuator) : min(settings.MaxRumbleToATFrequency, ScaledLeftActuator);
+                    else
+                        leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+
+                    if(!settings.SwapTriggersRumbleToAT && ScaledRightActuator < 25 || settings.SwapTriggersRumbleToAT && ScaledLeftActuator < 25)
+                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, ScaledLeftActuator) : min(settings.MaxRumbleToATFrequency, ScaledRightActuator);
+                    else
+                        rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+
+                    // set power
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, ScaledRightActuator) : min(settings.MaxRumbleToATIntensity,ScaledLeftActuator); 
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,ScaledLeftActuator) : min(settings.MaxRumbleToATIntensity,ScaledRightActuator);
+
+                    // set static threshold
+                    leftForces[2] = 20;
+                    rightForces[2] = 20;
+
+                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
+                }  
             }
 
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
@@ -762,9 +808,9 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
-    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
-    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(8428);
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //_CrtSetBreakAlloc(28737);
     FreeConsole();
 
      
@@ -1145,6 +1191,7 @@ int main()
                     {
                         if (s.ControllerInput.ID == CurrentController)
                         {
+                            DualsenseUtils::HapticFeedbackStatus HF_status = DualSense[i].GetHapticFeedbackStatus();
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
                             ImGui::Text("%s %d | %s: %s | %s: %d%%", strings.ControllerNumberText.c_str(),i+1, strings.USBorBTconnectionType.c_str(), bt_or_usb, strings.BatteryLevel.c_str(), DualSense[i].State.battery.Level);
 
@@ -1206,10 +1253,19 @@ int main()
 
                             if (ImGui::CollapsingHeader(strings.AdaptiveTriggers.c_str()))
                             {
-                                ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
-                                Tooltip(strings.Tooltip_RumbleToAT.c_str());
+                                if(!s.HapticsToTriggers)
+                                {
+                                    ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
+                                    Tooltip(strings.Tooltip_RumbleToAT.c_str());
+                                }
 
-                                if (s.RumbleToAT) {
+                                if(!s.RumbleToAT && HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
+                                {
+                                    ImGui::Checkbox(strings.HapticsToTriggers.c_str(), &s.HapticsToTriggers);
+                                    Tooltip(strings.Tooltip_HapticsToTriggers.c_str());
+                                }
+
+                                if (s.RumbleToAT || s.HapticsToTriggers) {
                                     ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
                                     Tooltip(strings.Tooltip_SwapTriggersRumbleToAT.c_str());
 
@@ -1227,7 +1283,7 @@ int main()
 
                                 ImGui::Separator();
 
-                                if(!s.RumbleToAT)
+                                if(!s.RumbleToAT && !s.HapticsToTriggers)
                                 {
                                     if (ImGui::BeginCombo(strings.LeftTriggerMode.c_str(),
                                         s.lmodestr.c_str())) {
@@ -1419,7 +1475,7 @@ int main()
                                                  0,
                                                  255);
 
-                                if (DualSense[i].GetConnectionType() == Feature::USB)
+                                if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
                                 {
                                     if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
                                     {
@@ -1465,7 +1521,12 @@ int main()
                                 }
                                 else
                                 {
-                                    ImGui::Text(strings.HapticsUnavailable.c_str());
+                                    if (HF_status == DualsenseUtils::HapticFeedbackStatus::BluetoothNotUSB) {
+                                        ImGui::Text(strings.HapticsUnavailable.c_str());
+                                    }
+                                    else if (HF_status == DualsenseUtils::HapticFeedbackStatus::AudioDeviceNotFound) {
+                                        ImGui::Text(strings.HapticsUnavailableNoAudioDevice.c_str());
+                                    }
                                 }
                               
                             }
@@ -1685,6 +1746,7 @@ int main()
     udpServer.Dispose();
     if (trayThread.joinable())
         trayThread.join();
+    tray.exit();
     tray.~Tray();
    
     ImGui_ImplOpenGL3_Shutdown();

@@ -27,6 +27,7 @@ public:
     int MaxRumbleToATFrequency = 25;
     bool SwapTriggersShortcut = false;
     float swipeThreshold = 0.50f;
+    bool HapticsToTriggers = false;
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {
@@ -53,6 +54,7 @@ public:
         j["MaxRumbleToATIntensity"] = MaxRumbleToATIntensity;
         j["MaxRumbleToATFrequency"] = MaxRumbleToATFrequency;
         j["SwapTriggersShortcut"] = SwapTriggersShortcut;
+        j["HapticsToTriggers"] = HapticsToTriggers;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
         return j;
     }
@@ -84,6 +86,7 @@ public:
         if (j.contains("MaxRumbleToATIntensity"))          j.at("MaxRumbleToATIntensity").get_to(settings.MaxRumbleToATIntensity);
         if (j.contains("MaxRumbleToATFrequency"))          j.at("MaxRumbleToATFrequency").get_to(settings.MaxRumbleToATFrequency);
         if (j.contains("SwapTriggersShortcut"))          j.at("SwapTriggersShortcut").get_to(settings.SwapTriggersShortcut);
+        if (j.contains("HapticsToTriggers"))          j.at("HapticsToTriggers").get_to(settings.HapticsToTriggers);
         if (j.contains("emuStatus"))        j.at("emuStatus").get_to(settings.emuStatus);
 
         return settings;

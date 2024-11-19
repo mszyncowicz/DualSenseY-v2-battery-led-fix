@@ -478,6 +478,12 @@ enum TriggerMode : uint8_t
 
 namespace DualsenseUtils
 {
+    enum HapticFeedbackStatus {
+        Working = 0,
+        BluetoothNotUSB = 1,
+        AudioDeviceNotFound = 2,
+    };
+
 class InputFeatures
 {
 public:
@@ -623,7 +629,6 @@ std::vector<std::string> EnumerateControllerIDs()
     return v;
 }
 
-
 enum Reconnect_Result
 {
     Reconnected = 0,
@@ -721,9 +726,58 @@ bool compareDeviceIDs(const std::wstring &id1, const std::wstring &id2)
     return strippedId1 == strippedId2;
 }
 
+class Peaks {
+public:
+    float channelZero = 0; // used for left headset headphone
+    float Speaker = 0;
+    float LeftActuator = 0;
+    float RightActuator = 0;
+};
+
+
 class Dualsense
 {
 private:
+    static void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
+        const float* pInputSamples = (const float*)input;
+        Peaks* m_peaks = static_cast<Peaks*>(device->pUserData); // Cast user data back to Peaks struct
+
+        // Reset peaks for this callback
+        m_peaks->channelZero = 0.0f;
+        m_peaks->Speaker = 0.0f;
+        m_peaks->LeftActuator = 0.0f;
+        m_peaks->RightActuator = 0.0f;
+
+        for (ma_uint32 i = 0; i < frameCount; ++i) {
+            for (int channel = 0; channel < 4; ++channel) {
+                // Correct access pattern for 4 channels
+                float sample = pInputSamples[i * 4 + channel];
+
+                // Apply noise gate
+                if (fabs(sample) > 0.01f) {
+                    // Update peak values based on channel
+                    if (channel == 0) {
+                        if (sample > m_peaks->channelZero) {
+                            m_peaks->channelZero = sample; // Update peak for channel zero
+                        }
+                    } else if (channel == 1) {
+                        if (sample > m_peaks->Speaker) {
+                            m_peaks->Speaker = sample; // Update peak for Speaker
+                        }
+                    } else if (channel == 2) {
+                        if (sample > m_peaks->LeftActuator) {
+                            m_peaks->LeftActuator = sample; // Update peak for Left Actuator
+                        }
+                    } else if (channel == 3) {
+                        if (sample > m_peaks->RightActuator) {
+                            m_peaks->RightActuator = sample; // Update peak for Right Actuator
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     int offset = 0;
     uint8_t connectionType;
     bool Running = false;
@@ -735,12 +789,14 @@ private:
     hid_device *handle;
     bool bt_initialized = false;
     bool AudioInitialized = false;
+    bool AudioDeviceNotFound = false;
     bool WasConnectedAtLeastOnce = false;
     bool DisconnectedByError = false;
 
     DualsenseUtils::InputFeatures CurSettings;
 
     // Audio variables
+    Peaks peaks;
     ma_context context;
     ma_result result;
     ma_engine engine;
@@ -795,7 +851,6 @@ public:
                                                    parent);
                     wcout << "Device parent: " << parent << endl;
                     lastKnownParent = parent;
-                    wcout << lastKnownParent << endl;
                 }
                 else
                 {
@@ -812,6 +867,10 @@ public:
             path = Path;
         }
     };
+
+    Peaks GetAudioPeaks() {
+        return peaks;
+    }
 
     wstring GetKnownAudioParentInstanceID()
     {
@@ -1110,7 +1169,7 @@ public:
 
     void InitializeAudioEngine(bool InitEngine = true)
     {
-        if (!AudioInitialized && connectionType == Feature::USB && Connected)
+        if (!AudioInitialized && !AudioDeviceNotFound && connectionType == Feature::USB && Connected)
         {
             CComPtr<IMMDeviceEnumerator> pEnumerator;
             CComPtr<IMMDeviceCollection> pDevices;
@@ -1196,6 +1255,9 @@ public:
                             found = true;
                             break;
                         }
+                        else {
+                            wcout << "Wrong device: " << foundID << endl;
+                        }
                     }
                 }
             }
@@ -1203,6 +1265,7 @@ public:
             if (!found)
             {
                 AudioInitialized = false;
+                AudioDeviceNotFound = true;
                 return;
             }
 
@@ -1246,6 +1309,7 @@ public:
                 }
                 else
                 {
+                    wcout << "Invalid wasapi id: " << info.id.wasapi << endl;
                     deviceIndex++;
                 }
             }
@@ -1253,6 +1317,7 @@ public:
             if (!found)
             {
                 AudioInitialized = false;
+                AudioDeviceNotFound = true;
                 return;
             }
 
@@ -1285,16 +1350,21 @@ public:
                     cout << "Creating channel converter failed!" << endl;
                 }
 
-                ma_device_config deviceconfig =
-                    ma_device_config_init(ma_device_type_playback);
-                deviceconfig.playback.pDeviceID =
-                    &pPlaybackInfos[deviceIndex].id;
+                ma_device_config deviceconfig = ma_device_config_init(ma_device_type_loopback);
+                deviceconfig.capture.pDeviceID = &pPlaybackInfos[deviceIndex].id;
+                deviceconfig.capture.format = ma_format_f32;
+                deviceconfig.capture.channels = 0;
+                deviceconfig.capture.channelMixMode = ma_channel_mix_mode_default;
+                deviceconfig.capture.shareMode = ma_share_mode_shared;
+                deviceconfig.playback.pDeviceID = &pPlaybackInfos[deviceIndex].id;
                 deviceconfig.playback.format = ma_format_f32;
                 deviceconfig.playback.channels = 4;
-                deviceconfig.playback.channelMixMode =
-                    ma_channel_mix_mode_default;
+                deviceconfig.playback.channelMixMode = ma_channel_mix_mode_default;
                 deviceconfig.sampleRate = 48000;
                 deviceconfig.playback.shareMode = ma_share_mode_shared;
+                deviceconfig.pUserData = &peaks;
+                deviceconfig.dataCallback = data_callback;
+                
 
                 if (ma_device_init(NULL, &deviceconfig, &device) != MA_SUCCESS)
                 {
@@ -1304,6 +1374,8 @@ public:
                 {
                     cout << "Audio device intialized" << endl;
                 }
+
+                ma_device_start(&device);
 
                 ma_engine_config config = ma_engine_config_init();
                 //config.pContext = &context;
@@ -1323,16 +1395,28 @@ public:
                 }
 
                 ma_engine_set_volume(&engine, 100);
-                ma_device_set_master_volume(&device, 1);
+                ma_device_set_master_volume(&device, 1.0f);
                 AudioInitialized = true;
                 CoUninitialize();
             }
         }
     }
 
+    DualsenseUtils::HapticFeedbackStatus GetHapticFeedbackStatus() {
+        if (connectionType == Feature::ConnectionType::BT) {
+            return DualsenseUtils::HapticFeedbackStatus::BluetoothNotUSB;
+        }
+
+        if (AudioDeviceNotFound) {
+            return DualsenseUtils::HapticFeedbackStatus::AudioDeviceNotFound;
+        }
+
+        return DualsenseUtils::HapticFeedbackStatus::Working;
+    }
+
     bool PlayHaptics(const char *WavFileLocation)
     {
-        if (connectionType == Feature::USB)
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound)
         {
             ma_result soundplay =
                 ma_engine_play_sound(&engine, WavFileLocation, NULL);
@@ -1406,7 +1490,6 @@ public:
                                                    parent);
                     wcout << "Device parent: " << parent << endl;
                     lastKnownParent = parent;
-                    wcout << lastKnownParent << endl;
                 }
                 else
                 {

@@ -29,6 +29,7 @@ namespace MyUtils {
     void RemoveFromStartup();
     std::string GetImagesFolderPath();
     std::string GetLocalFolderPath();
+    int scaleFloatToInt(float input_float);
     std::string currentDateTime();
     std::string currentDateTimeWMS();
     bool GetConfigPathForController(std::string& Path, std::string ControllerID);

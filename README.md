@@ -1,10 +1,4 @@
 ### ⚠️ STILL IN DEVELOPMENT! ⚠️
-## Expect Bugs or some other weird stuff to happen
-
-## Known issues:
- - 9GB memory leak on specific machines.
-
-
 ## IF YOU FIND THIS VERSION UNSTABLE OR NOT WORKING CORRECTLY YOU CAN GO BACK TO [OLD ONE](https://github.com/WujekFoliarz/DualSenseY/releases/tag/6.2) 
 
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases

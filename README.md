@@ -52,6 +52,7 @@
   - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation.
   - [libcpr](https://github.com/libcpr/cpr)
   - [traypp](https://github.com/Soundux/traypp)
+  - [Crashlogs](https://github.com/TylerGlaiel/Crashlogs)
   - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage

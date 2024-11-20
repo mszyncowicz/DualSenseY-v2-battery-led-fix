@@ -1,4 +1,4 @@
-const int VERSION = 9;
+const int VERSION = 10;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"

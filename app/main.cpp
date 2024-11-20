@@ -1,6 +1,6 @@
 const int VERSION = 9;
 
-#define _CRTDBG_MAP_ALLOC
+//#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -23,8 +23,9 @@ const int VERSION = 9;
 #include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <cstdlib>
-#include <crtdbg.h>
+#include <TlHelp32.h>
+//#include <cstdlib>
+//#include <crtdbg.h>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) &&                                 \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
@@ -177,9 +178,12 @@ void readControllerState(Dualsense &controller)
     while (!stop_thread)
     {
         controller.Read(); // Perform the read operation
-        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+
+        if(!controller.Connected)
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
     }
 }
+
 
 void Tooltip(const char* text) {
     ImGui::SameLine();
@@ -236,21 +240,22 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                         controller.SetLightbar(v.Red, v.Green, v.Blue);
                     }
                 }
-                curStatus = DS4;
+                curStatus = DS4;               
             }
             else {
                 v.Remove360();
                 v.RemoveDS4();
                 curStatus = None;
+                std::this_thread::sleep_for(std::chrono::microseconds(5000));
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::microseconds(25));
         }
         else
         {
             v.Remove360();
             v.RemoveDS4();
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
         }
     }
 
@@ -298,6 +303,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
     int steps[] = {1, -1, 1, -1,1, -1, 1, -1,1, -1, 1, -1};
     int limits[] = {255, 0, 255, 0,255, 0, 255, 0,255, 0, 255, 0};
     int direction = 1; // 1 for increasing, -1 for decreasing
+    DualsenseUtils::InputFeatures lastFeatures;
 
     while (!stop_thread)
     {
@@ -656,13 +662,18 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 controller.UseRumbleNotHaptics(false);
             }
 
-
             controller.SetRumble(settings.lrumble, settings.rrumble);
 
             if(controller.Connected)
-                controller.Write();
+            {
+                if (controller.Write() == false) {
+                    std::this_thread::sleep_for(std::chrono::microseconds(5000));
+                }
+            }
+            else {
+                std::this_thread::sleep_for(std::chrono::microseconds(5000));
+            }
         }
-        std::this_thread::sleep_for(std::chrono::microseconds(25));
     }
 }
 
@@ -808,12 +819,37 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
+    glaiel::crashlogs::begin_monitoring();
+    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
+    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(28737);
     FreeConsole();
 
-     
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    int InstancesCount = 0;
+    if (Process32First(snapshot, &entry) == TRUE)
+    {
+        while (Process32Next(snapshot, &entry) == TRUE)
+        {
+            if (strcmp(entry.szExeFile, "DualSenseY.exe") == 0)
+            {
+                InstancesCount++;
+            }
+        }
+    }
+
+    if (InstancesCount > 1) {
+        MessageBox(0, "DualSenseY is already running!", "Error", 0);
+        return 1;
+    }
+
+    CloseHandle(snapshot);
+  
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -1701,10 +1737,12 @@ int main()
             }
         }
 
+        std::this_thread::sleep_for(std::chrono::microseconds(100)); // ~5fps limit
+
         ImGui::End();
         ImGui::Render();
 
-        end_cycle(window);
+        end_cycle(window);       
     }
 
     stop_thread = true; // Signal all threads to stop

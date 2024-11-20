@@ -25,6 +25,7 @@ target_link_libraries("DualSenseY" PRIVATE setupapi cfgmgr32)
 target_link_libraries("DualSenseY" PRIVATE setupapi ViGEmClient)
 target_link_libraries("DualSenseY" PRIVATE nlohmann_json)
 target_link_libraries("DualSenseY" PRIVATE "tray")
+target_link_libraries("DualSenseY" PRIVATE "Crashlogs")
 
 target_set_warnings(
     TARGET

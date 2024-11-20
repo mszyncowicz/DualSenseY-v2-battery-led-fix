@@ -21,6 +21,7 @@
 #include <cpr/cpr.h>
 #include <tray.hpp>
 #include <nlohmann/json.hpp>
+#include <crashlogs.h>
 
 namespace MyUtils {
     std::string GetExecutablePath();

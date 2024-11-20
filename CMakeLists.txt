@@ -72,6 +72,7 @@ add_subdirectory(hidapi)
 add_subdirectory(ViGEmClient)
 add_subdirectory("json/")
 add_subdirectory("traypp/" EXCLUDE_FROM_ALL)
+add_subdirectory("Crashlogs/" EXCLUDE_FROM_ALL)
 link_libraries(tray)
 
 # INSTALL TARGETS

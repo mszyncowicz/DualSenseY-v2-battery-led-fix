@@ -403,10 +403,10 @@ enum RumbleMode : uint8_t
     Haptic_Feedback = 0xFC
 };
 
-enum FeatureType : int8_t
-{
+enum FeatureType : int8_t {
     Full = 0x57,
-    LetGo = 0x08
+    LetGo = 0x08,
+    BT_Init = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x40,
 };
 
 enum AudioOutput : uint8_t
@@ -558,6 +558,29 @@ public:
         j.at("Blue").get_to(features.Blue);
         j.at("ID").get_to(features.ID);
         return features;
+    }
+
+    bool operator==(const InputFeatures& other) const {
+    return VibrationType == other.VibrationType &&
+           Features == other.Features &&
+           _RightMotor == other._RightMotor &&
+           _LeftMotor == other._LeftMotor &&
+           SpeakerVolume == other.SpeakerVolume &&
+           MicrophoneVolume == other.MicrophoneVolume &&
+           audioOutput == other.audioOutput &&
+           micLED == other.micLED &&
+           micStatus == other.micStatus &&
+           RightTriggerMode == other.RightTriggerMode &&
+           LeftTriggerMode == other.LeftTriggerMode &&
+           std::equal(std::begin(RightTriggerForces), std::end(RightTriggerForces), std::begin(other.RightTriggerForces)) &&
+           std::equal(std::begin(LeftTriggerForces), std::end(LeftTriggerForces), std::begin(other.LeftTriggerForces)) &&
+           _Brightness == other._Brightness &&
+           playerLED == other.playerLED &&
+           PlayerLED_Bitmask == other.PlayerLED_Bitmask &&
+           Red == other.Red &&
+           Green == other.Green &&
+           Blue == other.Blue &&
+           ID == other.ID;
     }
 };
 
@@ -792,8 +815,10 @@ private:
     bool AudioDeviceNotFound = false;
     bool WasConnectedAtLeastOnce = false;
     bool DisconnectedByError = false;
+    bool FirstTimeWrite = true;
 
     DualsenseUtils::InputFeatures CurSettings;
+    DualsenseUtils::InputFeatures LastSettings;
 
     // Audio variables
     Peaks peaks;
@@ -865,6 +890,7 @@ public:
             }
 
             path = Path;
+            FirstTimeWrite = true;
         }
     };
 
@@ -879,8 +905,7 @@ public:
 
     void Read()
     {
-        const wchar_t *error = hid_error(handle);
-        if (error == DefaultError && handle)
+        if (handle && Connected)
         {
             unsigned char ButtonStates[MAX_READ_LENGTH];
             ButtonState buttonState;
@@ -888,7 +913,7 @@ public:
             try {
                 res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
             }
-            catch (...) {
+            catch (const std::exception& e) {
                 Connected = false;
             }
 
@@ -987,7 +1012,6 @@ public:
         }
         else
         {
-            Connected = false;
             State.square = false;
             State.triangle = false;
             State.circle = false;
@@ -1011,15 +1035,32 @@ public:
             State.R2 = 0;
             State.trackPadTouch0.IsActive = false;
             State.trackPadTouch1.IsActive = false;
+            State.battery.State = BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
+            State.battery.Level = 0;
         }
     }
 
     bool Write()
-    {
-        error = hid_error(handle);
+    {       
+        if (CurSettings == LastSettings && !FirstTimeWrite )
+        {          
+            if (error != DefaultError)
+            {
+                Connected = false;
+                bt_initialized = false;
+                FirstTimeWrite = true;
+            }
+            return false;
+        }
+        else {
+            error = hid_error(handle);
+        }
 
-        if (error == DefaultError)
+        if (error == DefaultError && handle)
         {
+            // Update the previous settings with the current ones
+            LastSettings = CurSettings;
+
             if (connectionType == Feature::USB)
             {
                 uint8_t outReport[MAX_USB_WRITE_LENGTH];
@@ -1069,10 +1110,12 @@ public:
                 try
                 {
                     res = hid_write(handle, outReport, MAX_USB_WRITE_LENGTH);
+                    FirstTimeWrite = false;
                 }
-                catch (...)
+                catch (const std::exception& e)
                 {
                     Connected = false;
+                    FirstTimeWrite = true;
                 }
             }
             else if (connectionType == Feature::BT)
@@ -1083,15 +1126,23 @@ public:
                 outReport[2] = CurSettings.VibrationType;
                 if (bt_initialized == false)
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(
-                        500)); // doesn't always work without sleep
-                    outReport[3] = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x40;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // doesn't always work without sleep
+                    outReport[3] = Feature::FeatureType::BT_Init;
                     bt_initialized = true;
+
+                    try {
+                        const UINT32 crcChecksum = compute(outReport, 74);
+
+                        outReport[0x4A] = (unsigned char)((crcChecksum & 0x000000FF) >> 0UL);
+                        outReport[0x4B] = (unsigned char)((crcChecksum & 0x0000FF00) >> 8UL);
+                        outReport[0x4C] = (unsigned char)((crcChecksum & 0x00FF0000) >> 16UL);
+                        outReport[0x4D] = (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
+                        hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
+                    }
+                    catch (const std::exception& e) {  }                 
                 }
-                else if (bt_initialized == true)
-                {
-                    outReport[3] = CurSettings.Features;
-                }
+
+                outReport[3] = CurSettings.Features;              
                 outReport[4] = CurSettings._RightMotor;
                 outReport[5] = CurSettings._LeftMotor;
                 outReport[6] = 0x7C; // Headset volume
@@ -1143,11 +1194,12 @@ public:
                     (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
 
                 try {
-                    res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
-                    error = hid_error(handle);
+                    hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
+                    FirstTimeWrite = false;
                 }
-                catch(...){
+                catch(const std::exception& e){
                     Connected = false;
+                    FirstTimeWrite = true;
                 }
             }
         }
@@ -1438,6 +1490,7 @@ public:
     {
         if (!Connected)
         {
+            FirstTimeWrite = true;
             bt_initialized = false;
             if (SamePort && path != "")
             {
@@ -1495,7 +1548,7 @@ public:
                 {
                     cout << "Bluetooth connection detected." << endl;
                 }
-
+              
                 return DualsenseUtils::Reconnect_Result::Reconnected;
             }
         }

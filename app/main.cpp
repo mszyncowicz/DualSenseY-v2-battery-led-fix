@@ -1,4 +1,4 @@
-const int VERSION = 10;
+const int VERSION = 11;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -175,12 +175,13 @@ float GetCurrentAudioPeak()
 
 void readControllerState(Dualsense &controller)
 {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     while (!stop_thread)
     {
         controller.Read(); // Perform the read operation
 
         if(!controller.Connected)
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
@@ -199,9 +200,13 @@ void Tooltip(const char* text) {
 
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     ViGEm v;
     v.InitializeVigembus();
     EmuStatus curStatus = None;
+
+    using namespace std;
+    using namespace std::chrono;
 
     while (!stop_thread)
     {
@@ -237,25 +242,25 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 settings.rrumble = v.rotors.rrotor;
                 if(!settings.CurrentlyUsingUDP){
                     if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
-                        controller.SetLightbar(v.Red, v.Green, v.Blue);
+                        controller.SetLightbar(v.Red, v.Green, v.Blue);                      
                     }
                 }
-                curStatus = DS4;               
+                curStatus = DS4;              
             }
             else {
                 v.Remove360();
                 v.RemoveDS4();
                 curStatus = None;
-                std::this_thread::sleep_for(std::chrono::microseconds(5000));
+                            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
 
-            std::this_thread::sleep_for(std::chrono::microseconds(25));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         else
         {
             v.Remove360();
             v.RemoveDS4();
-            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 
@@ -275,7 +280,8 @@ void MouseClick(DWORD flag, DWORD mouseData = 0)
 }
 
 void writeControllerState(Dualsense &controller, Settings &settings)
-{  
+{
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     cout << "Write thread started: " << controller.GetPath() << " | "
          << settings.ControllerInput.ID << endl;
 
@@ -662,16 +668,17 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 controller.UseRumbleNotHaptics(false);
             }
 
+            controller.SetSpeakerVolume(settings.ControllerInput.SpeakerVolume);
             controller.SetRumble(settings.lrumble, settings.rrumble);
 
             if(controller.Connected)
             {
                 if (controller.Write() == false) {
-                    std::this_thread::sleep_for(std::chrono::microseconds(5000));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             }
             else {
-                std::this_thread::sleep_for(std::chrono::microseconds(5000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
     }
@@ -819,37 +826,14 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
     glaiel::crashlogs::begin_monitoring();
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(28737);
     FreeConsole();
-
-    PROCESSENTRY32 entry;
-    entry.dwSize = sizeof(PROCESSENTRY32);
-
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    int InstancesCount = 0;
-    if (Process32First(snapshot, &entry) == TRUE)
-    {
-        while (Process32Next(snapshot, &entry) == TRUE)
-        {
-            if (strcmp(entry.szExeFile, "DualSenseY.exe") == 0)
-            {
-                InstancesCount++;
-            }
-        }
-    }
-
-    if (InstancesCount > 1) {
-        MessageBox(0, "DualSenseY is already running!", "Error", 0);
-        return 1;
-    }
-
-    CloseHandle(snapshot);
-  
+ 
     bool UpdateAvailable = false;
     try {
         std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
@@ -891,6 +875,30 @@ int main()
     enJson.clear();
     
     Strings strings = ReadStringsFromFile(appConfig.Language); // Load language file
+
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    int InstancesCount = 0;
+    if (Process32First(snapshot, &entry) == TRUE)
+    {
+        while (Process32Next(snapshot, &entry) == TRUE)
+        {
+            if (strcmp(entry.szExeFile, "DualSenseY.exe") == 0)
+            {
+                InstancesCount++;
+            }
+        }
+    }
+
+    if (InstancesCount > 1) {
+        MessageBox(0, "DualSenseY is already running!", "Error", 0);
+        return 1;
+    }
+
+    CloseHandle(snapshot);
 
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
@@ -1511,6 +1519,8 @@ int main()
                                                  0,
                                                  255);
 
+                                ImGui::Separator();
+
                                 if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
                                 {
                                     if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
@@ -1543,17 +1553,10 @@ int main()
                                             CloseHandle(pi.hThread);
                                         }
                                     };
+                                    Tooltip(strings.Tooltip_StartAudioToHaptics.c_str());
 
-                                    ImGui::SameLine();
-                                    ImGui::TextDisabled("(?)");
-                                    if (ImGui::BeginItemTooltip())
-                                    {
-                                        ImGui::PushTextWrapPos(
-                                        ImGui::GetFontSize() * 35.0f);
-                                        ImGui::TextUnformatted(strings.Tooltip_StartAudioToHaptics.c_str());
-                                        ImGui::PopTextWrapPos();
-                                        ImGui::EndTooltip();
-                                    }
+                                    ImGui::SliderInt(strings.SpeakerVolume.c_str(), &s.ControllerInput.SpeakerVolume, 0, 255);
+                                    Tooltip(strings.Tooltip_SpeakerVolume.c_str());
                                 }
                                 else
                                 {
@@ -1737,7 +1740,7 @@ int main()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::microseconds(100)); // ~5fps limit
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         ImGui::End();
         ImGui::Render();

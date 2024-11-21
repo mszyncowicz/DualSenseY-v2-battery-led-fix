@@ -22,6 +22,7 @@
 #include <tray.hpp>
 #include <nlohmann/json.hpp>
 #include <crashlogs.h>
+#include <TlHelp32.h>
 
 namespace MyUtils {
     std::string GetExecutablePath();

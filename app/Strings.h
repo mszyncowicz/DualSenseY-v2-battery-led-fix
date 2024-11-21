@@ -6,6 +6,7 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string SpeakerVolume = "Speaker volume";
     std::string HapticsUnavailableNoAudioDevice = "Couldn't find the DualSense Wireless Controller speaker associated with this controller. Haptic feedback not available";
     std::string HapticsToTriggers = "Haptics To Adaptive Triggers";
     std::string RumbleToAT_RigidMode = "Rigid trigger mode";
@@ -71,6 +72,7 @@ public:
     std::string RunWithWindows = "Run with Windows";
 
     // Tooltips
+    std::string Tooltip_SpeakerVolume = "Sets speaker volume at hardware level, affects everything played on this controller";
     std::string Tooltip_HapticsToTriggers = "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller (Ex. Zenless Zone Zero) or Audio To Haptics feature";
     std::string Tooltip_RumbleToAT_RigidMode = "Sets rigid trigger effect";
     std::string Tooltip_RumbleToAT =
@@ -127,6 +129,8 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["SpeakerVolume"] = SpeakerVolume;
+        j["Tooltip_SpeakerVolume"] = Tooltip_SpeakerVolume;
         j["HapticsUnavailableNoAudioDevice"] = HapticsUnavailableNoAudioDevice;
         j["HapticsToTriggers"] = HapticsToTriggers;
         j["Tooltip_RumbleToAT_RigidMode"] = Tooltip_RumbleToAT_RigidMode;
@@ -221,6 +225,12 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("SpeakerVolume"))
+            j.at("SpeakerVolume").get_to(strings.SpeakerVolume);
+
+        if (j.contains("Tooltip_SpeakerVolume"))
+            j.at("Tooltip_SpeakerVolume").get_to(strings.Tooltip_SpeakerVolume);
 
         if (j.contains("HapticsUnavailableNoAudioDevice"))
             j.at("HapticsUnavailableNoAudioDevice").get_to(strings.HapticsUnavailableNoAudioDevice);

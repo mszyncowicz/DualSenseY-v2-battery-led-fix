@@ -491,7 +491,7 @@ public:
     Feature::FeatureType Features = Feature::FeatureType::Full;
     uint8_t _RightMotor = 0;
     uint8_t _LeftMotor = 0;
-    uint8_t SpeakerVolume = 100;
+    int SpeakerVolume = 100;
     int MicrophoneVolume = 80;
     Feature::AudioOutput audioOutput = Feature::Speaker;
     Feature::MicrophoneLED micLED = Feature::MicrophoneLED::MLED_Off;
@@ -731,21 +731,42 @@ std::wstring replaceUSBwithHID(const std::wstring &input)
     return result;
 }
 
+void trimTrailingWhitespace(std::wstring& str) {
+    str.erase(std::find_if(str.rbegin(), str.rend(), [](wchar_t ch) {
+        return ch != L'\0' && ch > 0x20; // Keep only non-null, printable characters
+    }).base(), str.end());
+}
+
+void debugString(const std::wstring& str) {
+    std::wcout << L"String content (size: " << str.size() << L"):" << std::endl;
+    for (size_t i = 0; i < str.size(); ++i) {
+        std::wcout << L"[" << i << L"]: '" << str[i] << L"' (0x" 
+                   << std::hex << (int)str[i] << std::dec << L")" << std::endl;
+    }
+}
+
 bool compareDeviceIDs(const std::wstring &id1, const std::wstring &id2)
 {
     std::wregex pattern(LR"(MI_\d{2}|&\d{3}|&\d{2}(&|$))");
-    std::wregex zerozero(LR"(00)");
-    std::wregex zerothree(LR"(03)");
 
     // Remove the unwanted parts from both strings
     std::wstring strippedId1 = std::regex_replace(id1, pattern, L"");
     std::wstring strippedId2 = std::regex_replace(id2, pattern, L"");
 
-    // Remove last two numbers from both string
-    strippedId1 = std::regex_replace(strippedId1, zerozero, L"");
-    strippedId2 = std::regex_replace(strippedId2, zerothree, L"");
+    trimTrailingWhitespace(strippedId1);
+    trimTrailingWhitespace(strippedId2);
+
+    // Remove last four numbers from both string
+    if (strippedId1.size() >= 4) {
+        strippedId1.erase(strippedId1.size() - 4, 4);
+    }
+
+    if (strippedId2.size() >= 4) {
+        strippedId2.erase(strippedId2.size() - 4, 4);
+    }
 
     // Compare the stripped IDs
+    wcout << "Comparing -> " << strippedId1 << "size " << strippedId1.size() << " size " << strippedId2.size() << " to " << strippedId2 << endl;
     return strippedId1 == strippedId2;
 }
 
@@ -1567,6 +1588,7 @@ public:
     {
         SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
         SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
+        SetSpeakerVolume(100);
 
         if (Connected)
         {
@@ -1695,6 +1717,10 @@ public:
         {
             CurSettings.VibrationType = Feature::Haptic_Feedback;
         }
+    }
+
+    void SetSpeakerVolume(int Volume) {
+        CurSettings.SpeakerVolume = Volume;
     }
 
     void SetRumble(uint8_t LeftMotor, uint8_t RightMotor)

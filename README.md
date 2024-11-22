@@ -1,6 +1,9 @@
 ### ⚠️ STILL IN DEVELOPMENT! ⚠️
 ## IF YOU FIND THIS VERSION UNSTABLE OR NOT WORKING CORRECTLY YOU CAN GO BACK TO [OLD ONE](https://github.com/WujekFoliarz/DualSenseY/releases/tag/6.2) 
 
+## - List of known bugs:
+- Wrong battery level after disconnecting the controller on bluetooth
+
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
 ### Discord → https://discord.gg/AFYvxf282U
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz

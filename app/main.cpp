@@ -1,4 +1,4 @@
-const int VERSION = 11;
+const int VERSION = 12;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -180,7 +180,7 @@ void readControllerState(Dualsense &controller)
     {
         controller.Read(); // Perform the read operation
 
-        if(!controller.Connected)
+        if(controller.Connected == false)
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
@@ -203,15 +203,60 @@ void writeEmuController(Dualsense &controller, Settings &settings)
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
     ViGEm v;
     v.InitializeVigembus();
-    EmuStatus curStatus = None;
-
-    using namespace std;
-    using namespace std::chrono;
+    ButtonState editedButtonState;
 
     while (!stop_thread)
     {
         if (controller.Connected)
         {
+            editedButtonState = controller.State;
+
+            int deltaLX = editedButtonState.LX - 128;
+            int deltaLY = editedButtonState.LY - 128;
+
+            float magnitudeL = sqrt(deltaLX * deltaLX + deltaLY * deltaLY);
+
+            if (magnitudeL <= settings.LeftAnalogDeadzone) {
+                editedButtonState.LX = 128;
+                editedButtonState.LY = 128;
+            } else {
+                float scale = (magnitudeL - settings.LeftAnalogDeadzone) / (127.0f - settings.LeftAnalogDeadzone);
+
+                if (scale > 1.0f) scale = 1.0f;
+
+                editedButtonState.LX = 128 + static_cast<int>(deltaLX * scale);
+                editedButtonState.LY = 128 + static_cast<int>(deltaLY * scale);
+            }
+
+            int deltaRX = editedButtonState.RX - 128;
+            int deltaRY = editedButtonState.RY - 128;
+
+            float magnitudeR = sqrt(deltaRX * deltaRX + deltaRY * deltaRY);
+
+            if (magnitudeR <= settings.RightAnalogDeadzone) {
+                editedButtonState.RX = 128;
+                editedButtonState.RY = 128;
+            } else {
+                float scale = (magnitudeR - settings.RightAnalogDeadzone) / (127.0f - settings.RightAnalogDeadzone);
+
+                if (scale > 1.0f) scale = 1.0f;
+
+                editedButtonState.RX = 128 + static_cast<int>(deltaRX * scale);
+                editedButtonState.RY = 128 + static_cast<int>(deltaRY * scale);
+            }
+
+            if (settings.TriggersAsButtons) {
+                if (editedButtonState.L2 >= 1) {
+                    editedButtonState.L2 = 255;
+                    editedButtonState.L2Btn = true;
+                }
+
+                if (editedButtonState.R2 >= 1) {
+                    editedButtonState.R2 = 255;
+                    editedButtonState.R2Btn = true;
+                }
+            }
+
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -219,44 +264,29 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 continue;
             }
 
-            if (curStatus != settings.emuStatus && settings.emuStatus != None) {
-                v.Remove360();
-                v.RemoveDS4();
-            }
-
             if (settings.emuStatus == X360)
             {
-                v.RemoveDS4();
                 v.StartX360();
-                v.UpdateX360(controller.State);
+                v.UpdateX360(editedButtonState);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
-                curStatus = X360;
             }
             else if (settings.emuStatus == DS4)
             {
-                v.Remove360();
                 v.StartDS4();
-                v.UpdateDS4(controller.State);
+                v.UpdateDS4(editedButtonState);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
                 if(!settings.CurrentlyUsingUDP){
                     if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
                         controller.SetLightbar(v.Red, v.Green, v.Blue);                      
                     }
-                }
-                curStatus = DS4;              
+                }            
             }
-            else {
-                v.Remove360();
-                v.RemoveDS4();
-                curStatus = None;
-                            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            }
-
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        else
+
+        if(settings.emuStatus == None || !controller.Connected)
         {
             v.Remove360();
             v.RemoveDS4();
@@ -549,6 +579,11 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
                     controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
                 }  
+            }
+
+            if (settings.TriggersAsButtons && !settings.CurrentlyUsingUDP && settings.emuStatus != None) {
+                controller.SetLeftTrigger(Trigger::Rigid,40,255,255,255,255,255,255);
+                controller.SetRightTrigger(Trigger::Rigid,40,255,255,255,255,255,255);
             }
 
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
@@ -1654,7 +1689,7 @@ int main()
                                 {
                                     if (ImGui::Button(strings.STOPemu.c_str()))
                                     {
-                                        StartHidHideRequest(DualSense[i].GetPath(), "show");
+                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
                                         s.emuStatus = None;
                                     }
                                 }
@@ -1666,6 +1701,13 @@ int main()
                                 else {
                                     ImGui::Text(strings.ControllerEmuAppAsAdmin.c_str());
                                 }
+
+                                ImGui::Separator();
+
+                                ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
+                                ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
+                                ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
+                                Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
                             }
 
                             if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {

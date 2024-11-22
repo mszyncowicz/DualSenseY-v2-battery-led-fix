@@ -28,11 +28,17 @@ public:
     bool SwapTriggersShortcut = false;
     float swipeThreshold = 0.50f;
     bool HapticsToTriggers = false;
+    int LeftAnalogDeadzone = 0;
+    int RightAnalogDeadzone = 0;
+    bool TriggersAsButtons = false;
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["LeftAnalogDeadzone"] = LeftAnalogDeadzone;
+        j["RightAnalogDeadzone"] = RightAnalogDeadzone;
+        j["TriggersAsButtons"] = TriggersAsButtons;
         j["AudioToLED"] = AudioToLED;
         j["DiscoMode"] = DiscoMode;
         j["lrumble"] = lrumble;
@@ -65,6 +71,9 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("LeftAnalogDeadzone"))       j.at("LeftAnalogDeadzone").get_to(settings.LeftAnalogDeadzone);
+        if (j.contains("RightAnalogDeadzone"))        j.at("RightAnalogDeadzone").get_to(settings.RightAnalogDeadzone);
+        if (j.contains("TriggersAsButtons"))        j.at("TriggersAsButtons").get_to(settings.TriggersAsButtons);
         if (j.contains("AudioToLED"))       j.at("AudioToLED").get_to(settings.AudioToLED);
         if (j.contains("DiscoMode"))        j.at("DiscoMode").get_to(settings.DiscoMode);
         if (j.contains("lrumble"))          j.at("lrumble").get_to(settings.lrumble);

@@ -75,7 +75,7 @@ public:
 
     void Remove360()
     {
-        if (vigem_target_is_attached(x360)) {
+        if (wasEmulating360) {
             vigem_target_remove(client, x360);
             vigem_target_x360_unregister_notification(x360);
             wasEmulating360 = false;
@@ -83,10 +83,12 @@ public:
     }
 
     void RemoveDS4() {
-        if (vigem_target_is_attached(ds4)) {
-            vigem_target_remove(client, ds4);        
-            vigem_target_ds4_unregister_notification(ds4);
-            wasEmulatingDS4 = false;
+        if (wasEmulatingDS4) {
+            VIGEM_ERROR error = vigem_target_remove(client, ds4);
+            if (error == _VIGEM_ERRORS::VIGEM_ERROR_NONE) {
+                vigem_target_ds4_unregister_notification(ds4);
+                wasEmulatingDS4 = false;
+            }
         }    
     }
 
@@ -110,6 +112,7 @@ public:
         if (working)
         {
             if (!wasEmulatingDS4) {
+                
                 vigem_target_add(client, ds4);         
                 vigem_target_ds4_register_notification(client,ds4,EVT_VIGEM_DS4_NOTIFICATION, this);
                 wasEmulatingDS4 = true;
@@ -122,8 +125,6 @@ public:
 
     bool UpdateX360(ButtonState state)
     {
-        if (client && x360)
-        {
             XUSB_REPORT report;
             USHORT buttons = 0;
 
@@ -165,15 +166,12 @@ public:
             report.sThumbRY = ConvertRange(state.RY, 255, 0, -32767, 32766);
             vigem_target_x360_update(client, x360, report);
             return true;
-        }
+        
 
-        return false;
     }
 
     bool UpdateDS4(ButtonState state)
     {
-        if (client && ds4)
-        {
             DS4_REPORT_EX report;
             report.Report.bThumbLX = state.LX;
             report.Report.bThumbLY = state.LY;
@@ -258,9 +256,6 @@ public:
 
             vigem_target_ds4_update_ex(client, ds4, report);
             return true;
-        }
-
-        return false;
     }
 
     static VOID CALLBACK notification(PVIGEM_CLIENT Client,

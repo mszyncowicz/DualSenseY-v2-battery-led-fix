@@ -933,6 +933,9 @@ public:
 
             try {
                 res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
+                if (res < 0) {
+                    Connected = false;
+                }
             }
             catch (const std::exception& e) {
                 Connected = false;
@@ -1063,7 +1066,7 @@ public:
 
     bool Write()
     {       
-        if (CurSettings == LastSettings && !FirstTimeWrite )
+        if (CurSettings == LastSettings && !FirstTimeWrite)
         {          
             if (error != DefaultError)
             {
@@ -1131,6 +1134,9 @@ public:
                 try
                 {
                     res = hid_write(handle, outReport, MAX_USB_WRITE_LENGTH);
+                    if (res < 0) {
+                        Connected = false;
+                    }
                     FirstTimeWrite = false;
                 }
                 catch (const std::exception& e)

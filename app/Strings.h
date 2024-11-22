@@ -6,6 +6,9 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string LeftAnalogStickDeadZone = "Left analog stick deadzone";
+    std::string RightAnalogStickDeadZone = "Right analog stick deadzone";
+    std::string TriggersAsButtons = "Triggers as buttons";
     std::string SpeakerVolume = "Speaker volume";
     std::string HapticsUnavailableNoAudioDevice = "Couldn't find the DualSense Wireless Controller speaker associated with this controller. Haptic feedback not available";
     std::string HapticsToTriggers = "Haptics To Adaptive Triggers";
@@ -72,6 +75,7 @@ public:
     std::string RunWithWindows = "Run with Windows";
 
     // Tooltips
+    std::string Tooltip_TriggersAsButtons = "Sets trigger resistance to very hard and L2/R2 to maximum on slightest trigger pull";
     std::string Tooltip_SpeakerVolume = "Sets speaker volume at hardware level, affects everything played on this controller";
     std::string Tooltip_HapticsToTriggers = "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller (Ex. Zenless Zone Zero) or Audio To Haptics feature";
     std::string Tooltip_RumbleToAT_RigidMode = "Sets rigid trigger effect";
@@ -129,6 +133,8 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["LeftAnalogStickDeadZone"] = LeftAnalogStickDeadZone;
+        j["RightAnalogStickDeadZone"] = RightAnalogStickDeadZone;
         j["SpeakerVolume"] = SpeakerVolume;
         j["Tooltip_SpeakerVolume"] = Tooltip_SpeakerVolume;
         j["HapticsUnavailableNoAudioDevice"] = HapticsUnavailableNoAudioDevice;
@@ -225,6 +231,12 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("LeftAnalogStickDeadZone"))
+            j.at("LeftAnalogStickDeadZone").get_to(strings.LeftAnalogStickDeadZone);
+
+        if (j.contains("RightAnalogStickDeadZone"))
+            j.at("RightAnalogStickDeadZone").get_to(strings.RightAnalogStickDeadZone);
 
         if (j.contains("SpeakerVolume"))
             j.at("SpeakerVolume").get_to(strings.SpeakerVolume);

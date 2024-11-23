@@ -931,13 +931,8 @@ public:
             unsigned char ButtonStates[MAX_READ_LENGTH];
             ButtonState buttonState;
 
-            try {
-                res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
-                if (res < 0) {
-                    Connected = false;
-                }
-            }
-            catch (const std::exception& e) {
+            res = hid_read(handle, ButtonStates, MAX_READ_LENGTH);
+            if (res < 0) {
                 Connected = false;
             }
 
@@ -1076,11 +1071,8 @@ public:
             }
             return false;
         }
-        else {
-            error = hid_error(handle);
-        }
 
-        if (error == DefaultError && handle)
+        if (handle != nullptr && Connected)
         {
             // Update the previous settings with the current ones
             LastSettings = CurSettings;
@@ -1131,22 +1123,18 @@ public:
                 outReport[46] = CurSettings.Green;
                 outReport[47] = CurSettings.Blue;
 
-                try
-                {
-                    res = hid_write(handle, outReport, MAX_USB_WRITE_LENGTH);
-                    if (res < 0) {
-                        Connected = false;
-                    }
-                    FirstTimeWrite = false;
-                }
-                catch (const std::exception& e)
-                {
+                res = hid_write(handle, outReport, MAX_USB_WRITE_LENGTH);
+                if (res < 0) {
                     Connected = false;
-                    FirstTimeWrite = true;
+                    FirstTimeWrite = false;
                 }
             }
             else if (connectionType == Feature::BT)
             {
+                if (FirstTimeWrite) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
+
                 uint8_t outReport[MAX_BT_WRITE_LENGTH];
                 outReport[0] = 0x31;
                 outReport[1] = 2;
@@ -1157,16 +1145,22 @@ public:
                     outReport[3] = Feature::FeatureType::BT_Init;
                     bt_initialized = true;
 
-                    try {
                         const UINT32 crcChecksum = compute(outReport, 74);
 
                         outReport[0x4A] = (unsigned char)((crcChecksum & 0x000000FF) >> 0UL);
                         outReport[0x4B] = (unsigned char)((crcChecksum & 0x0000FF00) >> 8UL);
                         outReport[0x4C] = (unsigned char)((crcChecksum & 0x00FF0000) >> 16UL);
                         outReport[0x4D] = (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
-                        hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
-                    }
-                    catch (const std::exception& e) {  }                 
+
+                        error = hid_error(handle);
+                        if(error == DefaultError)
+                        {
+                            res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
+                            if (res < 0) {
+                                Connected = false;
+                            }
+                            FirstTimeWrite = false;
+                        }
                 }
 
                 outReport[3] = CurSettings.Features;              
@@ -1220,11 +1214,20 @@ public:
                 outReport[0x4D] =
                     (unsigned char)((crcChecksum & 0xFF000000) >> 24UL);
 
-                try {
-                    hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
-                    FirstTimeWrite = false;
+                try
+                {
+                    error = hid_error(handle);
+                    if(error == DefaultError)
+                    {
+                        res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
+                        if (res < 0) {
+                            Connected = false;
+                        }
+                        FirstTimeWrite = false;
+                    }
                 }
-                catch(const std::exception& e){
+                catch (...)
+                {
                     Connected = false;
                     FirstTimeWrite = true;
                 }

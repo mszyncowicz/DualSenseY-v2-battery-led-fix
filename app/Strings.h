@@ -135,6 +135,8 @@ public:
         // GUI Strings
         j["LeftAnalogStickDeadZone"] = LeftAnalogStickDeadZone;
         j["RightAnalogStickDeadZone"] = RightAnalogStickDeadZone;
+        j["Tooltip_TriggersAsButtons"] = Tooltip_TriggersAsButtons;
+        j["TriggersAsButtons"] = TriggersAsButtons;
         j["SpeakerVolume"] = SpeakerVolume;
         j["Tooltip_SpeakerVolume"] = Tooltip_SpeakerVolume;
         j["HapticsUnavailableNoAudioDevice"] = HapticsUnavailableNoAudioDevice;
@@ -237,6 +239,12 @@ public:
 
         if (j.contains("RightAnalogStickDeadZone"))
             j.at("RightAnalogStickDeadZone").get_to(strings.RightAnalogStickDeadZone);
+
+        if (j.contains("TriggersAsButtons"))
+            j.at("TriggersAsButtons").get_to(strings.TriggersAsButtons);
+
+        if (j.contains("Tooltip_TriggersAsButtons"))
+            j.at("Tooltip_TriggersAsButtons").get_to(strings.Tooltip_TriggersAsButtons);
 
         if (j.contains("SpeakerVolume"))
             j.at("SpeakerVolume").get_to(strings.SpeakerVolume);

@@ -778,19 +778,18 @@ public:
     float RightActuator = 0;
 };
 
-
 class Dualsense
 {
 private:
     static void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
-        const float* pInputSamples = (const float*)input;
-        Peaks* m_peaks = static_cast<Peaks*>(device->pUserData); // Cast user data back to Peaks struct
+        float* pInputSamples = (float*)input;
+        Dualsense* self = (Dualsense*)device->pUserData;
 
         // Reset peaks for this callback
-        m_peaks->channelZero = 0.0f;
-        m_peaks->Speaker = 0.0f;
-        m_peaks->LeftActuator = 0.0f;
-        m_peaks->RightActuator = 0.0f;
+        self->peaks.channelZero = 0.0f;
+        self->peaks.Speaker = 0.0f;
+        self->peaks.LeftActuator = 0.0f;
+        self->peaks.RightActuator = 0.0f;
 
         for (ma_uint32 i = 0; i < frameCount; ++i) {
             for (int channel = 0; channel < 4; ++channel) {
@@ -801,24 +800,24 @@ private:
                 if (fabs(sample) > 0.01f) {
                     // Update peak values based on channel
                     if (channel == 0) {
-                        if (sample > m_peaks->channelZero) {
-                            m_peaks->channelZero = sample; // Update peak for channel zero
+                        if (sample > self->peaks.channelZero) {
+                            self->peaks.channelZero = sample; // Update peak for channel zero
                         }
                     } else if (channel == 1) {
-                        if (sample > m_peaks->Speaker) {
-                            m_peaks->Speaker = sample; // Update peak for Speaker
+                        if (sample > self->peaks.Speaker) {
+                            self->peaks.Speaker = sample; // Update peak for Speaker
                         }
                     } else if (channel == 2) {
-                        if (sample > m_peaks->LeftActuator) {
-                            m_peaks->LeftActuator = sample; // Update peak for Left Actuator
+                        if (sample > self->peaks.LeftActuator) {
+                            self->peaks.LeftActuator = sample; // Update peak for Left Actuator
                         }
                     } else if (channel == 3) {
-                        if (sample > m_peaks->RightActuator) {
-                            m_peaks->RightActuator = sample; // Update peak for Right Actuator
+                        if (sample > self->peaks.RightActuator) {
+                            self->peaks.RightActuator = sample; // Update peak for Right Actuator
                         }
                     }
                 }
-            }
+            } 
         }
     }
 
@@ -1444,7 +1443,7 @@ public:
                 deviceconfig.playback.channelMixMode = ma_channel_mix_mode_default;
                 deviceconfig.sampleRate = 48000;
                 deviceconfig.playback.shareMode = ma_share_mode_shared;
-                deviceconfig.pUserData = &peaks;
+                deviceconfig.pUserData = this;
                 deviceconfig.dataCallback = data_callback;
                 
 

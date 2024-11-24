@@ -1,4 +1,4 @@
-const int VERSION = 12;
+const int VERSION = 13;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -257,6 +257,16 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 }
             }
 
+            if (settings.TouchpadAsSelectStart) {
+                if (controller.State.touchBtn && controller.State.trackPadTouch0.X <= 1000) {
+                    editedButtonState.share = true;
+                }
+
+                if (controller.State.touchBtn && controller.State.trackPadTouch0.X >= 1001) {
+                    editedButtonState.options = true;
+                }
+            }
+
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -273,6 +283,11 @@ void writeEmuController(Dualsense &controller, Settings &settings)
             }
             else if (settings.emuStatus == DS4)
             {
+                if (settings.DualShock4V2)
+                    v.SetDS4V2();
+                else
+                    v.SetDS4V1();
+
                 v.StartDS4();
                 v.UpdateDS4(editedButtonState);
                 settings.lrumble = v.rotors.lrotor;
@@ -327,6 +342,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
     int x360emuanimation = 0;
     bool lastMic = false;
     bool lastMic2 = false;
+    bool lastMic3 = false;
     bool mic = false;
     float touchpadLastX = 0;
     float touchpadLastY = 0;
@@ -402,6 +418,14 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             if (settings.emuStatus != None && settings.StopEmuShortcut && controller.State.micBtn && controller.State.DpadDown) {
                 RunAsyncHidHideRequest(controller.GetPath(), "show");
                 settings.emuStatus = None;
+            }
+
+            if (settings.TouchpadToMouseShortcut && controller.State.micBtn && controller.State.touchBtn && !lastMic3) {
+                settings.TouchpadToMouse = settings.TouchpadToMouse ? settings.TouchpadToMouse = false : settings.TouchpadToMouse = true;
+                lastMic3 = true;
+            }
+            else if (settings.TouchpadToMouseShortcut && !controller.State.micBtn && controller.State.touchBtn && lastMic3) {
+                lastMic3 = false;
             }
 
             if (settings.TouchpadToMouse && controller.State.trackPadTouch0.IsActive) {
@@ -513,18 +537,18 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                 else {
                     // set frequency
                     if (!settings.SwapTriggersRumbleToAT && settings.lrumble < 25 || settings.SwapTriggersRumbleToAT && settings.rrumble < 25)
-                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.rrumble) : min(settings.MaxRumbleToATFrequency, settings.lrumble);
+                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRightRumbleToATFrequency, settings.rrumble) : min(settings.MaxLeftRumbleToATFrequency, settings.lrumble);
                     else
-                        leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                        leftForces[0] = min(settings.MaxLeftRumbleToATFrequency, 25);
 
                     if(!settings.SwapTriggersRumbleToAT && settings.rrumble < 25 || settings.SwapTriggersRumbleToAT && settings.lrumble < 25)
-                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, settings.lrumble) : min(settings.MaxRumbleToATFrequency, settings.rrumble);
+                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxLeftRumbleToATFrequency, settings.lrumble) : min(settings.MaxRightRumbleToATFrequency, settings.rrumble);
                     else
-                        rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                        rightForces[0] = min(settings.MaxRightRumbleToATFrequency, 25);
 
                     // set power
-                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, settings.rrumble) : min(settings.MaxRumbleToATIntensity,settings.lrumble); 
-                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,settings.lrumble) : min(settings.MaxRumbleToATIntensity,settings.rrumble);
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRightRumbleToATIntensity, settings.rrumble) : min(settings.MaxLeftRumbleToATIntensity,settings.lrumble); 
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxLeftRumbleToATIntensity,settings.lrumble) : min(settings.MaxRightRumbleToATIntensity,settings.rrumble);
 
                     // set static threshold
                     leftForces[2] = 20;
@@ -536,6 +560,10 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
 
             if (settings.HapticsToTriggers && !settings.CurrentlyUsingUDP) {
+                if (settings.RumbleToAT && settings.lrumble > 0 || settings.RumbleToAT && settings.rrumble > 0) {
+                    goto skiphapticstotriggers;
+                }
+
                 Peaks peaks = controller.GetAudioPeaks();
                 int ScaledLeftActuator = MyUtils::scaleFloatToInt(peaks.LeftActuator);
                 int ScaledRightActuator = MyUtils::scaleFloatToInt(peaks.RightActuator);
@@ -544,12 +572,12 @@ void writeControllerState(Dualsense &controller, Settings &settings)
 
                 if (settings.RumbleToAT_RigidMode) {
                     // stiffness
-                    leftForces[1] = settings.SwapTriggersRumbleToAT ? settings.rrumble : settings.lrumble;
-                    rightForces[1] = settings.SwapTriggersRumbleToAT ? settings.lrumble : settings.rrumble;
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? ScaledRightActuator : ScaledLeftActuator;
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? ScaledLeftActuator : ScaledRightActuator;
 
                     // set threshold
-                    leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.rrumble: 255 - settings.lrumble; 
-                    rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.lrumble : 255 - settings.rrumble;
+                    leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - ScaledRightActuator: 255 - ScaledLeftActuator; 
+                    rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - ScaledLeftActuator : 255 - ScaledRightActuator;
 
                     controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0);
                     controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0);
@@ -559,18 +587,18 @@ void writeControllerState(Dualsense &controller, Settings &settings)
 
                     // set frequency
                     if (!settings.SwapTriggersRumbleToAT && ScaledLeftActuator < 25 || settings.SwapTriggersRumbleToAT && ScaledRightActuator < 25)
-                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, ScaledRightActuator) : min(settings.MaxRumbleToATFrequency, ScaledLeftActuator);
+                        leftForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRightRumbleToATFrequency, ScaledRightActuator) : min(settings.MaxLeftRumbleToATFrequency, ScaledLeftActuator);
                     else
-                        leftForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                        leftForces[0] = min(settings.MaxLeftRumbleToATFrequency, 25);
 
                     if(!settings.SwapTriggersRumbleToAT && ScaledRightActuator < 25 || settings.SwapTriggersRumbleToAT && ScaledLeftActuator < 25)
-                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATFrequency, ScaledLeftActuator) : min(settings.MaxRumbleToATFrequency, ScaledRightActuator);
+                        rightForces[0] = settings.SwapTriggersRumbleToAT ? min(settings.MaxLeftRumbleToATFrequency, ScaledLeftActuator) : min(settings.MaxRightRumbleToATFrequency, ScaledRightActuator);
                     else
-                        rightForces[0] = min(settings.MaxRumbleToATFrequency, 25);
+                        rightForces[0] = min(settings.MaxRightRumbleToATFrequency, 25);
 
                     // set power
-                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity, ScaledRightActuator) : min(settings.MaxRumbleToATIntensity,ScaledLeftActuator); 
-                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRumbleToATIntensity,ScaledLeftActuator) : min(settings.MaxRumbleToATIntensity,ScaledRightActuator);
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRightRumbleToATFrequency, ScaledRightActuator) : min(settings.MaxLeftRumbleToATFrequency,ScaledLeftActuator); 
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxLeftRumbleToATFrequency,ScaledLeftActuator) : min(settings.MaxRightRumbleToATFrequency,ScaledRightActuator);
 
                     // set static threshold
                     leftForces[2] = 20;
@@ -580,6 +608,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
                 }  
             }
+            skiphapticstotriggers:
 
             if (settings.TriggersAsButtons && !settings.CurrentlyUsingUDP && settings.emuStatus != None) {
                 controller.SetLeftTrigger(Trigger::Rigid,40,255,255,255,255,255,255);
@@ -660,7 +689,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
 
             if (settings.MicScreenshot) {
-                if (controller.State.micBtn && !lastMic && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp) {
+                if (controller.State.micBtn && !lastMic && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp && !controller.State.touchBtn) {
                     controller.PlayHaptics("sounds/screenshot.wav");
                     MyUtils::TakeScreenShot();
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -1332,17 +1361,12 @@ int main()
 
                             if (ImGui::CollapsingHeader(strings.AdaptiveTriggers.c_str()))
                             {
-                                if(!s.HapticsToTriggers)
-                                {
-                                    ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
-                                    Tooltip(strings.Tooltip_RumbleToAT.c_str());
-                                }
 
-                                if(!s.RumbleToAT && HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
-                                {
-                                    ImGui::Checkbox(strings.HapticsToTriggers.c_str(), &s.HapticsToTriggers);
-                                    Tooltip(strings.Tooltip_HapticsToTriggers.c_str());
-                                }
+                                ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
+                                Tooltip(strings.Tooltip_RumbleToAT.c_str());
+
+                                ImGui::Checkbox(strings.HapticsToTriggers.c_str(), &s.HapticsToTriggers);
+                                Tooltip(strings.Tooltip_HapticsToTriggers.c_str());
 
                                 if (s.RumbleToAT || s.HapticsToTriggers) {
                                     ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
@@ -1351,11 +1375,19 @@ int main()
                                     ImGui::Checkbox(strings.RumbleToAT_RigidMode.c_str(), &s.RumbleToAT_RigidMode);
                                     Tooltip(strings.Tooltip_RumbleToAT_RigidMode.c_str());
 
-                                    if (!s.RumbleToAT_RigidMode) {                                      
-                                        ImGui::SliderInt(strings.MaxIntensity.c_str(), &s.MaxRumbleToATIntensity, 0, 255);
+                                    if (!s.RumbleToAT_RigidMode) {
+                                        ImGui::SliderInt(strings.MaxLeftIntensity.c_str(), &s.MaxLeftRumbleToATIntensity, 0, 255);
                                         Tooltip(strings.Tooltip_MaxIntensity.c_str());
 
-                                        ImGui::SliderInt(strings.MaxFrequency.c_str(), &s.MaxRumbleToATFrequency, 0, 25);
+                                        ImGui::SliderInt(strings.MaxLeftFrequency.c_str(), &s.MaxLeftRumbleToATFrequency, 0, 25);
+                                        Tooltip(strings.Tooltip_MaxFrequency.c_str());
+
+                                        ImGui::Separator();
+
+                                        ImGui::SliderInt(strings.MaxRightIntensity.c_str(), &s.MaxRightRumbleToATIntensity, 0, 255);
+                                        Tooltip(strings.Tooltip_MaxIntensity.c_str());
+
+                                        ImGui::SliderInt(strings.MaxRightFrequency.c_str(), &s.MaxRightRumbleToATFrequency, 0, 25);
                                         Tooltip(strings.Tooltip_MaxFrequency.c_str());
                                     }                                 
                                 }
@@ -1662,6 +1694,7 @@ int main()
                                     DualSense[i].SetMicrophoneVolume(80);
                                 }
 
+                                ImGui::Checkbox(strings.TouchpadShortcut.c_str(), &s.TouchpadToMouseShortcut);
                                 ImGui::Checkbox(strings.SwapTriggersShortcut.c_str(), &s.SwapTriggersShortcut);
                                 ImGui::Checkbox(strings.X360Shortcut.c_str(), &s.X360Shortcut);
                                 ImGui::Checkbox(strings.DS4Shortcut.c_str(), &s.DS4Shortcut);
@@ -1684,6 +1717,9 @@ int main()
                                         DualSense[i].SetLightbar(0, 0, 64);
                                         s.emuStatus = DS4;
                                     }
+                                    ImGui::SameLine();
+                                    ImGui::Checkbox(strings.DualShock4V2emu.c_str(), &s.DualShock4V2);
+                                    Tooltip(strings.Tooltip_Dualshock4V2.c_str());
                                 }
                                 else
                                 {
@@ -1708,6 +1744,7 @@ int main()
                                 ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
                                 ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
                                 Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
+                                ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
                             }
 
                             if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {

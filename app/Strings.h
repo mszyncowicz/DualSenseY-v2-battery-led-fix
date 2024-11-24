@@ -6,6 +6,9 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string TouchpadShortcut = "Touchpad + Mic button = Touchpad as mouse";
+    std::string TouchpadAsSelectStart = "Touchpad as select/start";
+    std::string DualShock4V2emu = "DualShock4 V2 (CUH-ZCT2x)";
     std::string LeftAnalogStickDeadZone = "Left analog stick deadzone";
     std::string RightAnalogStickDeadZone = "Right analog stick deadzone";
     std::string TriggersAsButtons = "Triggers as buttons";
@@ -36,13 +39,15 @@ public:
     std::string LED_DS4_Unavailable = "LED settings are unavailable while emulating DualShock 4";
     std::string UDPStatus = "UDP Status";
     std::string Touchpad = "Touchpad";
-    std::string TouchpadToMouse = "Touchpad to mouse";
+    std::string TouchpadToMouse = "Touchpad as mouse";
     std::string Active = "Active";
     std::string Inactive = "Inactive";
     std::string RumbleToAT = "Rumble To Adaptive Triggers";
     std::string SwapTriggersRumbleToAT = "Swap triggers";
-    std::string MaxIntensity = "Max intensity";
-    std::string MaxFrequency = "Max frequency";
+    std::string MaxLeftIntensity = "Max left trigger intensity";
+    std::string MaxLeftFrequency = "Max left trigger frequency";
+    std::string MaxRightIntensity = "Max right trigger intensity";
+    std::string MaxRightFrequency = "Max right trigger frequency";
     std::string LedSection = "LED";
     std::string AudioToLED = "Audio to LED";
     std::string DiscoMode = "Disco Mode";
@@ -75,6 +80,7 @@ public:
     std::string RunWithWindows = "Run with Windows";
 
     // Tooltips
+    std::string Tooltip_Dualshock4V2 = "Emulates the second revision of DualShock 4, older games will not recognise it";
     std::string Tooltip_TriggersAsButtons = "Sets trigger resistance to very hard and L2/R2 to maximum on slightest trigger pull";
     std::string Tooltip_SpeakerVolume = "Sets speaker volume at hardware level, affects everything played on this controller";
     std::string Tooltip_HapticsToTriggers = "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller (Ex. Zenless Zone Zero) or Audio To Haptics feature";
@@ -133,6 +139,10 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["TouchpadShortcut"] = TouchpadShortcut;
+        j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
+        j["DualShock4V2emu"] = DualShock4V2emu;
+        j["Tooltip_Dualshock4V2"] = Tooltip_Dualshock4V2;
         j["LeftAnalogStickDeadZone"] = LeftAnalogStickDeadZone;
         j["RightAnalogStickDeadZone"] = RightAnalogStickDeadZone;
         j["Tooltip_TriggersAsButtons"] = Tooltip_TriggersAsButtons;
@@ -170,8 +180,10 @@ public:
         j["Inactive"] = Inactive;
         j["RumbleToAT"] = RumbleToAT;
         j["SwapTriggersRumbleToAT"] = SwapTriggersRumbleToAT;
-        j["MaxIntensity"] = MaxIntensity;
-        j["MaxFrequency"] = MaxFrequency;
+        j["MaxLeftIntensity"] = MaxLeftIntensity;
+        j["MaxLeftFrequency"] = MaxLeftFrequency;
+        j["MaxRightIntensity"] = MaxRightIntensity;
+        j["MaxRightFrequency"] = MaxRightFrequency;
         j["LedSection"] = LedSection;
         j["AudioToLED"] = AudioToLED;
         j["DiscoMode"] = DiscoMode;
@@ -233,6 +245,18 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+       if (j.contains("TouchpadShortcut"))
+            j.at("TouchpadShortcut").get_to(strings.TouchpadShortcut);
+
+        if (j.contains("TouchpadAsSelectStart"))
+            j.at("TouchpadAsSelectStart").get_to(strings.TouchpadAsSelectStart);
+
+        if (j.contains("DualShock4V2emu"))
+            j.at("DualShock4V2emu").get_to(strings.DualShock4V2emu);
+
+        if (j.contains("Tooltip_Dualshock4V2"))
+            j.at("Tooltip_Dualshock4V2").get_to(strings.Tooltip_Dualshock4V2);
 
         if (j.contains("LeftAnalogStickDeadZone"))
             j.at("LeftAnalogStickDeadZone").get_to(strings.LeftAnalogStickDeadZone);
@@ -346,10 +370,14 @@ public:
             j.at("RumbleToAT").get_to(strings.RumbleToAT);
         if (j.contains("SwapTriggersRumbleToAT"))
             j.at("SwapTriggersRumbleToAT").get_to(strings.SwapTriggersRumbleToAT);
-        if (j.contains("MaxIntensity"))
-            j.at("MaxIntensity").get_to(strings.MaxIntensity);
-        if (j.contains("MaxFrequency"))
-            j.at("MaxFrequency").get_to(strings.MaxFrequency);
+        if (j.contains("MaxLeftIntensity"))
+            j.at("MaxLeftIntensity").get_to(strings.MaxLeftIntensity);
+        if (j.contains("MaxLeftFrequency"))
+            j.at("MaxLeftFrequency").get_to(strings.MaxLeftFrequency);
+       if (j.contains("MaxRightIntensity"))
+            j.at("MaxRightIntensity").get_to(strings.MaxRightIntensity);
+        if (j.contains("MaxRightFrequency"))
+            j.at("MaxRightFrequency").get_to(strings.MaxRightFrequency);
         if (j.contains("LedSection"))
             j.at("LedSection").get_to(strings.LedSection);
         if (j.contains("AudioToLED"))

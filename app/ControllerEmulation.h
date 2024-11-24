@@ -170,6 +170,14 @@ public:
 
     }
 
+    void SetDS4V1() {
+        vigem_target_set_pid(ds4,0x05c4);
+    }
+
+    void SetDS4V2() {
+        vigem_target_set_pid(ds4,0x09cc);
+    }
+
     bool UpdateDS4(ButtonState state)
     {
             DS4_REPORT_EX report;

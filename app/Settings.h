@@ -21,10 +21,15 @@ public:
     bool TouchpadToMouse = false;
     bool X360Shortcut = false;
     bool DS4Shortcut = false;
+    bool TouchpadToMouseShortcut = false;
     bool StopEmuShortcut = false;
     bool SwapTriggersRumbleToAT = false;
-    int MaxRumbleToATIntensity = 255;
-    int MaxRumbleToATFrequency = 25;
+    int MaxLeftRumbleToATIntensity = 255;
+    int MaxLeftRumbleToATFrequency = 25;
+    int MaxRightRumbleToATIntensity = 255;
+    int MaxRightRumbleToATFrequency = 25;
+    bool DualShock4V2 = false;
+    bool TouchpadAsSelectStart = false;
     bool SwapTriggersShortcut = false;
     float swipeThreshold = 0.50f;
     bool HapticsToTriggers = false;
@@ -36,6 +41,9 @@ public:
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
+        j["TouchpadToMouseShortcut"] = TouchpadToMouseShortcut;
+        j["DualShock4V2"] = DualShock4V2;
         j["LeftAnalogDeadzone"] = LeftAnalogDeadzone;
         j["RightAnalogDeadzone"] = RightAnalogDeadzone;
         j["TriggersAsButtons"] = TriggersAsButtons;
@@ -57,8 +65,10 @@ public:
         j["DS4Shortcut"] = DS4Shortcut;
         j["StopEmuShortcut"] = StopEmuShortcut;
         j["SwapTriggersRumbleToAT"] = SwapTriggersRumbleToAT;
-        j["MaxRumbleToATIntensity"] = MaxRumbleToATIntensity;
-        j["MaxRumbleToATFrequency"] = MaxRumbleToATFrequency;
+        j["MaxLeftRumbleToATIntensity"] = MaxLeftRumbleToATIntensity;
+        j["MaxLeftRumbleToATFrequency"] = MaxLeftRumbleToATFrequency;
+        j["MaxRightRumbleToATIntensity"] = MaxRightRumbleToATIntensity;
+        j["MaxRightRumbleToATFrequency"] = MaxRightRumbleToATFrequency;
         j["SwapTriggersShortcut"] = SwapTriggersShortcut;
         j["HapticsToTriggers"] = HapticsToTriggers;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
@@ -71,6 +81,9 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("TouchpadToMouseShortcut"))       j.at("TouchpadToMouseShortcut").get_to(settings.TouchpadToMouseShortcut);
+        if (j.contains("TouchpadAsSelectStart"))       j.at("TouchpadAsSelectStart").get_to(settings.TouchpadAsSelectStart);
+        if (j.contains("DualShock4V2"))       j.at("DualShock4V2").get_to(settings.DualShock4V2);
         if (j.contains("LeftAnalogDeadzone"))       j.at("LeftAnalogDeadzone").get_to(settings.LeftAnalogDeadzone);
         if (j.contains("RightAnalogDeadzone"))        j.at("RightAnalogDeadzone").get_to(settings.RightAnalogDeadzone);
         if (j.contains("TriggersAsButtons"))        j.at("TriggersAsButtons").get_to(settings.TriggersAsButtons);
@@ -92,8 +105,10 @@ public:
         if (j.contains("DS4Shortcut"))          j.at("DS4Shortcut").get_to(settings.DS4Shortcut);
         if (j.contains("StopEmuShortcut"))          j.at("StopEmuShortcut").get_to(settings.StopEmuShortcut);
         if (j.contains("SwapTriggersRumbleToAT"))          j.at("SwapTriggersRumbleToAT").get_to(settings.SwapTriggersRumbleToAT);
-        if (j.contains("MaxRumbleToATIntensity"))          j.at("MaxRumbleToATIntensity").get_to(settings.MaxRumbleToATIntensity);
-        if (j.contains("MaxRumbleToATFrequency"))          j.at("MaxRumbleToATFrequency").get_to(settings.MaxRumbleToATFrequency);
+        if (j.contains("MaxRumbleToATIntensity"))          j.at("MaxRumbleToATIntensity").get_to(settings.MaxLeftRumbleToATIntensity);
+        if (j.contains("MaxRumbleToATFrequency"))          j.at("MaxRumbleToATFrequency").get_to(settings.MaxLeftRumbleToATFrequency);
+        if (j.contains("MaxRightRumbleToATIntensity"))          j.at("MaxRightRumbleToATIntensity").get_to(settings.MaxRightRumbleToATIntensity);
+        if (j.contains("MaxRightRumbleToATFrequency"))          j.at("MaxRightRumbleToATFrequency").get_to(settings.MaxRightRumbleToATFrequency);
         if (j.contains("SwapTriggersShortcut"))          j.at("SwapTriggersShortcut").get_to(settings.SwapTriggersShortcut);
         if (j.contains("HapticsToTriggers"))          j.at("HapticsToTriggers").get_to(settings.HapticsToTriggers);
         if (j.contains("emuStatus"))        j.at("emuStatus").get_to(settings.emuStatus);

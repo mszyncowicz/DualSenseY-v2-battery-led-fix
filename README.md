@@ -4,6 +4,7 @@
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
 ### Discord → https://discord.gg/AFYvxf282U
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz
+### Translations → https://crowdin.com/project/dualsensey (If your language is not there, create an issue on github or contact me on discord)
 
 # DualSenseY
 

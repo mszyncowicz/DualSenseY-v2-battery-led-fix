@@ -9,7 +9,8 @@
   },
   "ExpandedNodes": [
     "",
-    "\\app"
+    "\\AudioPassthrough"
   ],
+  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough.sln",
   "PreviewInSolutionExplorer": false
 }

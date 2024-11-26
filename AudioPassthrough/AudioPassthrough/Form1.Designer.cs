@@ -29,8 +29,11 @@
             label1 = new Label();
             label2 = new Label();
             button1 = new Button();
+            trackBar2 = new TrackBar();
+            label3 = new Label();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).BeginInit();
             SuspendLayout();
             // 
             // pictureBox1
@@ -80,11 +83,33 @@
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
             // 
+            // trackBar2
+            // 
+            trackBar2.Location = new Point(12, 217);
+            trackBar2.Maximum = 20;
+            trackBar2.Minimum = 1;
+            trackBar2.Name = "trackBar2";
+            trackBar2.Size = new Size(200, 45);
+            trackBar2.TabIndex = 5;
+            trackBar2.TabStop = false;
+            trackBar2.Value = 1;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(12, 200);
+            label3.Name = "label3";
+            label3.Size = new Size(55, 15);
+            label3.TabIndex = 6;
+            label3.Text = "Intensity:";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(224, 211);
+            ClientSize = new Size(224, 266);
+            Controls.Add(label3);
+            Controls.Add(trackBar2);
             Controls.Add(button1);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -96,9 +121,11 @@
             Name = "Form1";
             Text = "DualSense AP";
             FormClosing += Form1_FormClosing;
+            FormClosed += Form1_FormClosed;
             Load += Form1_Load;
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ((System.ComponentModel.ISupportInitialize)trackBar1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)trackBar2).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -110,5 +137,7 @@
         private Label label1;
         private Label label2;
         private Button button1;
+        private TrackBar trackBar2;
+        private Label label3;
     }
 }

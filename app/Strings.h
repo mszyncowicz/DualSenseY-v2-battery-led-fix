@@ -6,6 +6,7 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string UseHeadset = "Use headset";
     std::string TouchpadShortcut = "Touchpad + Mic button = Touchpad as mouse";
     std::string TouchpadAsSelectStart = "Touchpad as select/start";
     std::string DualShock4V2emu = "DualShock4 V2 (CUH-ZCT2x)";
@@ -139,6 +140,7 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["UseHeadset"] = UseHeadset;
         j["TouchpadShortcut"] = TouchpadShortcut;
         j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
         j["DualShock4V2emu"] = DualShock4V2emu;
@@ -246,7 +248,10 @@ public:
     {
         Strings strings;
 
-       if (j.contains("TouchpadShortcut"))
+        if (j.contains("UseHeadset"))
+            j.at("UseHeadset").get_to(strings.UseHeadset);
+
+        if (j.contains("TouchpadShortcut"))
             j.at("TouchpadShortcut").get_to(strings.TouchpadShortcut);
 
         if (j.contains("TouchpadAsSelectStart"))

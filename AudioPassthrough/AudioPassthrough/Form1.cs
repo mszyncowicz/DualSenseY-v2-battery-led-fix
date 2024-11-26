@@ -161,6 +161,23 @@ namespace AudioPassthrough {
 
         private void WasapiLoopbackCapture_DataAvailable(object? sender, WaveInEventArgs e) {
             if (SystemAudioPlayback) {
+                // Define your gain factor (adjust as needed)
+                float gainFactor = trackBar2.Value; // Example to double the volume
+
+                // Process the audio buffer
+                int sampleCount = e.BytesRecorded / sizeof(float); // Number of samples
+                for (int i = 0; i < sampleCount; i++) {
+                    float sample = BitConverter.ToSingle(e.Buffer, i * sizeof(float));
+
+                    sample *= gainFactor;
+
+                    if (sample > 1.0f) sample = 1.0f;
+                    if (sample < -1.0f) sample = -1.0f;
+
+                    byte[] modifiedSample = BitConverter.GetBytes(sample);
+                    Buffer.BlockCopy(modifiedSample, 0, e.Buffer, i * sizeof(float), sizeof(float));
+                }
+
                 audioPassthroughBuffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
             }
         }
@@ -169,7 +186,7 @@ namespace AudioPassthrough {
             speakerPlaybackVolume = speaker;
             leftActuatorVolume = left;
             rightActuatorVolume = right;
-            
+
 
             try {
                 if (audioPassthroughStream != null) {
@@ -212,6 +229,23 @@ namespace AudioPassthrough {
 
         private void button1_Click(object sender, EventArgs e) {
             this.WindowState = FormWindowState.Minimized;
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e) {
+            if (hapticStream != null) {
+                hapticStream.Dispose();
+            }
+
+            if (audioPassthroughStream != null) {
+                audioPassthroughStream.Dispose();
+                audioPassthroughBuffer.ClearBuffer();
+            }
+
+            if (wasapiLoopbackCapture != null) {
+                wasapiLoopbackCapture.Dispose();
+            }
+
+            Environment.Exit(0);
         }
     }
 }

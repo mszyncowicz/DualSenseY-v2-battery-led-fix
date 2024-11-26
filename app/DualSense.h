@@ -1597,6 +1597,7 @@ public:
         SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
         SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
         SetSpeakerVolume(100);
+        UseHeadsetNotSpeaker(false);
 
         if (Connected)
         {
@@ -1717,14 +1718,7 @@ public:
 
     void UseRumbleNotHaptics(bool flag)
     {
-        if (flag)
-        {
-            CurSettings.VibrationType = Feature::StandardRumble;
-        }
-        else
-        {
-            CurSettings.VibrationType = Feature::Haptic_Feedback;
-        }
+        CurSettings.VibrationType = flag ? Feature::StandardRumble : Feature::Haptic_Feedback;
     }
 
     void SetSpeakerVolume(int Volume) {
@@ -1745,5 +1739,9 @@ public:
 
         CurSettings._LeftMotor = LeftMotor;
         CurSettings._RightMotor = RightMotor;
+    }
+
+    void UseHeadsetNotSpeaker(bool flag) {
+        CurSettings.audioOutput = flag ? CurSettings.audioOutput = Feature::AudioOutput::Headset : CurSettings.audioOutput = Feature::AudioOutput::Speaker;
     }
 };

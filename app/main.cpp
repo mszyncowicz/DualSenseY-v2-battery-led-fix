@@ -733,6 +733,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
 
             controller.SetSpeakerVolume(settings.ControllerInput.SpeakerVolume);
+            controller.UseHeadsetNotSpeaker(settings.UseHeadset);
             controller.SetRumble(settings.lrumble, settings.rrumble);
 
             if(controller.Connected)
@@ -1624,6 +1625,8 @@ int main()
 
                                     ImGui::SliderInt(strings.SpeakerVolume.c_str(), &s.ControllerInput.SpeakerVolume, 0, 255);
                                     Tooltip(strings.Tooltip_SpeakerVolume.c_str());
+
+                                    ImGui::Checkbox("Use headset", &s.UseHeadset);
                                 }
                                 else
                                 {

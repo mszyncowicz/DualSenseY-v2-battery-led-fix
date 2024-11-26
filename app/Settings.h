@@ -31,6 +31,7 @@ public:
     bool DualShock4V2 = false;
     bool TouchpadAsSelectStart = false;
     bool SwapTriggersShortcut = false;
+    bool UseHeadset = false;
     float swipeThreshold = 0.50f;
     bool HapticsToTriggers = false;
     int LeftAnalogDeadzone = 0;
@@ -42,6 +43,7 @@ public:
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
         j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
+        j["UseHeadset"] = UseHeadset;
         j["TouchpadToMouseShortcut"] = TouchpadToMouseShortcut;
         j["DualShock4V2"] = DualShock4V2;
         j["LeftAnalogDeadzone"] = LeftAnalogDeadzone;
@@ -82,6 +84,7 @@ public:
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
         if (j.contains("TouchpadToMouseShortcut"))       j.at("TouchpadToMouseShortcut").get_to(settings.TouchpadToMouseShortcut);
+        if (j.contains("UseHeadset"))       j.at("UseHeadset").get_to(settings.UseHeadset);
         if (j.contains("TouchpadAsSelectStart"))       j.at("TouchpadAsSelectStart").get_to(settings.TouchpadAsSelectStart);
         if (j.contains("DualShock4V2"))       j.at("DualShock4V2").get_to(settings.DualShock4V2);
         if (j.contains("LeftAnalogDeadzone"))       j.at("LeftAnalogDeadzone").get_to(settings.LeftAnalogDeadzone);

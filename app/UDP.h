@@ -104,6 +104,21 @@ public:
         std::thread(&UDP::Listen, this).detach();
     }
 
+    int getParameterValue(const nlohmann::json& param) {
+        if (param.is_null()) {
+            return 0; // Default value for null
+        }
+        else if (param.is_boolean()) {
+            return param.get<bool>() ? 1 : 0; // Convert boolean to 1 or 0
+        }
+        else if (param.is_number()) {
+            return param.get<int>(); // Convert number to int
+        }
+        else {
+            return 0;
+        }
+    }
+
     void Listen()
     {
         sockaddr_in clientAddr{};
@@ -147,17 +162,31 @@ public:
                    (SOCKADDR *)&clientAddr,
                    clientAddrSize);
 
-            // Here, you would parse the packetString manually if needed
             isActive = true;
             nlohmann::json data = nlohmann::json::parse(packetString);
-            cout << data << endl;
+            //cout << data << endl;
 
             for (auto &instr : data["instructions"])
             {
-                uint8_t triggers[7];
+                uint8_t triggers[11];
                 Trigger::TriggerMode mode = Trigger::Off;
+             
+                int type = !instr["type"].is_null() ? static_cast<int>(instr["type"]) : 0;
+                int intParam0 = getParameterValue(instr["parameters"][0]);
+                int intParam1 = getParameterValue(instr["parameters"][1]);
+                int intParam2 = getParameterValue(instr["parameters"][2]);
+                int intParam3 = getParameterValue(instr["parameters"][3]);
+                int intParam4 = getParameterValue(instr["parameters"][4]);
+                int intParam5 = getParameterValue(instr["parameters"][5]);
+                int intParam6 = getParameterValue(instr["parameters"][6]);
+                int intParam7 = getParameterValue(instr["parameters"][7]);
+                int intParam8 = getParameterValue(instr["parameters"][8]);
+                int intParam9 = getParameterValue(instr["parameters"][9]);
+                int intParam10 = getParameterValue(instr["parameters"][10]);
+                int intParam11 = getParameterValue(instr["parameters"][11]);
+                //int intParam12 = !instr["parameters"][12].is_null() ? static_cast<int>(instr["parameters"][12]) : 0;
 
-                switch (static_cast<int>(instr["type"]))
+                switch (type)
                 {
                     {
                     case 1:
@@ -168,7 +197,7 @@ public:
                         uint8_t firstFoot = 0;
                         uint8_t secondFoot = 0;
                         uint8_t frequency = 0;
-                        switch (static_cast<int>(instr["parameters"][2]))
+                        switch (intParam2)
                         {
                         case 0: //Normal
                         {
@@ -180,6 +209,10 @@ public:
                             triggers[4] = 0;
                             triggers[5] = 0;
                             triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 1: //GameCube
@@ -192,18 +225,26 @@ public:
                             triggers[4] = 0;
                             triggers[5] = 0;
                             triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 2: //VerySoft
                         {
-                            mode = Trigger::Rigid_A;
+                            mode = Trigger::Pulse;
                             triggers[0] = 128;
                             triggers[1] = 160;
                             triggers[2] = 255;
-                            triggers[3] = 255;
-                            triggers[4] = 255;
-                            triggers[5] = 255;
-                            triggers[6] = 255;
+                            triggers[3] = 0;
+                            triggers[4] = 0;
+                            triggers[5] = 0;
+                            triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 3: //Soft
@@ -212,10 +253,14 @@ public:
                             triggers[0] = 69;
                             triggers[1] = 160;
                             triggers[2] = 255;
-                            triggers[3] = 255;
-                            triggers[4] = 255;
-                            triggers[5] = 255;
-                            triggers[6] = 255;
+                            triggers[3] = 0;
+                            triggers[4] = 0;
+                            triggers[5] = 0;
+                            triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 4: //Hard
@@ -228,6 +273,10 @@ public:
                             triggers[4] = 255;
                             triggers[5] = 255;
                             triggers[6] = 255;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 5: //VeryHard
@@ -240,11 +289,15 @@ public:
                             triggers[4] = 255;
                             triggers[5] = 255;
                             triggers[6] = 255;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 6: //Hardest
                         {
-                            mode = Trigger::Rigid_A;
+                            mode = Trigger::Pulse;
                             triggers[0] = 0;
                             triggers[1] = 255;
                             triggers[2] = 255;
@@ -252,6 +305,10 @@ public:
                             triggers[4] = 255;
                             triggers[5] = 255;
                             triggers[6] = 255;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 7: //Rigid
@@ -264,6 +321,10 @@ public:
                             triggers[4] = 0;
                             triggers[5] = 0;
                             triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 8: //VibrateTrigger
@@ -276,6 +337,10 @@ public:
                             triggers[4] = 33;
                             triggers[5] = 35;
                             triggers[6] = 34;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 9: //Choppy:
@@ -288,6 +353,10 @@ public:
                             triggers[4] = 38;
                             triggers[5] = 2;
                             triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 10: //Medium
@@ -300,6 +369,10 @@ public:
                             triggers[4] = 6;
                             triggers[5] = 1;
                             triggers[6] = 33;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 11: //VibrateTriggerPulse
@@ -312,12 +385,15 @@ public:
                             triggers[4] = 33;
                             triggers[5] = 35;
                             triggers[6] = 34;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
                             break;
                         }
                         case 12: //CustomTriggerValue
                         {
-                            int CustomMode = instr["parameters"][3] != NULL ? static_cast<int>(instr["parameters"][3]) : 0;
-                            switch (CustomMode) {
+                            switch (intParam3) {
                             case 0:
                                 mode = Trigger::Off;
                                 break;
@@ -349,13 +425,13 @@ public:
                                 mode = Trigger::Pulse_B;
                                 break;
                                 case 10:
-                                mode = Trigger::Pulse_AB;
+                                mode = Trigger::Pulse_B2;
                                 break;
                                 case 11:
                                 mode = Trigger::Pulse_B;
                                 break;
                                 case 12:
-                                mode = Trigger::Pulse_AB;
+                                mode = Trigger::Pulse_B2;
                                 break;
                                 case 13:
                                 mode = Trigger::Pulse_AB;
@@ -370,7 +446,7 @@ public:
                                 mode = Trigger::Pulse_AB;
                                 break;
                             default:
-                                cout << "Unknown trigger: " << CustomMode << endl;
+                                cout << "Unknown trigger: " << intParam2 << endl;
                                 for (auto& a : instr["parameters"]) {
                                     cout << " " << a << " ";
                                 }
@@ -378,37 +454,34 @@ public:
                                 break;
                             }
 
-                            triggers[0] = instr["parameters"][4] != NULL ? static_cast<int>(instr["parameters"][4]) : 0;
-                            triggers[1] = instr["parameters"][5] != NULL ? static_cast<int>(instr["parameters"][5]) : 0;
-                            triggers[2] = instr["parameters"][6] != NULL ? static_cast<int>(instr["parameters"][6]) : 0;
-                            triggers[3] = instr["parameters"][7] != NULL ? static_cast<int>(instr["parameters"][7]) : 0;
-                            triggers[4] = instr["parameters"][8] != NULL ? static_cast<int>(instr["parameters"][8]) : 0;
-                            triggers[5] = instr["parameters"][9] != NULL ? static_cast<int>(instr["parameters"][9]) : 0;
-                            triggers[6] = instr["parameters"][10] != NULL ? static_cast<int>(instr["parameters"][10]) : 0;
+                            triggers[0] = intParam4;
+                            triggers[1] = intParam5;
+                            triggers[2] = intParam6;
+                            triggers[3] = intParam7;
+                            triggers[4] = intParam8;
+                            triggers[5] = intParam9;
+                            triggers[6] = intParam10;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = intParam11;
+                            triggers[10] = 0;
 
                             break;
                         }
                         case 13: //Resistance
                         {
-                            mode = Trigger::Pulse_A;
-                            uint8_t start =
-                                instr["parameters"][3] != NULL
-                                    ? static_cast<int>(instr["parameters"][3])
-                                    : 0;
-                            uint8_t force =
-                                instr["parameters"][4] != NULL
-                                    ? static_cast<int>(instr["parameters"][4])
-                                    : 0;
+                            mode = Trigger::Rigid_B;
+                            uint8_t start = intParam3;
+                            uint8_t force = intParam4;
 
                             if (start > 9 || force > 8)
                             {
-                                return;
+                                break;
                             }
 
                             if (force > 0)
                             {
-                                uint8_t b =
-                                    static_cast<uint8_t>((force - 1) & 7);
+                                uint8_t b = static_cast<uint8_t>((force - 1) & 7);
                                 uint32_t num = 0;
                                 uint16_t num2 = 0;
 
@@ -421,51 +494,37 @@ public:
                                 }
 
                                 triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
-                                triggers[1] =
-                                    static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
                                 triggers[2] = static_cast<uint8_t>(num & 0xFF);
-                                triggers[3] =
-                                    static_cast<uint8_t>((num >> 8) & 0xFF);
-                                triggers[4] =
-                                    static_cast<uint8_t>((num >> 16) & 0xFF);
-                                triggers[5] =
-                                    static_cast<uint8_t>((num >> 24) & 0xFF);
+                                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
                                 triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
                             }
                             break;
                         }
                         case 14: //Bow
                         {
                             mode = Trigger::Pulse_A;
-                            start =
-                                instr["parameters"][3] != NULL
-                                    ? static_cast<int>(instr["parameters"][3])
-                                    : 0;
-                            end = instr["parameters"][4] != NULL
-                                      ? static_cast<int>(instr["parameters"][4])
-                                      : 0;
-                            force =
-                                instr["parameters"][5] != NULL
-                                    ? static_cast<int>(instr["parameters"][5])
-                                    : 0;
-                            snapForce =
-                                instr["parameters"][6] != NULL
-                                    ? static_cast<int>(instr["parameters"][6])
-                                    : 0;
+                            start = intParam3;
+                            end = intParam4;
+                            force = intParam5;
+                            snapForce = intParam6;
 
                             if (start > 8 || end > 8 || start >= end ||
                                 force > 8 || snapForce > 8)
                             {
-                                return;
+                                break;
                             }
 
                             if (end > 0 && force > 0 && snapForce > 0)
                             {
-                                uint16_t num = static_cast<uint16_t>(
-                                    (1 << start) | (1 << end));
-                                uint32_t num2 = static_cast<uint32_t>(
-                                    ((force - 1) & 7) |
-                                    (((snapForce - 1) & 7) << 3));
+                                uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
+                                uint32_t num2 = static_cast<uint32_t>(((force - 1) & 7) |(((snapForce - 1) & 7) << 3));
 
                                 triggers[0] = static_cast<uint8_t>(num & 0xFF);
                                 triggers[1] =
@@ -476,89 +535,79 @@ public:
                                 triggers[4] = 0;
                                 triggers[5] = 0;
                                 triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
                             }
 
                             break;
                         }
                         case 15: //Galloping
                         {
-                            mode = Trigger::Pulse_A;
+                            mode = Trigger::Pulse_A2;
 
-                            start =
-                                instr["parameters"][3] != NULL
-                                    ? static_cast<int>(instr["parameters"][3])
-                                    : 0;
-                            end = instr["parameters"][4] != NULL
-                                      ? static_cast<int>(instr["parameters"][4])
-                                      : 0;
-                            firstFoot =
-                                instr["parameters"][5] != NULL
-                                    ? static_cast<int>(instr["parameters"][5])
-                                    : 0;
-                            secondFoot =
-                                instr["parameters"][6] != NULL
-                                    ? static_cast<int>(instr["parameters"][6])
-                                    : 0;
-                            frequency =
-                                instr["parameters"][7] != NULL
-                                    ? static_cast<int>(instr["parameters"][7])
-                                    : 0;
+                            start = intParam3;
+                            end = intParam4;
+                            firstFoot = intParam5;
+                            secondFoot = intParam6;
+                            frequency = intParam7;
 
-                            if (start > 8 || end > 9 || start >= end ||
-                                secondFoot > 7 || firstFoot > 6 ||
-                                firstFoot >= secondFoot)
-                            {
-                                return;
+                            if (start > 8) {
+                                break;
                             }
+                            if (end > 9) {
+                                break;
+                            }
+                            if (start >= end) {
+                                break;
+                            }
+                            if (secondFoot > 7) {
+                                break;
+                            }
+                            if (firstFoot > 6) {
+                                break;
+                            }
+                            if (firstFoot >= secondFoot) {
+                                break;
+                            }
+                            if (frequency > 0) {
+                                uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
+                                uint32_t num2 = static_cast<uint32_t>((secondFoot & 7) | ((firstFoot & 7) << 3));
 
-                            if (frequency > 0)
-                            {
-                                uint16_t num = static_cast<uint16_t>(
-                                    (1 << start) | (1 << end));
-                                uint32_t num2 = static_cast<uint32_t>(
-                                    (secondFoot & 7) | ((firstFoot & 7) << 3));
-
-                                triggers[0] = frequency;
-                                triggers[1] = static_cast<uint8_t>(num & 0xFF);
-                                triggers[2] =
-                                    static_cast<uint8_t>((num >> 8) & 0xFF);
-                                triggers[3] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[0] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[3] = frequency;
                                 triggers[4] = 0;
                                 triggers[5] = 0;
                                 triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
                             }
                             break;
                         }
                         case 16: //SemiAutomaticGun
                         {
-                            mode = Trigger::Pulse_AB;
+                            mode = Trigger::Rigid_AB;
 
-                            start =
-                                instr["parameters"][3] != NULL
-                                    ? static_cast<int>(instr["parameters"][3])
-                                    : 0;
-                            end = instr["parameters"][4] != NULL
-                                      ? static_cast<int>(instr["parameters"][4])
-                                      : 0;
-                            force =
-                                instr["parameters"][5] != NULL
-                                    ? static_cast<int>(instr["parameters"][5])
-                                    : 0;
+                            start = intParam3;
+                            end = intParam4;
+                            force = intParam5;
 
                             if (start > 7 || start < 2 || end > 8 ||
                                 end <= start || force > 8)
                             {
-                                return;
+                                break;
                             }
 
                             if (force > 0)
                             {
-                                uint16_t num = static_cast<uint16_t>(
-                                    (1 << start) | (1 << end));
+                                uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
 
                                 triggers[0] = static_cast<uint8_t>(num & 0xFF);
-                                triggers[1] =
-                                    static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num >> 8) & 0xFF);
                                 triggers[2] = force - 1;
                                 triggers[3] = 0;
                                 triggers[4] = 0;
@@ -570,60 +619,97 @@ public:
                         }
                         case 17: //AutomaticGun
                         {
-                            mode = Trigger::Pulse_B;
-                            start =
-                                instr["parameters"][3] != NULL
-                                    ? static_cast<int>(instr["parameters"][3])
-                                    : 0;
-                            uint8_t strength =
-                                instr["parameters"][4] != NULL
-                                    ? static_cast<int>(instr["parameters"][4])
-                                    : 0;
-                            uint8_t frequency =
-                                instr["parameters"][5] != NULL
-                                    ? static_cast<int>(instr["parameters"][5])
-                                    : 0;
+                            mode = Trigger::Pulse_B2;
+                            start = intParam3;
+                            uint8_t strength = intParam4;
+                            uint8_t frequency = intParam5;
 
-                            triggers[0] = frequency;
-                            triggers[1] = strength;
-                            triggers[2] = start;
-                            triggers[3] = 255;
-                            triggers[4] = 255;
-                            triggers[5] = 255;
-                            triggers[6] = 255;
+                            if (start > 9)
+			                {
+                                break;
+			                }
+			                if (strength > 8)
+			                {
+                                break;
+			                }
+			                if (strength > 0 && frequency > 0)
+			                {
+                                uint8_t b = (strength - 1) & 7;
+                                uint32_t num = 0;
+                                uint16_t num2 = 0;
+
+                                for (int i = static_cast<int>(start); i < 10; i++) {
+                                    num |= static_cast<uint32_t>(b) << (3 * i);
+                                    num2 |= static_cast<uint16_t>(1 << i);
+                                }
+
+				                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+				                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+				                triggers[2] = static_cast<uint8_t>(num & 0xFF);
+				                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+				                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+				                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+				                triggers[6] = 0;
+				                triggers[7] = 0;
+				                triggers[8] = frequency;
+				                triggers[9] = 0;
+			                }
 
                             break;
                         }
                         case 18: //Machine
                         {
-                            mode = Trigger::Pulse_B;
-                            triggers[0] =
-                                instr["parameters"][7] != NULL
-                                    ? static_cast<int>(instr["parameters"][7])
-                                    : 0;
-                            triggers[1] =
-                                instr["parameters"][4] != NULL
-                                    ? static_cast<int>(instr["parameters"][4])
-                                    : 0;
-                            triggers[2] =
-                                instr["parameters"][8] != NULL
-                                    ? static_cast<int>(instr["parameters"][8])
-                                    : 0;
-                            triggers[3] =
-                                instr["parameters"][5] != NULL
-                                    ? static_cast<int>(instr["parameters"][5])
-                                    : 0;
-                            triggers[4] =
-                                instr["parameters"][6] != NULL
-                                    ? static_cast<int>(instr["parameters"][6])
-                                    : 0;
-                            triggers[5] = 0;
-                            triggers[6] = 0;
+                            mode = Trigger::Pulse_AB;                       
+                            start = intParam3;
+                            end = intParam4;
+                            uint8_t strengthA = intParam5;
+                            uint8_t strengthB = intParam6;
+                            frequency = intParam7;
+                            uint8_t period = intParam8;
+
+                            if (start > 8)
+			                {
+				                break;
+			                }
+			                if (end > 9)
+			                {
+				                break;
+			                }
+			                if (end <= start)
+			                {
+				                break;
+			                }
+			                if (strengthA > 7)
+			                {
+				                break;
+			                }
+			                if (strengthB > 7)
+			                {
+				                break;
+			                }
+			                if (frequency > 0)
+			                {
+                                uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
+                                uint32_t num2 = static_cast<uint32_t>((strengthA & 7) | ((strengthB & 7) << 3));
+
+                                triggers[0] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[3] = frequency;
+                                triggers[4] = period;
+                                triggers[5] = 0;
+                                triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
+			                }
                             break;
+                           
                         }
                         }
 
-                        if (static_cast<int>(instr["parameters"][1]) == 1)
+                        if (intParam1 == 1)
                         {
                             thisSettings.ControllerInput.LeftTriggerMode = mode;
                             thisSettings.ControllerInput.LeftTriggerForces[0] =
@@ -640,8 +726,16 @@ public:
                                 triggers[5];
                             thisSettings.ControllerInput.LeftTriggerForces[6] =
                                 triggers[6];
+                            thisSettings.ControllerInput.LeftTriggerForces[7] =
+                                triggers[7];
+                            thisSettings.ControllerInput.LeftTriggerForces[8] =
+                                triggers[8];
+                            thisSettings.ControllerInput.LeftTriggerForces[9] =
+                                triggers[9];
+                            thisSettings.ControllerInput.LeftTriggerForces[10] =
+                                triggers[10];
                         }
-                        else if (static_cast<int>(instr["parameters"][1]) == 2)
+                        else if (intParam1 == 2)
                         {
                             thisSettings.ControllerInput.RightTriggerMode =
                                 mode;
@@ -659,17 +753,22 @@ public:
                                 triggers[5];
                             thisSettings.ControllerInput.RightTriggerForces[6] =
                                 triggers[6];
+                            thisSettings.ControllerInput.RightTriggerForces[7] =
+                                triggers[7];
+                            thisSettings.ControllerInput.RightTriggerForces[8] =
+                                triggers[8];
+                            thisSettings.ControllerInput.RightTriggerForces[9] =
+                                triggers[9];
+                            thisSettings.ControllerInput.RightTriggerForces[10] =
+                                triggers[10];
                         }
                         break;
                     }
                 case 2:
                 {
-                    thisSettings.ControllerInput.Red =
-                        static_cast<int>(instr["parameters"][1]);
-                    thisSettings.ControllerInput.Green =
-                        static_cast<int>(instr["parameters"][2]);
-                    thisSettings.ControllerInput.Blue =
-                        static_cast<int>(instr["parameters"][3]);
+                    thisSettings.ControllerInput.Red = intParam1;
+                    thisSettings.ControllerInput.Green = intParam2;
+                    thisSettings.ControllerInput.Blue = intParam3;
                     break;
                 }
                 default:

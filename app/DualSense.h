@@ -470,8 +470,10 @@ enum TriggerMode : uint8_t
     Rigid_B = 0x1 | 0x04,
     Rigid_AB = 0x1 | 0x20 | 0x04,
     Pulse_A = 0x2 | 0x20,
+    Pulse_A2 = 35,
     Pulse_B = 0x2 | 0x04,
-    Pulse_AB = 0x2 | 0x20 | 0x04,
+    Pulse_B2 = 38,
+    Pulse_AB = 39,
     Calibration = 0xFC
 };
 }
@@ -498,8 +500,8 @@ public:
     Feature::MicrophoneStatus micStatus = Feature::MicrophoneStatus::MSTATUS_On;
     Trigger::TriggerMode RightTriggerMode = Trigger::TriggerMode::Off;
     Trigger::TriggerMode LeftTriggerMode = Trigger::TriggerMode::Off;
-    int RightTriggerForces[7] = {0};
-    int LeftTriggerForces[7] = {0};
+    int RightTriggerForces[11] = {0};
+    int LeftTriggerForces[11] = {0};
     Feature::Brightness _Brightness = Feature::Brightness::High;
     Feature::PlayerLED playerLED = Feature::PlayerLED::PLAYER_OFF;
     unsigned char PlayerLED_Bitmask = 0x0;
@@ -934,6 +936,9 @@ public:
             if (res < 0) {
                 Connected = false;
             }
+            else {
+                Connected = true;
+            }
 
             buttonState.LX = ButtonStates[1 + offset];
             buttonState.LY = ButtonStates[2 + offset];
@@ -1030,6 +1035,10 @@ public:
         }
         else
         {
+            State.LX = 128;
+            State.LY = 128;
+            State.RX = 128;
+            State.RY = 128;
             State.square = false;
             State.triangle = false;
             State.circle = false;
@@ -1062,7 +1071,7 @@ public:
     {       
         if (CurSettings == LastSettings && !FirstTimeWrite)
         {          
-            if (error != DefaultError)
+            if (error != DefaultError && error != L"")
             {
                 Connected = false;
                 bt_initialized = false;
@@ -1096,8 +1105,11 @@ public:
                 outReport[14] = CurSettings.RightTriggerForces[2];
                 outReport[15] = CurSettings.RightTriggerForces[3];
                 outReport[16] = CurSettings.RightTriggerForces[4];
-                outReport[17] = CurSettings.RightTriggerForces[5];
-                outReport[20] = CurSettings.RightTriggerForces[6];
+                outReport[17] = CurSettings.RightTriggerForces[6];
+                outReport[18] = CurSettings.RightTriggerForces[7];
+                outReport[19] = CurSettings.RightTriggerForces[8];
+                outReport[20] = CurSettings.RightTriggerForces[9];
+                outReport[21] = CurSettings.RightTriggerForces[10];
                 outReport[22] = CurSettings.LeftTriggerMode;
                 outReport[23] = CurSettings.LeftTriggerForces[0];
                 outReport[24] = CurSettings.LeftTriggerForces[1];
@@ -1105,9 +1117,11 @@ public:
                 outReport[26] = CurSettings.LeftTriggerForces[3];
                 outReport[27] = CurSettings.LeftTriggerForces[4];
                 outReport[28] = CurSettings.LeftTriggerForces[5];
-                outReport[31] = CurSettings.LeftTriggerForces[6];
-                outReport[32] = 0; // one of these lowers haptic intesity
-                outReport[33] = 0;
+                outReport[29] = CurSettings.LeftTriggerForces[6];
+                outReport[30] = CurSettings.LeftTriggerForces[7];
+                outReport[31] = CurSettings.LeftTriggerForces[8];
+                outReport[32] = CurSettings.LeftTriggerForces[9];
+                outReport[33] = CurSettings.LeftTriggerForces[10];
                 outReport[34] = 0;
                 outReport[35] = 0;
                 outReport[36] = 0;
@@ -1125,7 +1139,12 @@ public:
                 res = hid_write(handle, outReport, MAX_USB_WRITE_LENGTH);
                 if (res < 0) {
                     Connected = false;
+                    FirstTimeWrite = true;
+                }
+                else {
+                    Connected = true;
                     FirstTimeWrite = false;
+                    return true;
                 }
             }
             else if (connectionType == Feature::BT)
@@ -1157,8 +1176,11 @@ public:
                             res = hid_write(handle, outReport, MAX_BT_WRITE_LENGTH);
                             if (res < 0) {
                                 Connected = false;
+                                FirstTimeWrite = true;
                             }
-                            FirstTimeWrite = false;
+                            else {
+                                FirstTimeWrite = false;
+                            }                         
                         }
                 }
 
@@ -1177,8 +1199,11 @@ public:
                 outReport[15] = CurSettings.RightTriggerForces[2];
                 outReport[16] = CurSettings.RightTriggerForces[3];
                 outReport[17] = CurSettings.RightTriggerForces[4];
-                outReport[18] = CurSettings.RightTriggerForces[5];
-                outReport[21] = CurSettings.RightTriggerForces[6];
+                outReport[18] = CurSettings.RightTriggerForces[6];
+                outReport[19] = CurSettings.RightTriggerForces[7];
+                outReport[20] = CurSettings.RightTriggerForces[8];
+                outReport[21] = CurSettings.RightTriggerForces[9];
+                outReport[22] = CurSettings.RightTriggerForces[10];
                 outReport[23] = CurSettings.LeftTriggerMode;
                 outReport[24] = CurSettings.LeftTriggerForces[0];
                 outReport[25] = CurSettings.LeftTriggerForces[1];
@@ -1186,9 +1211,11 @@ public:
                 outReport[27] = CurSettings.LeftTriggerForces[3];
                 outReport[28] = CurSettings.LeftTriggerForces[4];
                 outReport[29] = CurSettings.LeftTriggerForces[5];
-                outReport[32] = CurSettings.LeftTriggerForces[6];
-                outReport[33] = 0; // one of these lowers haptic intesity
-                outReport[34] = 0;
+                outReport[30] = CurSettings.LeftTriggerForces[6];
+                outReport[31] = CurSettings.LeftTriggerForces[7];
+                outReport[32] = CurSettings.LeftTriggerForces[8];
+                outReport[33] = CurSettings.LeftTriggerForces[9];
+                outReport[34] = CurSettings.LeftTriggerForces[10];
                 outReport[35] = 0;
                 outReport[36] = 0;
                 outReport[37] = 0;
@@ -1222,7 +1249,9 @@ public:
                         if (res < 0) {
                             Connected = false;
                         }
-                        FirstTimeWrite = false;
+                        else {
+                            return true;
+                        }
                     }
                 }
                 catch (...)
@@ -1236,6 +1265,8 @@ public:
         {
             Connected = false;
         }
+
+        return false;
     }
 
     std::string GetPath()
@@ -1594,8 +1625,8 @@ public:
 
     ~Dualsense()
     {
-        SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
-        SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0);
+        SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0,0,0,0,0);
+        SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0,0,0,0,0);
         SetSpeakerVolume(100);
         UseHeadsetNotSpeaker(false);
 
@@ -1685,7 +1716,11 @@ public:
                          uint8_t Force4,
                          uint8_t Force5,
                          uint8_t Force6,
-                         uint8_t Force7)
+                         uint8_t Force7,
+                         uint8_t Force8,
+                         uint8_t Force9,
+                         uint8_t Force10,
+                         uint8_t Force11)
     {
         CurSettings.RightTriggerMode = triggerMode;
         CurSettings.RightTriggerForces[0] = Force1;
@@ -1695,6 +1730,10 @@ public:
         CurSettings.RightTriggerForces[4] = Force5;
         CurSettings.RightTriggerForces[5] = Force6;
         CurSettings.RightTriggerForces[6] = Force7;
+        CurSettings.RightTriggerForces[7] = Force8;
+        CurSettings.RightTriggerForces[8] = Force9;
+        CurSettings.RightTriggerForces[9] = Force10;
+        CurSettings.RightTriggerForces[10] = Force11;
     }
 
     void SetLeftTrigger(Trigger::TriggerMode triggerMode,
@@ -1704,7 +1743,11 @@ public:
                         uint8_t Force4,
                         uint8_t Force5,
                         uint8_t Force6,
-                        uint8_t Force7)
+                        uint8_t Force7,
+                        uint8_t Force8,
+                        uint8_t Force9,
+                        uint8_t Force10,
+                        uint8_t Force11)
     {
         CurSettings.LeftTriggerMode = triggerMode;
         CurSettings.LeftTriggerForces[0] = Force1;
@@ -1714,6 +1757,10 @@ public:
         CurSettings.LeftTriggerForces[4] = Force5;
         CurSettings.LeftTriggerForces[5] = Force6;
         CurSettings.LeftTriggerForces[6] = Force7;
+        CurSettings.LeftTriggerForces[7] = Force8;
+        CurSettings.LeftTriggerForces[8] = Force9;
+        CurSettings.LeftTriggerForces[9] = Force10;
+        CurSettings.LeftTriggerForces[10] = Force11;
     }
 
     void UseRumbleNotHaptics(bool flag)

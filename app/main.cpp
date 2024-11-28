@@ -1,4 +1,4 @@
-const int VERSION = 14;
+const int VERSION = 15;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -506,7 +506,11 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     settings.ControllerInput.RightTriggerForces[3],
                     settings.ControllerInput.RightTriggerForces[4],
                     settings.ControllerInput.RightTriggerForces[5],
-                    settings.ControllerInput.RightTriggerForces[6]);
+                    settings.ControllerInput.RightTriggerForces[6],
+                    settings.ControllerInput.RightTriggerForces[7],
+                    settings.ControllerInput.RightTriggerForces[8],
+                    settings.ControllerInput.RightTriggerForces[9],
+                    settings.ControllerInput.RightTriggerForces[10]);
 
                 controller.SetLeftTrigger(settings.ControllerInput.LeftTriggerMode,
                     settings.ControllerInput.LeftTriggerForces[0],
@@ -515,7 +519,11 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     settings.ControllerInput.LeftTriggerForces[3],
                     settings.ControllerInput.LeftTriggerForces[4],
                     settings.ControllerInput.LeftTriggerForces[5],
-                    settings.ControllerInput.LeftTriggerForces[6]);
+                    settings.ControllerInput.LeftTriggerForces[6],
+                    settings.ControllerInput.LeftTriggerForces[7],
+                    settings.ControllerInput.LeftTriggerForces[8],
+                    settings.ControllerInput.LeftTriggerForces[9],
+                    settings.ControllerInput.LeftTriggerForces[10]);
             }
 
             if (settings.RumbleToAT && !settings.CurrentlyUsingUDP) {
@@ -531,8 +539,8 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.rrumble: 255 - settings.lrumble; 
                     rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.lrumble : 255 - settings.rrumble;
 
-                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0);
-                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0);
+                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0,0,0,0,0);
                 }
                 else {
                     // set frequency
@@ -554,8 +562,8 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     leftForces[2] = 20;
                     rightForces[2] = 20;
 
-                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
-                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
+                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0,0,0,0,0);
                 }            
             }
 
@@ -579,8 +587,8 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - ScaledRightActuator: 255 - ScaledLeftActuator; 
                     rightForces[0] = settings.SwapTriggersRumbleToAT ? 255 - ScaledLeftActuator : 255 - ScaledRightActuator;
 
-                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0);
-                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0);
+                    controller.SetLeftTrigger(Trigger::Rigid, leftForces[0], leftForces[1], 0,0,0,0,0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Rigid,rightForces[0], rightForces[1], 0,0,0,0,0,0,0,0,0);
                 }
                 else {
                     //cout << ScaledLeftActuator << " | " << ScaledRightActuator << endl;
@@ -604,15 +612,15 @@ void writeControllerState(Dualsense &controller, Settings &settings)
                     leftForces[2] = 20;
                     rightForces[2] = 20;
 
-                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0);
-                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0);
+                    controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0,0,0,0,0);
+                    controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0,0,0,0,0);
                 }  
             }
             skiphapticstotriggers:
 
             if (settings.TriggersAsButtons && !settings.CurrentlyUsingUDP && settings.emuStatus != None) {
-                controller.SetLeftTrigger(Trigger::Rigid,40,255,255,255,255,255,255);
-                controller.SetRightTrigger(Trigger::Rigid,40,255,255,255,255,255,255);
+                controller.SetLeftTrigger(Trigger::Rigid,40,255,255,255,255,255,255,255,255,255,255);
+                controller.SetRightTrigger(Trigger::Rigid,40,255,255,255,255,255,255,255,255,255,255);
             }
 
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
@@ -1272,7 +1280,11 @@ int main()
                                 udpSettings.ControllerInput.LeftTriggerForces[3],
                                 udpSettings.ControllerInput.LeftTriggerForces[4],
                                 udpSettings.ControllerInput.LeftTriggerForces[5],
-                                udpSettings.ControllerInput.LeftTriggerForces[6]);
+                                udpSettings.ControllerInput.LeftTriggerForces[6],
+                                udpSettings.ControllerInput.LeftTriggerForces[7],
+                                udpSettings.ControllerInput.LeftTriggerForces[8],
+                                udpSettings.ControllerInput.LeftTriggerForces[9],
+                                udpSettings.ControllerInput.LeftTriggerForces[10]);
 
                             DualSense[i].SetRightTrigger(udpSettings.ControllerInput.RightTriggerMode,
                                 udpSettings.ControllerInput.RightTriggerForces[0],
@@ -1281,7 +1293,11 @@ int main()
                                 udpSettings.ControllerInput.RightTriggerForces[3],
                                 udpSettings.ControllerInput.RightTriggerForces[4],
                                 udpSettings.ControllerInput.RightTriggerForces[5],
-                                udpSettings.ControllerInput.RightTriggerForces[6]);
+                                udpSettings.ControllerInput.RightTriggerForces[6],
+                                udpSettings.ControllerInput.RightTriggerForces[7],
+                                udpSettings.ControllerInput.RightTriggerForces[8],
+                                udpSettings.ControllerInput.RightTriggerForces[9],
+                                udpSettings.ControllerInput.RightTriggerForces[10]);
 
                             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
                             if ((Now - udpServer.LastTime) > 8s) {
@@ -1480,6 +1496,22 @@ int main()
                                         &s.ControllerInput.LeftTriggerForces[6],
                                         0,
                                         255);
+                                    ImGui::SliderInt("LT 8",
+                                        &s.ControllerInput.LeftTriggerForces[7],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("LT 9",
+                                        &s.ControllerInput.LeftTriggerForces[8],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("LT 10",
+                                        &s.ControllerInput.LeftTriggerForces[9],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("LT 11",
+                                        &s.ControllerInput.LeftTriggerForces[10],
+                                        0,
+                                        255);
 
                                     ImGui::Spacing();
 
@@ -1563,6 +1595,22 @@ int main()
                                         255);
                                     ImGui::SliderInt("RT 7",
                                         &s.ControllerInput.RightTriggerForces[6],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("RT 8",
+                                        &s.ControllerInput.RightTriggerForces[7],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("RT 9",
+                                        &s.ControllerInput.RightTriggerForces[8],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("RT 10",
+                                        &s.ControllerInput.RightTriggerForces[9],
+                                        0,
+                                        255);
+                                    ImGui::SliderInt("RT 11",
+                                        &s.ControllerInput.RightTriggerForces[10],
                                         0,
                                         255);
                                     ImGui::Separator();

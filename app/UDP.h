@@ -27,6 +27,7 @@ class UDP
 public:
     bool isActive = false;
     int Battery;
+    Settings thisSettings;    
     std::chrono::high_resolution_clock::time_point LastTime;
     struct UDPResponse
     {
@@ -119,15 +120,33 @@ public:
         }
     }
 
+    std::string getParameterValueAsString(const nlohmann::json& param) {
+        if (param.is_null()) {
+            return ""; // Default value for null
+        }
+        else if (param.is_string()) {
+            return param.get<std::string>(); // Return the string directly
+        }
+        else if (param.is_boolean()) {
+            return param.get<bool>() ? "true" : "false"; // Convert boolean to "true" or "false"
+        }
+        else if (param.is_number()) {
+            return std::to_string(param.get<double>()); // Convert number to string
+        }
+        else {
+            return ""; // Default value for unsupported types
+        }
+    }
+
     void Listen()
     {
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
         sockaddr_in clientAddr{};
         int clientAddrSize = sizeof(clientAddr);
         char recvBuffer[1024];
 
         while (serverOn)
-        {
-                      
+        {                 
             int bytesReceived = recvfrom(clientSocket,
                                          recvBuffer,
                                          sizeof(recvBuffer),
@@ -171,7 +190,7 @@ public:
                 uint8_t triggers[11];
                 Trigger::TriggerMode mode = Trigger::Off;
              
-                int type = !instr["type"].is_null() ? static_cast<int>(instr["type"]) : 0;
+                int type = getParameterValue(instr["type"]);
                 int intParam0 = getParameterValue(instr["parameters"][0]);
                 int intParam1 = getParameterValue(instr["parameters"][1]);
                 int intParam2 = getParameterValue(instr["parameters"][2]);
@@ -771,6 +790,9 @@ public:
                     thisSettings.ControllerInput.Blue = intParam3;
                     break;
                 }
+                case 8:
+                    thisSettings.CurrentHapticFile = getParameterValueAsString(instr["parameters"][0]);
+                    break;
                 default:
                     break;
                 }
@@ -823,15 +845,9 @@ public:
         WSACleanup();
     }
 
-    Settings GetSettings()
-    {
-        return thisSettings;
-    }
-
 private:
     SOCKET clientSocket = INVALID_SOCKET;
     bool serverOn;
     bool newPacket = false;
     bool unavailable;
-    Settings thisSettings;    
 };

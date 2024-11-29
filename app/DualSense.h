@@ -20,6 +20,7 @@
 #include <string>
 #include <usbiodef.h>
 #include <nlohmann/json.hpp>
+#include <codecvt>
 
 using namespace std;
 
@@ -838,6 +839,8 @@ private:
     bool WasConnectedAtLeastOnce = false;
     bool DisconnectedByError = false;
     bool FirstTimeWrite = true;
+    wstring AudioDeviceInstanceID;
+    wstring AudioDeviceName;
 
     DualsenseUtils::InputFeatures CurSettings;
     DualsenseUtils::InputFeatures LastSettings;
@@ -923,6 +926,14 @@ public:
     wstring GetKnownAudioParentInstanceID()
     {
         return lastKnownParent;
+    }
+
+    wstring GetAudioDeviceInstanceID() {
+        return AudioDeviceInstanceID;
+    }
+
+    wstring GetAudioDeviceName() {
+        return AudioDeviceName;
     }
 
     void Read()
@@ -1279,6 +1290,28 @@ public:
         return (Feature::ConnectionType)connectionType;
     }
 
+    std::wstring GetDeviceName(CComPtr<IPropertyStore> pProps) {
+        if (!pProps) {
+            return L""; // Return an empty string if the property store pointer is invalid
+        }
+
+        PROPVARIANT propVar;
+        PropVariantInit(&propVar);
+
+        std::wstring deviceName;
+
+        // Get the friendly name property
+        HRESULT hr = pProps->GetValue(PKEY_Device_FriendlyName, &propVar);
+        if (SUCCEEDED(hr) && propVar.vt == VT_LPWSTR) {
+            deviceName = propVar.pwszVal; // Assign the friendly name
+        }
+
+        // Clean up the PROPVARIANT
+        PropVariantClear(&propVar);
+
+        return deviceName; // Return the friendly name or an empty string if not found
+    }
+
     void InitializeAudioEngine(bool InitEngine = true)
     {
         if (!AudioInitialized && !AudioDeviceNotFound && connectionType == Feature::USB && Connected)
@@ -1343,6 +1376,7 @@ public:
                     CComPtr<IPropertyStore> pProps;
                     hr = pDevice->OpenPropertyStore(STGM_READ, &pProps);
                     hr = pDevice->GetId(&ID);
+
                     if (FAILED(hr))
                     {
                         std::wcerr << L"Failed to open property store for "
@@ -1364,7 +1398,9 @@ public:
                             wcout << "Found matching parents for dualsense "
                                      "speaker: "
                                   << foundID << endl;
-                            found = true;
+                            found = true;;
+                            AudioDeviceInstanceID = foundID;
+                            AudioDeviceName = GetDeviceName(pProps);
                             break;
                         }
                         else {
@@ -1416,6 +1452,7 @@ public:
                 {
                     wcout << "Selected audio device: " << info.id.wasapi
                           << " Index:" << deviceIndex << endl;
+
                     found = true;
                     break;
                 }

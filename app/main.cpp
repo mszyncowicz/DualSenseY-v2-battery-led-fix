@@ -1,4 +1,4 @@
-const int VERSION = 15;
+const int VERSION = 16;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -1048,6 +1048,17 @@ int main()
     
     ImGuiIO &io = ImGui::GetIO();
 
+     static const ImWchar polishGlyphRange[] = {
+                0x0020, 0x00FF, // Basic Latin + Latin Supplement
+                0x0100, 0x017F, // Latin Extended-A
+                0x0180, 0x024F, // Latin Extended-B (if you need even more coverage)
+                0 };
+      if (appConfig.Language == "ja")    
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+      else {
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
+      }
+
     std::vector<const char*> languageItems;
     for (const auto& lang : languages) {
         languageItems.push_back(lang.c_str());
@@ -1061,19 +1072,7 @@ int main()
             break;
         }
     }
-
-    if (appConfig.Language == "jp")    
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 17.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    else {
-        static const ImWchar polishGlyphRange[] = {
-        0x0020, 0x00FF, // Basic Latin + Latin Supplement
-        0x0100, 0x017F, // Latin Extended-A
-        0x0180, 0x024F, // Latin Extended-B (if you need even more coverage)
-        0 };
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
-    }
-       
-
+    
     setTaskbarIcon(window);
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
     bool WindowHiddenOnStartup = false;
@@ -1087,6 +1086,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+
         if (IsMinimized && appConfig.HideToTray || IsMinimized && !appConfig.HideToTray && appConfig.HideWindowOnStartup && WindowHiddenOnStartup) {
             glfwHideWindow(window);
             WindowHiddenOnStartup = false;       
@@ -1270,34 +1270,38 @@ int main()
                                 firstTimeUDP = false;
                             }
                             s.CurrentlyUsingUDP = true;
-                            Settings udpSettings = udpServer.GetSettings();
                             udpServer.Battery = DualSense[i].State.battery.Level;               
-                            DualSense[i].SetLightbar(udpSettings.ControllerInput.Red, udpSettings.ControllerInput.Green, udpSettings.ControllerInput.Blue);
-                            DualSense[i].SetLeftTrigger(udpSettings.ControllerInput.LeftTriggerMode,
-                                udpSettings.ControllerInput.LeftTriggerForces[0],
-                                udpSettings.ControllerInput.LeftTriggerForces[1],
-                                udpSettings.ControllerInput.LeftTriggerForces[2],
-                                udpSettings.ControllerInput.LeftTriggerForces[3],
-                                udpSettings.ControllerInput.LeftTriggerForces[4],
-                                udpSettings.ControllerInput.LeftTriggerForces[5],
-                                udpSettings.ControllerInput.LeftTriggerForces[6],
-                                udpSettings.ControllerInput.LeftTriggerForces[7],
-                                udpSettings.ControllerInput.LeftTriggerForces[8],
-                                udpSettings.ControllerInput.LeftTriggerForces[9],
-                                udpSettings.ControllerInput.LeftTriggerForces[10]);
+                            DualSense[i].SetLightbar(udpServer.thisSettings.ControllerInput.Red, udpServer.thisSettings.ControllerInput.Green, udpServer.thisSettings.ControllerInput.Blue);
+                            DualSense[i].SetLeftTrigger(udpServer.thisSettings.ControllerInput.LeftTriggerMode,
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[0],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[1],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[2],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[3],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[4],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[5],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[6],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[7],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[8],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[9],
+                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[10]);
 
-                            DualSense[i].SetRightTrigger(udpSettings.ControllerInput.RightTriggerMode,
-                                udpSettings.ControllerInput.RightTriggerForces[0],
-                                udpSettings.ControllerInput.RightTriggerForces[1],
-                                udpSettings.ControllerInput.RightTriggerForces[2],
-                                udpSettings.ControllerInput.RightTriggerForces[3],
-                                udpSettings.ControllerInput.RightTriggerForces[4],
-                                udpSettings.ControllerInput.RightTriggerForces[5],
-                                udpSettings.ControllerInput.RightTriggerForces[6],
-                                udpSettings.ControllerInput.RightTriggerForces[7],
-                                udpSettings.ControllerInput.RightTriggerForces[8],
-                                udpSettings.ControllerInput.RightTriggerForces[9],
-                                udpSettings.ControllerInput.RightTriggerForces[10]);
+                            DualSense[i].SetRightTrigger(udpServer.thisSettings.ControllerInput.RightTriggerMode,
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[0],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[1],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[2],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[3],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[4],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[5],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[6],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[7],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[8],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[9],
+                                udpServer.thisSettings.ControllerInput.RightTriggerForces[10]);
+
+                            if (udpServer.thisSettings.CurrentHapticFile != "") {
+                                DualSense[i].PlayHaptics(udpServer.thisSettings.CurrentHapticFile.c_str());
+                                udpServer.thisSettings.CurrentHapticFile = "";
+                            }
 
                             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
                             if ((Now - udpServer.LastTime) > 8s) {
@@ -1648,7 +1652,7 @@ int main()
                                         si.cb = sizeof(si);
                                         ZeroMemory(&pi, sizeof(pi));
 
-                                        string id = WStringToString(DualSense[i].GetKnownAudioParentInstanceID());
+                                        string id =  WStringToString(DualSense[i].GetAudioDeviceName());
                                         string arg1 = string("\"") + id + string("\"");
                                         string command = "utilities\\AudioPassthrough.exe " + arg1;
 
@@ -1675,6 +1679,10 @@ int main()
                                     Tooltip(strings.Tooltip_SpeakerVolume.c_str());
 
                                     ImGui::Checkbox("Use headset", &s.UseHeadset);
+
+                                    ImGui::Separator();
+                                    ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
+                                    ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceName()).c_str());
                                 }
                                 else
                                 {
@@ -1801,8 +1809,7 @@ int main()
                             if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
                                 ImGui::SetNextItemWidth(120.0f);
                                 if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
-                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];
-                                    strings = ReadStringsFromFile(selectedLanguage);
+                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];                                    
                                     appConfig.Language = selectedLanguage;
                                     Config::WriteAppConfigToFile(appConfig);
                                 }

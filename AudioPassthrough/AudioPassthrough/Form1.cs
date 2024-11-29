@@ -48,22 +48,14 @@ namespace AudioPassthrough {
                 device = null;
 
                 foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                    mmdevice.GetPropertyInformation(NAudio.CoreAudioApi.Interfaces.StorageAccessMode.Read);
-                    Regex rg = new Regex(@"[{\d}]*\.(.*)$");
-                    PropertyStoreProperty controllerDeviceId = mmdevice.Properties[PropertyKeys.PKEY_Device_ControllerDeviceId];
-                    Match deviceIdMatch = rg.Match((string)controllerDeviceId.Value);
-
-                    for (int i = 0; i < deviceIdMatch.Groups.Count; i++) {
-                        try {
-                            string instancePath = deviceIdMatch.Groups[i].Value;
-                            if (instancePath.ToLower().Substring(0, arg.Length - 4).Replace("mi_00", "") == arg.ToLower().Substring(0, arg.Length - 4).Replace("mi_03", "")) {
-                                device = mmdevice;
-                                break;
-                            }
+                    try {
+                        if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
+                            device = mmdevice;
+                            break;
                         }
-                        catch {
-                            continue;
-                        }
+                    }
+                    catch {
+                        continue;
                     }
                 }
 
@@ -86,23 +78,15 @@ namespace AudioPassthrough {
         private void StartAudioToHaptics(string instanceID = "", bool reconnectattempt = false) {
             device = null;
             foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                mmdevice.GetPropertyInformation(NAudio.CoreAudioApi.Interfaces.StorageAccessMode.Read);
-                Regex rg = new Regex(@"[{\d}]*\.(.*)$");
-                PropertyStoreProperty controllerDeviceId = mmdevice.Properties[PropertyKeys.PKEY_Device_ControllerDeviceId];
-                Match deviceIdMatch = rg.Match((string)controllerDeviceId.Value);
-
-                for (int i = 0; i < deviceIdMatch.Groups.Count; i++) {
-                    try {
-                        string instancePath = deviceIdMatch.Groups[i].Value;
-                        if (instancePath.ToLower().Substring(0, instanceID.Length - 4).Replace("mi_00", "") == instanceID.ToLower().Substring(0, instanceID.Length - 4).Replace("mi_03", "")) {
-                            device = mmdevice;
-                            audioID = instanceID;
-                            break;
-                        }
+                try {
+                    if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
+                        device = mmdevice;
+                        audioID = instanceID;
+                        break;
                     }
-                    catch {
-                        continue;
-                    }
+                }
+                catch {
+                    continue;
                 }
             }
 
@@ -186,7 +170,6 @@ namespace AudioPassthrough {
             speakerPlaybackVolume = speaker;
             leftActuatorVolume = left;
             rightActuatorVolume = right;
-
 
             try {
                 if (audioPassthroughStream != null) {

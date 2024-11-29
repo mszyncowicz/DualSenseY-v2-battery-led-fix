@@ -37,6 +37,7 @@ public:
     int LeftAnalogDeadzone = 0;
     int RightAnalogDeadzone = 0;
     bool TriggersAsButtons = false;
+    std::string CurrentHapticFile = "";
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {

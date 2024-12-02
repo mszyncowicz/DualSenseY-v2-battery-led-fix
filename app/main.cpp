@@ -1,4 +1,4 @@
-const int VERSION = 16;
+const int VERSION = 18;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -23,7 +23,6 @@ const int VERSION = 16;
 #include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <TlHelp32.h>
 //#include <cstdlib>
 //#include <crtdbg.h>
 
@@ -98,6 +97,8 @@ void InitializeAudioEndpoint()
                      CLSCTX_ALL,
                      nullptr,
                      (void **)&meterInfo);
+
+    CoUninitialize();
 }
 
 void DeinitializeAudioEndpoint()
@@ -157,9 +158,8 @@ float GetCurrentAudioPeak()
             device->Release();
         if (deviceEnumerator)
             deviceEnumerator->Release();
-        CoUninitialize();
-        InitializeAudioEndpoint();
         client->DeviceChanged = false;
+        InitializeAudioEndpoint();
     }
 
     float peakValue = 0.0f;
@@ -204,11 +204,14 @@ void writeEmuController(Dualsense &controller, Settings &settings)
     ViGEm v;
     v.InitializeVigembus();
     ButtonState editedButtonState;
+    constexpr auto POLL_INTERVAL = std::chrono::milliseconds(1); // 1ms polling
 
     while (!stop_thread)
     {
         if (controller.Connected)
         {
+            auto start = std::chrono::high_resolution_clock::now();
+
             editedButtonState = controller.State;
 
             int deltaLX = editedButtonState.LX - 128;
@@ -298,7 +301,12 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                     }
                 }            
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+            auto end = std::chrono::high_resolution_clock::now();
+            auto elapsed = end - start;
+            if (elapsed < POLL_INTERVAL) {
+                std::this_thread::sleep_for(POLL_INTERVAL - elapsed);
+            }
         }
 
         if(settings.emuStatus == None || !controller.Connected)
@@ -900,12 +908,17 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 int main()
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-    glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
-    glaiel::crashlogs::begin_monitoring();
+    timeBeginPeriod(1);
+    //glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
+    //glaiel::crashlogs::begin_monitoring();
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(28737);
-    FreeConsole();
+
+    Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
+
+    if(appConfig.ShowConsole == false)
+        FreeConsole();
  
     bool UpdateAvailable = false;
     try {
@@ -923,8 +936,7 @@ int main()
     catch (...) {
         cout << "Version check failed" << endl;
     }
-  
-    Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
+     
     if (appConfig.ElevateOnStartup) {
         ElevateNow();
     }
@@ -1299,10 +1311,11 @@ int main()
                                 udpServer.thisSettings.ControllerInput.RightTriggerForces[10]);
 
                             if (udpServer.thisSettings.CurrentHapticFile != "") {
+                                
                                 DualSense[i].PlayHaptics(udpServer.thisSettings.CurrentHapticFile.c_str());
                                 udpServer.thisSettings.CurrentHapticFile = "";
                             }
-
+                            
                             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
                             if ((Now - udpServer.LastTime) > 8s) {
                                 udpServer.isActive = false;
@@ -1652,9 +1665,11 @@ int main()
                                         si.cb = sizeof(si);
                                         ZeroMemory(&pi, sizeof(pi));
 
-                                        string id =  WStringToString(DualSense[i].GetAudioDeviceName());
+                                        string id = DualSense[i].GetAudioDeviceName();
                                         string arg1 = string("\"") + id + string("\"");
                                         string command = "utilities\\AudioPassthrough.exe " + arg1;
+
+                                        cout << "Starting audio to haptics" << endl << "Arg1: " << arg1 << endl;
 
                                         if (CreateProcess(NULL,   // No module name (use command line)
                                             (LPSTR)command.c_str(),        // Command line
@@ -1682,7 +1697,7 @@ int main()
 
                                     ImGui::Separator();
                                     ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
-                                    ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceName()).c_str());
+                                    ImGui::Text(DualSense[i].GetAudioDeviceName());
                                 }
                                 else
                                 {
@@ -1866,7 +1881,11 @@ int main()
 
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                                Tooltip(strings.RunWithWindows.c_str());                               
+                                Tooltip(strings.RunWithWindows.c_str());
+
+                                if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
                             }                         
                         }
                     }
@@ -1938,6 +1957,7 @@ int main()
     DeinitializeAudioEndpoint();
     //_CrtDumpMemoryLeaks();
 
+    timeEndPeriod(1);
     return 0;
 }
 

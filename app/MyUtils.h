@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include <crashlogs.h>
 #include <TlHelp32.h>
+#include <timeapi.h>
 
 namespace MyUtils {
     std::string GetExecutablePath();

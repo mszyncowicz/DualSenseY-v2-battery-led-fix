@@ -6,6 +6,7 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string ShowConsole = "Show debug console";
     std::string UseHeadset = "Use headset";
     std::string TouchpadShortcut = "Touchpad + Mic button = Touchpad as mouse";
     std::string TouchpadAsSelectStart = "Touchpad as select/start";
@@ -140,6 +141,7 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["ShowConsole"] = ShowConsole;
         j["UseHeadset"] = UseHeadset;
         j["TouchpadShortcut"] = TouchpadShortcut;
         j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
@@ -247,6 +249,9 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("ShowConsole"))
+            j.at("ShowConsole").get_to(strings.ShowConsole);
 
         if (j.contains("UseHeadset"))
             j.at("UseHeadset").get_to(strings.UseHeadset);

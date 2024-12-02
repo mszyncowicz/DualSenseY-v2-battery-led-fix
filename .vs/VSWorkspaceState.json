@@ -12,8 +12,9 @@
   "ExpandedNodes": [
     "",
     "\\app",
-    "\\AudioPassthrough"
+    "\\AudioPassthrough",
+    "\\AudioPassthrough\\AudioPassthrough"
   ],
-  "SelectedNode": "\\app\\UDP.h",
+  "SelectedNode": "\\app\\DualSense.h",
   "PreviewInSolutionExplorer": false
 }

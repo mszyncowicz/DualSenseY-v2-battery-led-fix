@@ -33,8 +33,7 @@ public:
                            ERole role,
                            LPCWSTR pwstrDefaultDeviceId) override
     {
-        std::wcout << L"Default device changed: " << pwstrDefaultDeviceId
-                   << std::endl;
+        std::wcout << L"Default device changed: " << pwstrDefaultDeviceId << std::endl;
         DeviceChanged = true;
         return S_OK;
     }

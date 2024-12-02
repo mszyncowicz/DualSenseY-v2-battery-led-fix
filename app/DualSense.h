@@ -784,6 +784,8 @@ public:
 class Dualsense
 {
 private:
+    std::chrono::steady_clock::time_point lastPlayTime;
+    std::chrono::milliseconds cooldownDuration{300}; // Cooldown duration (1 second)
     static void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
         float* pInputSamples = (float*)input;
         Dualsense* self = (Dualsense*)device->pUserData;
@@ -840,7 +842,7 @@ private:
     bool DisconnectedByError = false;
     bool FirstTimeWrite = true;
     wstring AudioDeviceInstanceID;
-    wstring AudioDeviceName;
+    const char* AudioDeviceName;
 
     DualsenseUtils::InputFeatures CurSettings;
     DualsenseUtils::InputFeatures LastSettings;
@@ -932,7 +934,7 @@ public:
         return AudioDeviceInstanceID;
     }
 
-    wstring GetAudioDeviceName() {
+    const char* GetAudioDeviceName() {
         return AudioDeviceName;
     }
 
@@ -1290,28 +1292,6 @@ public:
         return (Feature::ConnectionType)connectionType;
     }
 
-    std::wstring GetDeviceName(CComPtr<IPropertyStore> pProps) {
-        if (!pProps) {
-            return L""; // Return an empty string if the property store pointer is invalid
-        }
-
-        PROPVARIANT propVar;
-        PropVariantInit(&propVar);
-
-        std::wstring deviceName;
-
-        // Get the friendly name property
-        HRESULT hr = pProps->GetValue(PKEY_Device_FriendlyName, &propVar);
-        if (SUCCEEDED(hr) && propVar.vt == VT_LPWSTR) {
-            deviceName = propVar.pwszVal; // Assign the friendly name
-        }
-
-        // Clean up the PROPVARIANT
-        PropVariantClear(&propVar);
-
-        return deviceName; // Return the friendly name or an empty string if not found
-    }
-
     void InitializeAudioEngine(bool InitEngine = true)
     {
         if (!AudioInitialized && !AudioDeviceNotFound && connectionType == Feature::USB && Connected)
@@ -1400,7 +1380,6 @@ public:
                                   << foundID << endl;
                             found = true;;
                             AudioDeviceInstanceID = foundID;
-                            AudioDeviceName = GetDeviceName(pProps);
                             break;
                         }
                         else {
@@ -1521,6 +1500,7 @@ public:
                 }
                 else
                 {
+                    AudioDeviceName = pPlaybackInfos[deviceIndex].name;
                     cout << "Audio device intialized" << endl;
                 }
 
@@ -1543,6 +1523,8 @@ public:
                     cout << "Sound engine intialized" << endl;
                 }
 
+                ma_engine_set_time_in_milliseconds(&engine, 0);
+                ma_engine_set_time_in_pcm_frames(&engine, 0);
                 ma_engine_set_volume(&engine, 100);
                 ma_device_set_master_volume(&device, 1.0f);
                 AudioInitialized = true;
@@ -1563,20 +1545,24 @@ public:
         return DualsenseUtils::HapticFeedbackStatus::Working;
     }
 
-    bool PlayHaptics(const char *WavFileLocation)
-    {
-        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound)
-        {
-            ma_result soundplay =
-                ma_engine_play_sound(&engine, WavFileLocation, NULL);
+    bool PlayHaptics(const char* WavFileLocation) {
+        auto now = std::chrono::steady_clock::now();
 
-            if (soundplay == MA_SUCCESS)
-            {
+        // Check if the cooldown period has passed
+        if (now - lastPlayTime < cooldownDuration) {
+            return false;
+        }
+
+        // Update the last play time
+        lastPlayTime = now;
+
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound) {       
+            ma_result soundplay = ma_engine_play_sound(&engine, WavFileLocation, NULL);
+
+            if (soundplay == MA_SUCCESS) {
                 return true;
-            }
-            else
-            {
-                cout << (ma_result)soundplay << endl;
+            } else {
+                std::cout << static_cast<int>(soundplay) << std::endl;
             }
         }
 

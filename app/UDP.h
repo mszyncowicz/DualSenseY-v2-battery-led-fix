@@ -109,9 +109,6 @@ public:
         if (param.is_null()) {
             return 0; // Default value for null
         }
-        else if (param.is_boolean()) {
-            return param.get<bool>() ? 1 : 0; // Convert boolean to 1 or 0
-        }
         else if (param.is_number()) {
             return param.get<int>(); // Convert number to int
         }
@@ -791,9 +788,11 @@ public:
                     break;
                 }
                 case 8:
+                    cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;
                     thisSettings.CurrentHapticFile = getParameterValueAsString(instr["parameters"][0]);
                     break;
                 default:
+                    cout << "Unrecognized instruction received! Number: " << type << endl;
                     break;
                 }
             }

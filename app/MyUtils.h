@@ -23,6 +23,7 @@
 #include <nlohmann/json.hpp>
 #include <crashlogs.h>
 #include <TlHelp32.h>
+#include <SetupAPI.h>
 #include <timeapi.h>
 
 namespace MyUtils {
@@ -35,6 +36,7 @@ namespace MyUtils {
     int scaleFloatToInt(float input_float);
     std::string currentDateTime();
     std::string currentDateTimeWMS();
+    bool RestartHIDDevice(const std::string& deviceInstanceID);
     bool GetConfigPathForController(std::string& Path, std::string ControllerID);
     bool WriteDefaultConfigPath(std::string Path, std::string ControllerID);
     void RemoveConfig(std::string ControllerID);

@@ -861,13 +861,6 @@ public:
     {
         if (Path != "")
         {
-            res = hid_init();
-
-            if (res != 0)
-            {
-                std::cerr << "HIDAPI initialization failed!" << std::endl;
-            }
-
             handle = hid_open_path(Path.c_str());
 
             if (!handle)

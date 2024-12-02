@@ -1,4 +1,4 @@
-const int VERSION = 18;
+const int VERSION = 19;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -175,7 +175,7 @@ float GetCurrentAudioPeak()
 
 void readControllerState(Dualsense &controller)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
     while (!stop_thread)
     {
         controller.Read(); // Perform the read operation
@@ -200,7 +200,7 @@ void Tooltip(const char* text) {
 
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
     ViGEm v;
     v.InitializeVigembus();
     ButtonState editedButtonState;
@@ -334,7 +334,7 @@ void MouseClick(DWORD flag, DWORD mouseData = 0)
 
 void writeControllerState(Dualsense &controller, Settings &settings)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
     cout << "Write thread started: " << controller.GetPath() << " | "
          << settings.ControllerInput.ID << endl;
 
@@ -907,13 +907,20 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
     timeBeginPeriod(1);
     //glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
     //glaiel::crashlogs::begin_monitoring();
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(28737);
+
+    int res = hid_init();
+
+    if (res != 0)
+    {
+        std::cerr << "HIDAPI initialization failed!" << std::endl;
+    }
 
     Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
 
@@ -1896,7 +1903,7 @@ int main()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(33));
 
         ImGui::End();
         ImGui::Render();
@@ -1935,8 +1942,8 @@ int main()
     if(WasElevated)
     {
         for (Dualsense& ds : DualSense) {
-            StartHidHideRequest(ds.GetPath(), "show");
             ds.~Dualsense();
+            StartHidHideRequest(ds.GetPath(), "show");
         }
     }
 

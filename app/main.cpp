@@ -1,4 +1,4 @@
-const int VERSION = 19;
+const int VERSION = 20;
 
 //#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
@@ -175,7 +175,7 @@ float GetCurrentAudioPeak()
 
 void readControllerState(Dualsense &controller)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
     while (!stop_thread)
     {
         controller.Read(); // Perform the read operation
@@ -200,16 +200,41 @@ void Tooltip(const char* text) {
 
 void writeEmuController(Dualsense &controller, Settings &settings)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
     ViGEm v;
     v.InitializeVigembus();
     ButtonState editedButtonState;
     constexpr auto POLL_INTERVAL = std::chrono::microseconds(500); // 0.5ms polling
+    constexpr auto DISCONNECT_DELAY = std::chrono::seconds(5); // 5 seconds delay
+
+    auto lastConnectedTime = std::chrono::high_resolution_clock::now();
+    bool wasVirtualControllerStarted = false;
 
     while (!stop_thread)
     {
         if (controller.Connected)
         {
+            lastConnectedTime = std::chrono::high_resolution_clock::now();
+
+            if (!wasVirtualControllerStarted)
+            {
+                if (settings.emuStatus == X360)
+                {
+                    v.StartX360();
+                }
+                else if (settings.emuStatus == DS4)
+                {
+                    if (settings.DualShock4V2)
+                        v.SetDS4V2();
+                    else
+                        v.SetDS4V1();
+
+                    v.StartDS4();
+                }
+
+                wasVirtualControllerStarted = true;
+            }
+
             auto start = std::chrono::high_resolution_clock::now();
 
             editedButtonState = controller.State;
@@ -279,23 +304,17 @@ void writeEmuController(Dualsense &controller, Settings &settings)
 
             if (settings.emuStatus == X360)
             {
-                v.StartX360();
                 v.UpdateX360(editedButtonState);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
             }
             else if (settings.emuStatus == DS4)
             {
-                if (settings.DualShock4V2)
-                    v.SetDS4V2();
-                else
-                    v.SetDS4V1();
-
-                v.StartDS4();
                 v.UpdateDS4(editedButtonState);
                 settings.lrumble = v.rotors.lrotor;
                 settings.rrumble = v.rotors.rrotor;
-                if(!settings.CurrentlyUsingUDP){
+
+                if (!settings.CurrentlyUsingUDP) {
                     if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
                         controller.SetLightbar(v.Red, v.Green, v.Blue);                      
                     }
@@ -308,17 +327,22 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 std::this_thread::sleep_for(POLL_INTERVAL - elapsed);
             }
         }
-
-        if(settings.emuStatus == None || !controller.Connected)
+        else
         {
-            v.Remove360();
-            v.RemoveDS4();
+            auto now = std::chrono::high_resolution_clock::now();
+            if (wasVirtualControllerStarted && now - lastConnectedTime > DISCONNECT_DELAY)
+            {
+                v.Remove360();
+                v.RemoveDS4();
+                wasVirtualControllerStarted = false;
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }
 
     v.Free();
 }
+
 
 void MouseClick(DWORD flag, DWORD mouseData = 0)
 {
@@ -334,7 +358,7 @@ void MouseClick(DWORD flag, DWORD mouseData = 0)
 
 void writeControllerState(Dualsense &controller, Settings &settings)
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
     cout << "Write thread started: " << controller.GetPath() << " | "
          << settings.ControllerInput.ID << endl;
 
@@ -1913,7 +1937,7 @@ int main()
 
     stop_thread = true; // Signal all threads to stop
 
-    std::this_thread::sleep_for(std::chrono::microseconds(30));
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
 
     for (auto &thread : readThreads)
     {
@@ -1942,8 +1966,8 @@ int main()
     if(WasElevated)
     {
         for (Dualsense& ds : DualSense) {
-            ds.~Dualsense();
             StartHidHideRequest(ds.GetPath(), "show");
+            ds.~Dualsense();
         }
     }
 

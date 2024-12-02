@@ -204,7 +204,7 @@ void writeEmuController(Dualsense &controller, Settings &settings)
     ViGEm v;
     v.InitializeVigembus();
     ButtonState editedButtonState;
-    constexpr auto POLL_INTERVAL = std::chrono::milliseconds(1); // 1ms polling
+    constexpr auto POLL_INTERVAL = std::chrono::microseconds(500); // 0.5ms polling
 
     while (!stop_thread)
     {

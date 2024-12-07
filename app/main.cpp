@@ -1,6 +1,5 @@
-const int VERSION = 20;
+const int VERSION = 21;
 
-//#define _CRTDBG_MAP_ALLOC
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -23,6 +22,9 @@ const int VERSION = 20;
 #include "Strings.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <algorithm>
+
+//#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
 //#include <crtdbg.h>
 
@@ -366,7 +368,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
     int colorState = 0; // 0 = red to yellow, 1 = yellow to green, 2 = green to cyan, etc.
     int colorStateBattery = 0;
     int colorStateX360EMU = 0;
-    uint8_t led[3];
+    int led[3];
     int step = 5; 
     led[0] = 255;
     led[1] = 0;
@@ -658,46 +660,79 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
             {
                 int peak = static_cast<int>(GetCurrentAudioPeak() * 500);
-                controller.SetLightbar(peak,peak,peak);
+
+                int r = 0, g = 0, b = 0;
+
+                if (peak <= settings.QUIET_THRESHOLD)
+                {
+                    float t = static_cast<float>(peak) / settings.QUIET_THRESHOLD;
+                    r = static_cast<int>(t * settings.QUIET_COLOR[0]);
+                    g = static_cast<int>(t * settings.QUIET_COLOR[1]);
+                    b = static_cast<int>(t * settings.QUIET_COLOR[2]);
+                }
+                else if (peak <= settings.MEDIUM_THRESHOLD)
+                {
+                    float t = static_cast<float>(peak - settings.QUIET_THRESHOLD) / (settings.MEDIUM_THRESHOLD - settings.QUIET_THRESHOLD);
+                    r = static_cast<int>(settings.QUIET_COLOR[0] + t * (settings.MEDIUM_COLOR[0] - settings.QUIET_COLOR[0]));
+                    g = static_cast<int>(settings.QUIET_COLOR[1] + t * (settings.MEDIUM_COLOR[1] - settings.QUIET_COLOR[1]));
+                    b = static_cast<int>(settings.QUIET_COLOR[2] + t * (settings.MEDIUM_COLOR[2] - settings.QUIET_COLOR[2]));
+                }
+                else
+                {
+                    float t = static_cast<float>(peak - settings.MEDIUM_THRESHOLD) / (255 - settings.MEDIUM_THRESHOLD);
+                    r = static_cast<int>(settings.MEDIUM_COLOR[0] + t * (settings.LOUD_COLOR[0] - settings.MEDIUM_COLOR[0]));
+                    g = static_cast<int>(settings.MEDIUM_COLOR[1] + t * (settings.LOUD_COLOR[1] - settings.MEDIUM_COLOR[1]));
+                    b = static_cast<int>(settings.MEDIUM_COLOR[2] + t * (settings.LOUD_COLOR[2] - settings.MEDIUM_COLOR[2]));
+                }
+
+                controller.SetLightbar(r, g, b);
             }
 
-            if (settings.DiscoMode && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
-            {               
+            if (settings.DiscoMode && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed) {
+                constexpr int DEFAULT_SPEED = 1;
+                int speed = settings.DiscoSpeed;
+                int step = DEFAULT_SPEED * speed;
+
                 controller.SetLightbar(led[0], led[1], led[2]);
 
                 switch (colorState)
-                    {
-                        case 0:
-                            led[1] += step;
-                            if (led[1] >= 255) colorState = 1;
-                            break;
+                {
+                    case 0:
+                        led[1] += step;
+                        if (led[1] >= 255) colorState = 1;
+                        break;
 
-                        case 1:
-                            led[0] -= step;
-                            if (led[0] <= 0) colorState = 2;
-                            break;
+                    case 1:
+                        led[0] -= step;
+                        if (led[0] <= 0) colorState = 2;
+                        break;
 
-                        case 2:
-                            led[2] += step;
-                            if (led[2] >= 255) colorState = 3;
-                            break;
+                    case 2:
+                        led[2] += step;
+                        if (led[2] >= 255) colorState = 3;
+                        break;
 
-                        case 3:
-                            led[1] -= step;
-                            if (led[1] <= 0) colorState = 4;
-                            break;
+                    case 3:
+                        led[1] -= step;
+                        if (led[1] <= 0) colorState = 4;
+                        break;
 
-                        case 4:
-                            led[0] += step;
-                            if (led[0] >= 255) colorState = 5;
-                            break;
+                    case 4:
+                        led[0] += step;
+                        if (led[0] >= 255) colorState = 5;
+                        break;
 
-                        case 5:
-                            led[2] -= step;
-                            if (led[2] <= 0) colorState = 0;
-                            break;
-                    }
+                    case 5:
+                        led[2] -= step;
+                        if (led[2] <= 0) colorState = 0;
+                        break;
+                }
+
+                led[0] = std::clamp(led[0], 0, 255);
+                led[1] = std::clamp(led[1], 0, 255);
+                led[2] = std::clamp(led[2], 0, 255);
             }
+
 
             if (settings.BatteryLightbar && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed) {
                 int batteryLevel = controller.State.battery.Level;
@@ -730,7 +765,7 @@ void writeControllerState(Dualsense &controller, Settings &settings)
 
             if (settings.MicScreenshot) {
                 if (controller.State.micBtn && !lastMic && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp && !controller.State.touchBtn) {
-                    controller.PlayHaptics("sounds/screenshot.wav");
+                    controller.PlayHaptics("screenshot");
                     MyUtils::TakeScreenShot();
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     filesystem::create_directories(MyUtils::GetImagesFolderPath() + "\\DualSenseY\\");
@@ -937,7 +972,7 @@ int main()
     //glaiel::crashlogs::begin_monitoring();
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(28737);
+    //_CrtSetBreakAlloc(10605);
 
     int res = hid_init();
 
@@ -989,6 +1024,8 @@ int main()
     EnglishFILE << enJson.dump(4);
     EnglishFILE.close();
     enJson.clear();
+
+    float soundpan = 1;
     
     Strings strings = ReadStringsFromFile(appConfig.Language); // Load language file
 
@@ -1080,7 +1117,7 @@ int main()
     bool firstTimeUDP = true;
     DualsenseUtils::InputFeatures preUDP;
     vector<std::string> ControllerID = DualsenseUtils::EnumerateControllerIDs();
-
+    
     int ControllerCount = DualsenseUtils::GetControllerCount();
     std::chrono::high_resolution_clock::time_point LastControllerCheck = std::chrono::high_resolution_clock::now();
 
@@ -1163,7 +1200,6 @@ int main()
         int screenWidth = mode->width;
         int screenHeight = mode->height;
 
-        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         io.FontGlobalScale = CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
         
         if (ImGui::Begin("Main", nullptr, window_flags))
@@ -1253,11 +1289,11 @@ int main()
 
                 if (!IsPresent)
                 {
-                        Dualsense x = Dualsense(id.c_str());
+                        Dualsense x = Dualsense(id.c_str());                       
                         if (x.Connected)
                         {
-                            DualSense.emplace_back(x);
-
+                            DualSense.push_back(x);
+                            
                             // Read default config if present
                             std::string configPath = "";
                             MyUtils::GetConfigPathForController(configPath, id);
@@ -1300,6 +1336,7 @@ int main()
             {
                 DualSense[i].Reconnect();
                 DualSense[i].InitializeAudioEngine();
+                DualSense[i].LoadSound("screenshot", "sounds\\screenshot.wav");               
                 DualSense[i].SetPlayerLED(i + 1);
 
                 if (udpServer.isActive)
@@ -1342,9 +1379,31 @@ int main()
                                 udpServer.thisSettings.ControllerInput.RightTriggerForces[10]);
 
                             if (udpServer.thisSettings.CurrentHapticFile != "") {
-                                
-                                DualSense[i].PlayHaptics(udpServer.thisSettings.CurrentHapticFile.c_str());
+
+                                DualSense[i].LoadSound(std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str(), udpServer.thisSettings.CurrentHapticFile.c_str());
+                                DualSense[i].PlayHaptics(std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str(), udpServer.thisSettings.DontPlayIfAlreadyPlaying, udpServer.thisSettings.Loop);
                                 udpServer.thisSettings.CurrentHapticFile = "";
+                            }
+
+                            while (!udpServer.thisSettings.AudioEditQueue.empty()) {
+                                AudioEdit& edit = udpServer.thisSettings.AudioEditQueue.front();
+
+                                switch (edit.EditType) {
+                                    case AudioEditType::Pitch:
+                                        DualSense[i].SetSoundPitch("UDP-" + edit.File, edit.Value);
+                                        break;
+                                    case AudioEditType::Volume:
+                                        DualSense[i].SetSoundVolume("UDP-" + edit.File, edit.Value);
+                                        break;
+                                    case AudioEditType::Stop:
+                                        DualSense[i].StopHaptics("UDP-" + edit.File);
+                                        break;
+                                    case AudioEditType::StopAll:
+                                        DualSense[i].StopAllHaptics();
+                                        break;
+                                }
+                                
+                                udpServer.thisSettings.AudioEditQueue.erase(udpServer.thisSettings.AudioEditQueue.begin());
                             }
                             
                             std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
@@ -1353,6 +1412,7 @@ int main()
                                 s.CurrentlyUsingUDP = false;
                                 firstTimeUDP = true;
                                 s.ControllerInput = preUDP;
+                                DualSense[i].StopSoundsThatStartWith("UDP-");
                             }
                         }                      
                     }
@@ -1364,6 +1424,7 @@ int main()
                     {
                         if (s.ControllerInput.ID == CurrentController)
                         {
+                            DualSense[i].SetSoundVolume("screenshot", s.ScreenshotSoundLoudness);
                             DualsenseUtils::HapticFeedbackStatus HF_status = DualSense[i].GetHapticFeedbackStatus();
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
                             ImGui::Text("%s %d | %s: %s | %s: %d%%", strings.ControllerNumberText.c_str(),i+1, strings.USBorBTconnectionType.c_str(), bt_or_usb, strings.BatteryLevel.c_str(), DualSense[i].State.battery.Level);
@@ -1389,12 +1450,38 @@ int main()
                                    
                                         if (!s.DiscoMode && !s.BatteryLightbar) {
                                             ImGui::Checkbox(strings.AudioToLED.c_str(), &s.AudioToLED);
-                                            Tooltip(strings.Tooltip_AudioToLED.c_str());                                         
+                                            Tooltip(strings.Tooltip_AudioToLED.c_str());
                                         }
 
                                         if (!s.AudioToLED && !s.BatteryLightbar) {
                                             ImGui::Checkbox(strings.DiscoMode.c_str(), &s.DiscoMode);                                          
                                             Tooltip(strings.Tooltip_DiscoMode.c_str());
+                                            ImGui::SameLine();
+                                            ImGui::SetNextItemWidth(100);
+                                            ImGui::SliderInt(std::string(strings.Speed + "##Disco").c_str(), &s.DiscoSpeed, 1, 10);
+                                        }
+
+                                        if (s.AudioToLED) {
+                                            ImGui::Separator();
+                                            ImGui::Text(strings.QuietColor.c_str());
+                                            ImGui::SliderInt(string(strings.LED_Red + "##q").c_str(), &s.QUIET_COLOR[0], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Green + "##q").c_str(), &s.QUIET_COLOR[1], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Blue + "##q").c_str(), &s.QUIET_COLOR[2], 0, 255);
+                                            ImGui::Spacing();
+
+                                            ImGui::Text(strings.MediumColor.c_str());
+                                            ImGui::SliderInt(string(strings.LED_Red + "##m").c_str(), &s.MEDIUM_COLOR[0], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Green + "##m").c_str(), &s.MEDIUM_COLOR[1], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Blue + "##m").c_str(), &s.MEDIUM_COLOR[2], 0, 255);
+                                            ImGui::Spacing();
+
+                                            ImGui::Text(strings.LoudColor.c_str());
+                                            ImGui::SliderInt(string(strings.LED_Red + "##l").c_str(), &s.LOUD_COLOR[0], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Green + "##l").c_str(), &s.LOUD_COLOR[1], 0, 255);
+                                            ImGui::SliderInt(string(strings.LED_Blue + "##l").c_str(), &s.LOUD_COLOR[2], 0, 255);
+                                            ImGui::Spacing();
+
+                                            ImGui::Separator();
                                         }
 
                                         if (!s.DiscoMode && !s.AudioToLED) {
@@ -1738,6 +1825,9 @@ int main()
                                     else if (HF_status == DualsenseUtils::HapticFeedbackStatus::AudioDeviceNotFound) {
                                         ImGui::Text(strings.HapticsUnavailableNoAudioDevice.c_str());
                                     }
+                                    else if (HF_status == DualsenseUtils::HapticFeedbackStatus::AudioEngineNotInitialized) {
+                                        ImGui::Text(strings.AudioEngineNotInitializedError.c_str());
+                                    }
                                 }
                               
                             }
@@ -1790,7 +1880,12 @@ int main()
                             if (ImGui::CollapsingHeader(strings.MicButton.c_str())) {
                                 ImGui::Checkbox(strings.TakeScreenshot.c_str(), &s.MicScreenshot);
                                 Tooltip(strings.Tooltip_TakeScreenshot.c_str());
-
+                                if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working) {
+                                    ImGui::SameLine();
+                                    ImGui::SetNextItemWidth(100);
+                                    ImGui::SliderFloat(strings.ScreenshotSoundVolume.c_str(), &s.ScreenshotSoundLoudness, 0, 1);
+                                }
+                                
                                 ImGui::Checkbox(strings.RealMicFunctionality.c_str(), &s.MicFunc);
                                 Tooltip(strings.Tooltip_RealMicFunctionality.c_str());
 
@@ -1917,7 +2012,7 @@ int main()
                                 if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
                                     Config::WriteAppConfigToFile(appConfig);
                                 }
-                            }                         
+                            }
                         }
                     }
                 }
@@ -1927,7 +2022,7 @@ int main()
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(33));
+        std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 30 FPS
 
         ImGui::End();
         ImGui::Render();
@@ -1967,7 +2062,6 @@ int main()
     {
         for (Dualsense& ds : DualSense) {
             StartHidHideRequest(ds.GetPath(), "show");
-            ds.~Dualsense();
         }
     }
 

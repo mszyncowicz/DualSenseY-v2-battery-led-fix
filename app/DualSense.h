@@ -485,6 +485,8 @@ namespace DualsenseUtils
         Working = 0,
         BluetoothNotUSB = 1,
         AudioDeviceNotFound = 2,
+        AudioEngineNotInitialized = 3,
+        Unknown = 4,
     };
 
 class InputFeatures
@@ -786,6 +788,7 @@ class Dualsense
 private:
     std::chrono::steady_clock::time_point lastPlayTime;
     std::chrono::milliseconds cooldownDuration{300}; // Cooldown duration (1 second)
+
     static void data_callback(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
         float* pInputSamples = (float*)input;
         Dualsense* self = (Dualsense*)device->pUserData;
@@ -853,6 +856,10 @@ private:
     ma_result result;
     ma_engine engine;
     ma_device device;
+    ma_decoder decoder;
+    ma_device deviceLoopback;
+    std::map<std::string, shared_ptr<ma_sound>> soundMap;
+    std::map<std::string, shared_ptr<ma_sound>> CurrentlyPlayedSounds;
 
 public:
     bool Connected = false;
@@ -913,6 +920,32 @@ public:
             FirstTimeWrite = true;
         }
     };
+
+    bool LoadSound(const std::string& soundName, const std::string& filePath) {
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound) {
+            if (soundMap.find(soundName) != soundMap.end()) {
+                return false; // Return if already loaded
+            }
+
+            // Allocate memory for a new sound
+            shared_ptr<ma_sound> sound = make_shared<ma_sound>();
+            ma_result result = ma_sound_init_from_file(&engine, filePath.c_str(), 0, NULL, NULL, sound.get());
+
+            if (result == MA_SUCCESS) {
+                soundMap[soundName] = sound; // Store the sound in the map
+                std::cout << "Loaded -> " << filePath << std::endl;
+                return true;
+            } else {
+                std::cerr << "Failed to load " << filePath << ". Reason: " << result << std::endl;
+
+                // Ensure proper cleanup
+                ma_sound_uninit(sound.get());
+
+                return false;
+            }
+        }
+        return false;
+    }
 
     Peaks GetAudioPeaks() {
         return peaks;
@@ -1285,7 +1318,7 @@ public:
         return (Feature::ConnectionType)connectionType;
     }
 
-    void InitializeAudioEngine(bool InitEngine = true)
+    void InitializeAudioEngine()
     {
         if (!AudioInitialized && !AudioDeviceNotFound && connectionType == Feature::USB && Connected)
         {
@@ -1442,8 +1475,6 @@ public:
                 return;
             }
 
-            if (InitEngine)
-            {
                 ma_channel channel;
 
                 ma_standard_channel_map channelInMap;
@@ -1471,7 +1502,22 @@ public:
                     cout << "Creating channel converter failed!" << endl;
                 }
 
-                ma_device_config deviceconfig = ma_device_config_init(ma_device_type_loopback);
+                ma_device_config deviceconfigLoopback = ma_device_config_init(ma_device_type_loopback);
+                deviceconfigLoopback.capture.pDeviceID = &pPlaybackInfos[deviceIndex].id;
+                deviceconfigLoopback.capture.format = ma_format_f32;
+                deviceconfigLoopback.capture.channels = 0;
+                deviceconfigLoopback.capture.channelMixMode = ma_channel_mix_mode_default;
+                deviceconfigLoopback.capture.shareMode = ma_share_mode_shared;
+                deviceconfigLoopback.playback.pDeviceID = &pPlaybackInfos[deviceIndex].id;
+                deviceconfigLoopback.playback.format = ma_format_f32;
+                deviceconfigLoopback.playback.channels = 0;
+                deviceconfigLoopback.playback.channelMixMode = ma_channel_mix_mode_default;
+                deviceconfigLoopback.sampleRate = 48000;
+                deviceconfigLoopback.playback.shareMode = ma_share_mode_shared;
+                deviceconfigLoopback.pUserData = this;
+                deviceconfigLoopback.dataCallback = data_callback;
+
+                ma_device_config deviceconfig = ma_device_config_init(ma_device_type_playback);
                 deviceconfig.capture.pDeviceID = &pPlaybackInfos[deviceIndex].id;
                 deviceconfig.capture.format = ma_format_f32;
                 deviceconfig.capture.channels = 0;
@@ -1479,12 +1525,12 @@ public:
                 deviceconfig.capture.shareMode = ma_share_mode_shared;
                 deviceconfig.playback.pDeviceID = &pPlaybackInfos[deviceIndex].id;
                 deviceconfig.playback.format = ma_format_f32;
-                deviceconfig.playback.channels = 4;
+                deviceconfig.playback.channels = 0;
                 deviceconfig.playback.channelMixMode = ma_channel_mix_mode_default;
                 deviceconfig.sampleRate = 48000;
                 deviceconfig.playback.shareMode = ma_share_mode_shared;
-                deviceconfig.pUserData = this;
-                deviceconfig.dataCallback = data_callback;
+                //deviceconfig.pUserData = this;
+                //deviceconfig.dataCallback = data_callback;
                 
 
                 if (ma_device_init(NULL, &deviceconfig, &device) != MA_SUCCESS)
@@ -1497,7 +1543,17 @@ public:
                     cout << "Audio device intialized" << endl;
                 }
 
+                if (ma_device_init(NULL, &deviceconfigLoopback, &deviceLoopback) != MA_SUCCESS)
+                {
+                    cout << "Failed to initialize loopback device!" << endl;
+                }
+                else
+                {
+                    cout << "Audio loopback intialized" << endl;
+                }
+
                 ma_device_start(&device);
+                ma_device_start(&deviceLoopback);
 
                 ma_engine_config config = ma_engine_config_init();
                 //config.pContext = &context;
@@ -1515,14 +1571,9 @@ public:
                 {
                     cout << "Sound engine intialized" << endl;
                 }
-
-                ma_engine_set_time_in_milliseconds(&engine, 0);
-                ma_engine_set_time_in_pcm_frames(&engine, 0);
-                ma_engine_set_volume(&engine, 100);
-                ma_device_set_master_volume(&device, 1.0f);
+          
                 AudioInitialized = true;
-                CoUninitialize();
-            }
+                CoUninitialize();           
         }
     }
 
@@ -1535,32 +1586,138 @@ public:
             return DualsenseUtils::HapticFeedbackStatus::AudioDeviceNotFound;
         }
 
+        if (!AudioInitialized) {
+            return DualsenseUtils::HapticFeedbackStatus::AudioEngineNotInitialized;
+        }
+
         return DualsenseUtils::HapticFeedbackStatus::Working;
     }
 
-    bool PlayHaptics(const char* WavFileLocation) {
-        auto now = std::chrono::steady_clock::now();
+    
+    static void ma_sound_end_proc(void* pUserData, ma_sound* pSound) {
+        auto Loop = static_cast<bool>(pUserData);
+    }
+    
 
-        // Check if the cooldown period has passed
-        if (now - lastPlayTime < cooldownDuration) {
-            return false;
+    bool SetSoundVolume(const std::string& soundName, float Volume) {
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound)
+        {
+            auto it = CurrentlyPlayedSounds.find(soundName);
+            if (it == CurrentlyPlayedSounds.end()) {
+                return false;
+            }
+
+            ma_sound_set_volume(it->second.get(), Volume);
+            return true;
         }
 
-        // Update the last play time
-        lastPlayTime = now;
+        return false;
+    }
 
-        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound) {       
-            ma_result soundplay = ma_engine_play_sound(&engine, WavFileLocation, NULL);
+    bool SetSoundPitch(const std::string& soundName, float Pitch) {
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound)
+        {
+            auto it = CurrentlyPlayedSounds.find(soundName);
+            if (it == CurrentlyPlayedSounds.end()) {
+                return false;
+            }
 
+            ma_sound_set_pitch(it->second.get(), Pitch);
+            return true;
+        }
+
+        return false;
+    }
+
+    void StopAllHaptics() {
+        for (const auto& [key, value] : CurrentlyPlayedSounds) {
+            ma_sound_stop(value.get());
+        }      
+    }
+
+    void StopSoundsThatStartWith(const std::string& String) {
+        for (const auto& [key, value] : CurrentlyPlayedSounds) {
+            if (key.rfind(String, 0) == 0) { // rfind with pos=0 checks the prefix
+                ma_sound_stop(value.get());
+            }
+        }
+    }
+
+    bool StopHaptics(const std::string& soundName) {
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound)
+        {
+            auto it = CurrentlyPlayedSounds.find(soundName);
+            if (it == CurrentlyPlayedSounds.end()) {
+                return false;
+            }
+
+            ma_sound_stop(it->second.get());
+            return true;
+        }
+
+        return false;
+    }
+
+
+    bool PlayHaptics(const std::string& soundName, bool DontPlayIfAlreadyPlaying = false, bool LoopUntilStoppedManually = false) {
+        if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound) {
+            auto it = soundMap.find(soundName);
+            if (it == soundMap.end()) {
+                return false;
+            }
+
+            std::shared_ptr<ma_sound> originalSound = it->second;
+
+            // Return if the sound is already playing and DontPlayIfAlreadyPlaying is set to true
+            auto it2 = CurrentlyPlayedSounds.find(soundName);
+            if (it2 != CurrentlyPlayedSounds.end()) {
+                if (DontPlayIfAlreadyPlaying && ma_sound_is_playing(it2->second.get())) {
+                    return false;
+                }
+            }
+
+            // Create a new instance of the sound with a custom deleter
+            auto deleter = [](ma_sound* sound) {
+                if (sound) {
+                    ma_sound_uninit(sound);
+                    delete sound;
+                }
+            };
+
+            std::shared_ptr<ma_sound> newSound(new ma_sound, deleter);
+            ma_result result = ma_sound_init_copy(&engine, originalSound.get(), 0, NULL, newSound.get());
+            if (result != MA_SUCCESS) {
+                std::cerr << "Failed to create a new sound instance. Error: " << result << std::endl;
+                return false;
+            }
+
+            // Add to the currently played sounds map
+            //newSound.get()->pEndCallbackUserData = &LoopUntilStoppedManually;
+            //newSound.get()->endCallback = ma_sound_end_proc;
+
+            if (LoopUntilStoppedManually) {
+                ma_sound_set_looping(newSound.get(), true);
+            }
+
+            CurrentlyPlayedSounds[soundName] = newSound;
+
+            // Start the sound
+            ma_result soundplay = ma_sound_start(newSound.get());
             if (soundplay == MA_SUCCESS) {
                 return true;
             } else {
-                std::cout << static_cast<int>(soundplay) << std::endl;
+                std::cerr << "Error playing sound: " << static_cast<int>(soundplay) << std::endl;
+
+                // Remove from the map (if it was already added)
+                CurrentlyPlayedSounds.erase(soundName);
+
+                return false;
             }
         }
 
         return false;
     }
+
 
     DualsenseUtils::Reconnect_Result Reconnect(bool SamePort = true)
     {
@@ -1588,6 +1745,7 @@ public:
                 Connected = true;
                 if (AudioInitialized) {
                     ma_device_uninit(&device);
+                    ma_device_uninit(&deviceLoopback);
                     ma_engine_uninit(&engine);
                     ma_context_uninit(&context);
                     AudioInitialized = false;
@@ -1663,9 +1821,18 @@ public:
         }
 
         if (AudioInitialized) {
-            ma_device_uninit(&device);
+            for (auto it = soundMap.begin(); it != soundMap.end();) {
+                if (it->second) {
+                    ma_sound_uninit(it->second.get());  // Clean up the ma_sound object
+                }
+                it = soundMap.erase(it);  // Erase and safely update the iterator
+            }
+
             ma_engine_uninit(&engine);
+            ma_device_uninit(&device);
+            ma_device_uninit(&deviceLoopback);           
             ma_context_uninit(&context);
+           
             AudioInitialized = false;
         }
     };

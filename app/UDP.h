@@ -117,6 +117,33 @@ public:
         }
     }
 
+    bool getBoolValue(const nlohmann::json& param) {
+        if (param.is_null()) {
+            return false;
+        }
+        else if (param.is_boolean()) {
+            return param.get<bool>();
+        }
+        else {
+            return false;
+        }
+    }
+
+    float getFloatValue(const nlohmann::json& param) {
+        if (param.is_null()) {
+            return 0;
+        }
+        else if (param.is_number_float()) {
+            return param.get<float>();
+        }
+        else if (param.is_number()) {
+            return param.get<float>();
+        }
+        else {
+            return 0;
+        }
+    }
+
     std::string getParameterValueAsString(const nlohmann::json& param) {
         if (param.is_null()) {
             return ""; // Default value for null
@@ -186,6 +213,7 @@ public:
             {
                 uint8_t triggers[11];
                 Trigger::TriggerMode mode = Trigger::Off;
+                AudioEdit edit;
              
                 int type = getParameterValue(instr["type"]);
                 int intParam0 = getParameterValue(instr["parameters"][0]);
@@ -788,9 +816,21 @@ public:
                     break;
                 }
                 case 8:
-                    cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;
+                {
+                    //cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;
                     thisSettings.CurrentHapticFile = getParameterValueAsString(instr["parameters"][0]);
+                    thisSettings.DontPlayIfAlreadyPlaying = getBoolValue(instr["parameters"][1]);
+                    thisSettings.Loop = getBoolValue(instr["parameters"][2]);
                     break;
+                }
+                case 9:                 
+                {
+                    edit.File = getParameterValueAsString(instr["parameters"][0]);
+                    edit.EditType = (AudioEditType)intParam1;
+                    edit.Value = getFloatValue(instr["parameters"][2]);                 
+                    thisSettings.AudioEditQueue.push_back(edit);
+                    break;
+                }
                 default:
                     cout << "Unrecognized instruction received! Number: " << type << endl;
                     break;

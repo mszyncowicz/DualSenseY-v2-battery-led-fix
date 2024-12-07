@@ -6,6 +6,12 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string Speed = "Speed";
+    std::string AudioEngineNotInitializedError = "Audio engine wasn't initialized, haptic feedback not available";
+    std::string ScreenshotSoundVolume = "Screenshot sound volume";
+    std::string QuietColor = "Quiet color";
+    std::string MediumColor = "Medium color";
+    std::string LoudColor = "Loud Color";
     std::string ShowConsole = "Show debug console";
     std::string UseHeadset = "Use headset";
     std::string TouchpadShortcut = "Touchpad + Mic button = Touchpad as mouse";
@@ -141,6 +147,12 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["Speed"] = Speed;
+        j["AudioEngineNotInitializedError"] = AudioEngineNotInitializedError;
+        j["ScreenshotSoundVolume"] = ScreenshotSoundVolume;
+        j["QuietColor"] = QuietColor;
+        j["MediumColor"] = MediumColor;
+        j["LoudColor"] = LoudColor;
         j["ShowConsole"] = ShowConsole;
         j["UseHeadset"] = UseHeadset;
         j["TouchpadShortcut"] = TouchpadShortcut;
@@ -249,6 +261,24 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("Speed"))
+            j.at("Speed").get_to(strings.Speed);
+
+        if (j.contains("AudioEngineNotInitializedError"))
+            j.at("AudioEngineNotInitializedError").get_to(strings.AudioEngineNotInitializedError);
+
+        if (j.contains("ScreenshotSoundVolume"))
+            j.at("ScreenshotSoundVolume").get_to(strings.ScreenshotSoundVolume);
+
+        if (j.contains("QuietColor"))
+            j.at("QuietColor").get_to(strings.QuietColor);
+
+        if (j.contains("MediumColor"))
+            j.at("MediumColor").get_to(strings.MediumColor);
+
+        if (j.contains("LoudColor"))
+            j.at("LoudColor").get_to(strings.LoudColor);
 
         if (j.contains("ShowConsole"))
             j.at("ShowConsole").get_to(strings.ShowConsole);

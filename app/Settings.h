@@ -1,6 +1,19 @@
 #pragma once
 #include <nlohmann/json.hpp>
 
+enum AudioEditType {
+    Pitch,
+    Volume,
+    Stop,
+    StopAll,
+};
+
+struct AudioEdit {
+    std::string File = "";
+    AudioEditType EditType;
+    float Value = 0;
+};
+
 class Settings
 {
 public:
@@ -37,12 +50,30 @@ public:
     int LeftAnalogDeadzone = 0;
     int RightAnalogDeadzone = 0;
     bool TriggersAsButtons = false;
+    int QUIET_THRESHOLD = 85;   // Below this is considered quiet
+    int MEDIUM_THRESHOLD = 170; // Below this is medium, above is loud
+    int QUIET_COLOR[3] = {10, 10, 10};
+    int MEDIUM_COLOR[3] = { 125, 125, 125 };
+    int LOUD_COLOR[3] = {255, 255, 255};
+    float ScreenshotSoundLoudness = 1;
+    int DiscoSpeed = 1;
+
+    // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
+    bool DontPlayIfAlreadyPlaying = false;
+    bool Loop = false;
+    std::vector<AudioEdit> AudioEditQueue;
+
     EmuStatus emuStatus = None;
 
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["DiscoSpeed"] = DiscoSpeed;
+        j["ScreenshotSoundLoudness"] = ScreenshotSoundLoudness;
+        j["QUIET_COLOR"] = QUIET_COLOR;
+        j["MEDIUM_COLOR"] = MEDIUM_COLOR;
+        j["LOUD_COLOR"] = LOUD_COLOR;
         j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
         j["UseHeadset"] = UseHeadset;
         j["TouchpadToMouseShortcut"] = TouchpadToMouseShortcut;
@@ -84,6 +115,11 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("DiscoSpeed"))       j.at("DiscoSpeed").get_to(settings.DiscoSpeed);
+        if (j.contains("ScreenshotSoundLoudness"))       j.at("ScreenshotSoundLoudness").get_to(settings.ScreenshotSoundLoudness);
+        if (j.contains("QUIET_COLOR"))       j.at("QUIET_COLOR").get_to(settings.QUIET_COLOR);
+        if (j.contains("MEDIUM_COLOR"))       j.at("MEDIUM_COLOR").get_to(settings.MEDIUM_COLOR);
+        if (j.contains("LOUD_COLOR"))       j.at("LOUD_COLOR").get_to(settings.LOUD_COLOR);
         if (j.contains("TouchpadToMouseShortcut"))       j.at("TouchpadToMouseShortcut").get_to(settings.TouchpadToMouseShortcut);
         if (j.contains("UseHeadset"))       j.at("UseHeadset").get_to(settings.UseHeadset);
         if (j.contains("TouchpadAsSelectStart"))       j.at("TouchpadAsSelectStart").get_to(settings.TouchpadAsSelectStart);

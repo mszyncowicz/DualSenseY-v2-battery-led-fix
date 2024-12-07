@@ -1,5 +1,4 @@
-### ⚠️ STILL IN DEVELOPMENT! ⚠️
-## IF YOU FIND THIS VERSION UNSTABLE OR NOT WORKING CORRECTLY YOU CAN GO BACK TO [OLD ONE](https://github.com/WujekFoliarz/DualSenseY/releases/tag/6.2) 
+[Legacy C# version](https://github.com/WujekFoliarz/DualSenseY/releases/tag/6.2) 
 
 ### Download → https://github.com/WujekFoliarz/DualSenseY-v2/releases
 ### Discord → https://discord.gg/AFYvxf282U

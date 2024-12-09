@@ -10,11 +10,7 @@
     ]
   },
   "ExpandedNodes": [
-    "",
-    "\\app",
-    "\\AudioPassthrough",
-    "\\AudioPassthrough\\AudioPassthrough"
+    ""
   ],
-  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

@@ -1,14 +1,4 @@
-const int VERSION = 21;
-
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_opengl3_loader.h"
-
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#include <GLES2/gl2.h>
-#endif
-#include <GLFW/glfw3.h>
+const int VERSION = 22;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -358,7 +348,7 @@ void MouseClick(DWORD flag, DWORD mouseData = 0)
     SendInput(1, &input, sizeof(INPUT));
 }
 
-void writeControllerState(Dualsense &controller, Settings &settings)
+void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpServer)
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
     cout << "Write thread started: " << controller.GetPath() << " | "
@@ -390,6 +380,8 @@ void writeControllerState(Dualsense &controller, Settings &settings)
     int limits[] = {255, 0, 255, 0,255, 0, 255, 0,255, 0, 255, 0};
     int direction = 1; // 1 for increasing, -1 for decreasing
     DualsenseUtils::InputFeatures lastFeatures;
+    bool firstTimeUDP = true;
+    DualsenseUtils::InputFeatures preUDP;
 
     while (!stop_thread)
     {
@@ -798,6 +790,115 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             if (!controller.State.micBtn && lastMic) {
                 lastMic = false;
             }
+
+            if (udpServer.isActive && settings.UseUDP == true)
+            {
+                if (firstTimeUDP)
+                {
+                    preUDP = settings.ControllerInput;
+                    firstTimeUDP = false;
+                }
+                settings.CurrentlyUsingUDP = true;
+                udpServer.Battery = controller.State.battery.Level;
+                controller.SetLightbar(
+                    udpServer.thisSettings.ControllerInput.Red,
+                    udpServer.thisSettings.ControllerInput.Green,
+                    udpServer.thisSettings.ControllerInput.Blue);
+                controller.SetLeftTrigger(
+                    udpServer.thisSettings.ControllerInput.LeftTriggerMode,
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[0],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[1],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[2],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[3],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[4],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[5],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[6],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[7],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[8],
+                    udpServer.thisSettings.ControllerInput.LeftTriggerForces[9],
+                    udpServer.thisSettings.ControllerInput
+                        .LeftTriggerForces[10]);
+
+                controller.SetRightTrigger(
+                    udpServer.thisSettings.ControllerInput.RightTriggerMode,
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[0],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[1],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[2],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[3],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[4],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[5],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[6],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[7],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[8],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[9],
+                    udpServer.thisSettings.ControllerInput
+                        .RightTriggerForces[10]);
+
+                if (udpServer.thisSettings.CurrentHapticFile != "")
+                {
+                    controller.LoadSound(
+                        std::string("UDP-" +
+                                    udpServer.thisSettings.CurrentHapticFile)
+                            .c_str(),
+                        udpServer.thisSettings.CurrentHapticFile.c_str());
+                    controller.PlayHaptics(
+                        std::string("UDP-" +
+                                    udpServer.thisSettings.CurrentHapticFile)
+                            .c_str(),
+                        udpServer.thisSettings.DontPlayIfAlreadyPlaying,
+                        udpServer.thisSettings.Loop);
+                    udpServer.thisSettings.CurrentHapticFile = "";
+                    //cout << " UDP played " << std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str() << endl;
+                }
+
+                while (!udpServer.thisSettings.AudioEditQueue.empty())
+                {
+                    AudioEdit &edit =
+                        udpServer.thisSettings.AudioEditQueue.front();
+
+                    switch (edit.EditType)
+                    {
+                    case AudioEditType::Pitch:
+                        controller.SetSoundPitch("UDP-" + edit.File,
+                                                 edit.Value);
+                        break;
+                    case AudioEditType::Volume:
+                        controller.SetSoundVolume("UDP-" + edit.File,
+                                                  edit.Value);
+                        break;
+                    case AudioEditType::Stop:
+                        controller.StopHaptics("UDP-" + edit.File);
+                        break;
+                    case AudioEditType::StopAll:
+                        controller.StopAllHaptics();
+                        break;
+                    }
+
+                    udpServer.thisSettings.AudioEditQueue.erase(
+                        udpServer.thisSettings.AudioEditQueue.begin());
+                }
+
+                std::chrono::high_resolution_clock::time_point Now =
+                    std::chrono::high_resolution_clock::now();
+                if ((Now - udpServer.LastTime) > 8s)
+                {
+                    udpServer.isActive = false;
+                    settings.CurrentlyUsingUDP = false;
+                    firstTimeUDP = true;
+                    settings.ControllerInput = preUDP;
+                    controller.StopSoundsThatStartWith("UDP-");
+                }
+            }
       
             if (settings.lrumble > 0 || settings.rrumble > 0)
             {
@@ -805,6 +906,10 @@ void writeControllerState(Dualsense &controller, Settings &settings)
             }
             else {
                 controller.UseRumbleNotHaptics(false);
+            }
+
+            if (settings.DisablePlayerLED) {
+                controller.SetPlayerLED(0);
             }
 
             controller.SetSpeakerVolume(settings.ControllerInput.SpeakerVolume);
@@ -1002,7 +1107,23 @@ int main()
     catch (...) {
         cout << "Version check failed" << endl;
     }
-     
+
+    // Download latest updater
+    cpr::Response response = cpr::Get(cpr::Url{ "https://github.com/WujekFoliarz/DualSenseY-v2/raw/refs/heads/master/Updater.exe" });
+    if (response.status_code == 200) {
+        std::ofstream outFile("Updater.exe", std::ios::binary);
+        if (outFile) {
+            outFile << response.text;  // Write the response content to the file
+            outFile.close();
+            std::cout << "File downloaded successfully: Updater.exe" << std::endl;
+        } else {
+            std::cerr << "Error opening file for writing." << std::endl;
+        }
+    } else {
+        // Handle HTTP errors
+        std::cerr << "Failed to download file. HTTP status code: " << response.status_code << std::endl;
+    }
+
     if (appConfig.ElevateOnStartup) {
         ElevateNow();
     }
@@ -1039,7 +1160,7 @@ int main()
     {
         while (Process32Next(snapshot, &entry) == TRUE)
         {
-            if (strcmp(entry.szExeFile, "DualSenseY.exe") == 0)
+            if (strcmp(entry.szExeFile, "DSX.exe") == 0)
             {
                 InstancesCount++;
             }
@@ -1047,7 +1168,7 @@ int main()
     }
 
     if (InstancesCount > 1) {
-        MessageBox(0, "DualSenseY is already running!", "Error", 0);
+        MessageBox(0, "DSY/DSX is already running!", "Error", 0);
         return 1;
     }
 
@@ -1114,8 +1235,6 @@ int main()
     vector<thread> emuThreads;
     std::string CurrentController = "";
     bool firstController = true;
-    bool firstTimeUDP = true;
-    DualsenseUtils::InputFeatures preUDP;
     vector<std::string> ControllerID = DualsenseUtils::EnumerateControllerIDs();
     
     int ControllerCount = DualsenseUtils::GetControllerCount();
@@ -1124,7 +1243,6 @@ int main()
     InitializeAudioEndpoint();
 
     UDP udpServer;
-    udpServer.StartFakeDSXProcess();
     
     ImGuiIO &io = ImGui::GetIO();
 
@@ -1135,6 +1253,8 @@ int main()
                 0 };
       if (appConfig.Language == "ja")    
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+      else if (appConfig.Language == "zh")
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
       else {
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
       }
@@ -1164,6 +1284,13 @@ int main()
         appConfig.ShowWindow = false;
     }
 
+    // Load images
+    int my_image_width = 128;
+    int my_image_height = 128;
+    GLuint my_image_texture = 0;
+    bool ret = MyUtils::LoadTextureFromFile("../../MyImage01.jpg", &my_image_texture, &my_image_width, &my_image_height);
+    IM_ASSERT(ret);
+
     while (!glfwWindowShouldClose(window))
     {
 
@@ -1182,7 +1309,45 @@ int main()
         start_cycle();
         ImGui::NewFrame();
 
-        ImGuiStyle *style = &ImGui::GetStyle();
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.WindowRounding = 5.3f;
+        style.FrameRounding = 2.3f;
+        style.ScrollbarRounding = 0;
+
+        style.Colors[ImGuiCol_Text]                  = ImVec4(0.90f, 0.90f, 0.90f, 0.90f);
+        style.Colors[ImGuiCol_TextDisabled]          = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
+        style.Colors[ImGuiCol_WindowBg]              = ImVec4(0.0f, 0.00f, 0.0f, 1.00f);
+        style.Colors[ImGuiCol_PopupBg]               = ImVec4(0.05f, 0.05f, 0.10f, 0.85f);
+        style.Colors[ImGuiCol_Border]                = ImVec4(0.70f, 0.70f, 0.70f, 0.65f);
+        style.Colors[ImGuiCol_BorderShadow]          = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+        style.Colors[ImGuiCol_FrameBg]               = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+        style.Colors[ImGuiCol_FrameBgHovered]        = ImVec4(0.90f, 0.80f, 0.80f, 0.40f);
+        style.Colors[ImGuiCol_FrameBgActive]         = ImVec4(0.90f, 0.65f, 0.65f, 0.45f);
+        style.Colors[ImGuiCol_TitleBg]               = ImVec4(0.00f, 0.00f, 0.00f, 0.83f);
+        style.Colors[ImGuiCol_TitleBgCollapsed]      = ImVec4(0.40f, 0.40f, 0.80f, 0.20f);
+        style.Colors[ImGuiCol_TitleBgActive]         = ImVec4(0.00f, 0.00f, 0.00f, 0.87f);
+        style.Colors[ImGuiCol_MenuBarBg]             = ImVec4(0.01f, 0.01f, 0.02f, 0.80f);
+        style.Colors[ImGuiCol_ScrollbarBg]           = ImVec4(0.20f, 0.25f, 0.30f, 0.60f);
+        style.Colors[ImGuiCol_ScrollbarGrab]         = ImVec4(0.55f, 0.53f, 0.55f, 0.51f);
+        style.Colors[ImGuiCol_ScrollbarGrabHovered]  = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
+        style.Colors[ImGuiCol_ScrollbarGrabActive]   = ImVec4(0.56f, 0.56f, 0.56f, 0.91f);
+        style.Colors[ImGuiCol_CheckMark]             = ImVec4(0.0f, 1.0f, 0.0f, 0.83f);
+        style.Colors[ImGuiCol_SliderGrab]            = ImVec4(0.75f, 0.70f, 0.70f, 0.62f);
+        style.Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.30f, 0.30f, 0.30f, 0.84f);
+        style.Colors[ImGuiCol_Button]                = ImVec4(0.48f, 0.72f, 0.89f, 0.49f);
+        style.Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.50f, 0.69f, 0.99f, 0.68f);
+        style.Colors[ImGuiCol_ButtonActive]          = ImVec4(0.80f, 0.50f, 0.50f, 1.00f);
+        style.Colors[ImGuiCol_Header]                = ImVec4(0.1f, 0.1f, 0.1f, 0.1f);
+        style.Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.2f, 0.2f, 0.2f, 1.00f);
+        style.Colors[ImGuiCol_HeaderActive]          = ImVec4(0.38f, 0.62f, 0.83f, 1.00f);
+        style.Colors[ImGuiCol_ResizeGrip]            = ImVec4(1.00f, 1.00f, 1.00f, 0.85f);
+        style.Colors[ImGuiCol_ResizeGripHovered]     = ImVec4(1.00f, 1.00f, 1.00f, 0.60f);
+        style.Colors[ImGuiCol_ResizeGripActive]      = ImVec4(1.00f, 1.00f, 1.00f, 0.90f);
+        style.Colors[ImGuiCol_PlotLines]             = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+        style.Colors[ImGuiCol_PlotLinesHovered]      = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_PlotHistogram]         = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_PlotHistogramHovered]  = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+        style.Colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.00f, 0.00f, 1.00f, 0.35f);
 
         // Get the viewport size (size of the application window)
         
@@ -1199,7 +1364,7 @@ int main()
         const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         int screenWidth = mode->width;
         int screenHeight = mode->height;
-
+ 
         io.FontGlobalScale = CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
         
         if (ImGui::Begin("Main", nullptr, window_flags))
@@ -1320,7 +1485,8 @@ int main()
 
                             writeThreads.emplace_back(writeControllerState,
                                                       std::ref(DualSense.back()),
-                                                      std::ref(ControllerSettings.back()));
+                                                      std::ref(ControllerSettings.back()),
+                                                      std::ref(udpServer));
 
                             emuThreads.emplace_back(writeEmuController,
                                                     std::ref(DualSense.back()),
@@ -1338,85 +1504,6 @@ int main()
                 DualSense[i].InitializeAudioEngine();
                 DualSense[i].LoadSound("screenshot", "sounds\\screenshot.wav");               
                 DualSense[i].SetPlayerLED(i + 1);
-
-                if (udpServer.isActive)
-                {
-                    for (Settings &s : ControllerSettings)
-                    {                     
-                        if (s.UseUDP == true)
-                        {
-                            if (firstTimeUDP) {
-                                preUDP = s.ControllerInput;
-                                firstTimeUDP = false;
-                            }
-                            s.CurrentlyUsingUDP = true;
-                            udpServer.Battery = DualSense[i].State.battery.Level;               
-                            DualSense[i].SetLightbar(udpServer.thisSettings.ControllerInput.Red, udpServer.thisSettings.ControllerInput.Green, udpServer.thisSettings.ControllerInput.Blue);
-                            DualSense[i].SetLeftTrigger(udpServer.thisSettings.ControllerInput.LeftTriggerMode,
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[0],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[1],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[2],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[3],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[4],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[5],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[6],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[7],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[8],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[9],
-                                udpServer.thisSettings.ControllerInput.LeftTriggerForces[10]);
-
-                            DualSense[i].SetRightTrigger(udpServer.thisSettings.ControllerInput.RightTriggerMode,
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[0],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[1],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[2],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[3],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[4],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[5],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[6],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[7],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[8],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[9],
-                                udpServer.thisSettings.ControllerInput.RightTriggerForces[10]);
-
-                            if (udpServer.thisSettings.CurrentHapticFile != "") {
-
-                                DualSense[i].LoadSound(std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str(), udpServer.thisSettings.CurrentHapticFile.c_str());
-                                DualSense[i].PlayHaptics(std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str(), udpServer.thisSettings.DontPlayIfAlreadyPlaying, udpServer.thisSettings.Loop);
-                                udpServer.thisSettings.CurrentHapticFile = "";
-                            }
-
-                            while (!udpServer.thisSettings.AudioEditQueue.empty()) {
-                                AudioEdit& edit = udpServer.thisSettings.AudioEditQueue.front();
-
-                                switch (edit.EditType) {
-                                    case AudioEditType::Pitch:
-                                        DualSense[i].SetSoundPitch("UDP-" + edit.File, edit.Value);
-                                        break;
-                                    case AudioEditType::Volume:
-                                        DualSense[i].SetSoundVolume("UDP-" + edit.File, edit.Value);
-                                        break;
-                                    case AudioEditType::Stop:
-                                        DualSense[i].StopHaptics("UDP-" + edit.File);
-                                        break;
-                                    case AudioEditType::StopAll:
-                                        DualSense[i].StopAllHaptics();
-                                        break;
-                                }
-                                
-                                udpServer.thisSettings.AudioEditQueue.erase(udpServer.thisSettings.AudioEditQueue.begin());
-                            }
-                            
-                            std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
-                            if ((Now - udpServer.LastTime) > 8s) {
-                                udpServer.isActive = false;
-                                s.CurrentlyUsingUDP = false;
-                                firstTimeUDP = true;
-                                s.ControllerInput = preUDP;
-                                DualSense[i].StopSoundsThatStartWith("UDP-");
-                            }
-                        }                      
-                    }
-                }
 
                 if (DualSense[i].GetPath() == CurrentController && DualSense[i].Connected)
                 {                  
@@ -1447,7 +1534,9 @@ int main()
                                 {
                                     if (ImGui::CollapsingHeader(strings.LedSection.c_str())) {
                                         ImGui::Separator();
-                                   
+
+                                        ImGui::Checkbox(strings.DisablePlayerLED.c_str(), &s.DisablePlayerLED);
+
                                         if (!s.DiscoMode && !s.BatteryLightbar) {
                                             ImGui::Checkbox(strings.AudioToLED.c_str(), &s.AudioToLED);
                                             Tooltip(strings.Tooltip_AudioToLED.c_str());
@@ -1811,7 +1900,7 @@ int main()
                                     ImGui::SliderInt(strings.SpeakerVolume.c_str(), &s.ControllerInput.SpeakerVolume, 0, 255);
                                     Tooltip(strings.Tooltip_SpeakerVolume.c_str());
 
-                                    ImGui::Checkbox("Use headset", &s.UseHeadset);
+                                    ImGui::Checkbox(strings.UseHeadset.c_str(), &s.UseHeadset);
 
                                     ImGui::Separator();
                                     ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
@@ -1984,6 +2073,10 @@ int main()
 
                                 if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
                                     Config::WriteAppConfigToFile(appConfig);
+
+                                    if (!IsRunAsAdministrator()) {
+                                        ElevateNow();
+                                    }
                                 }
                                 Tooltip(strings.Tooltip_RunAsAdmin.c_str());
 

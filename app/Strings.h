@@ -1,11 +1,12 @@
 #include "MyUtils.h"
 
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja"};
+std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh"};
 
 class Strings
 {
 public:
     // GUI Strings
+    std::string DisablePlayerLED = "Disable player LED";
     std::string Speed = "Speed";
     std::string AudioEngineNotInitializedError = "Audio engine wasn't initialized, haptic feedback not available";
     std::string ScreenshotSoundVolume = "Screenshot sound volume";
@@ -147,6 +148,7 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["DisablePlayerLED"] = DisablePlayerLED;
         j["Speed"] = Speed;
         j["AudioEngineNotInitializedError"] = AudioEngineNotInitializedError;
         j["ScreenshotSoundVolume"] = ScreenshotSoundVolume;
@@ -261,6 +263,9 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("DisablePlayerLED"))
+            j.at("DisablePlayerLED").get_to(strings.DisablePlayerLED);
 
         if (j.contains("Speed"))
             j.at("Speed").get_to(strings.Speed);

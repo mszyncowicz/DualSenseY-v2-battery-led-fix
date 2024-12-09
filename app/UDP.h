@@ -28,7 +28,7 @@ public:
     bool isActive = false;
     int Battery;
     Settings thisSettings;    
-    std::chrono::high_resolution_clock::time_point LastTime;
+    std::chrono::high_resolution_clock::time_point LastTime = std::chrono::high_resolution_clock::now();
     struct UDPResponse
     {
         std::string Status;
@@ -207,7 +207,7 @@ public:
 
             isActive = true;
             nlohmann::json data = nlohmann::json::parse(packetString);
-            //cout << data << endl;
+            //cout << packetString << endl;
 
             for (auto &instr : data["instructions"])
             {
@@ -815,15 +815,16 @@ public:
                     thisSettings.ControllerInput.Blue = intParam3;
                     break;
                 }
-                case 8:
+                case 20: // Haptic feedback
                 {
                     //cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;
                     thisSettings.CurrentHapticFile = getParameterValueAsString(instr["parameters"][0]);
                     thisSettings.DontPlayIfAlreadyPlaying = getBoolValue(instr["parameters"][1]);
                     thisSettings.Loop = getBoolValue(instr["parameters"][2]);
+
                     break;
                 }
-                case 9:                 
+                case 21: // Edit audio            
                 {
                     edit.File = getParameterValueAsString(instr["parameters"][0]);
                     edit.EditType = (AudioEditType)intParam1;

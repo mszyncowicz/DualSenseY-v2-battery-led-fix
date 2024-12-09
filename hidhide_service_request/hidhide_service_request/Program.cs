@@ -41,9 +41,9 @@ public class Program {
         }
 
 
-        string dirFullName = System.Reflection.Assembly.GetExecutingAssembly().Location.Replace("hidhide_service_request.dll", "DualSenseY.exe").Replace(@"\utilities\", @"\");
+        string dirFullName = AppDomain.CurrentDomain.BaseDirectory.Replace("utilities\\", "DSX.exe");
         if (!File.Exists(dirFullName)) {
-            NativeMethods.MsgBox(0, "Couldn't find DualSenseY.exe!", "Error", 0);
+            NativeMethods.MsgBox(0, $"Couldn't find DSX.exe!\nError path: {dirFullName}", "Error", 0);
             return;
         }
 

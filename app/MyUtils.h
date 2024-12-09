@@ -1,3 +1,16 @@
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_impl_opengl3_loader.h"
+
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <GLES2/gl2.h>
+#endif
+#include <GLFW/glfw3.h>
+
+
+#include "stb_image.h"
+
 #include <string>
 #include <fstream>
 #include <ctime>
@@ -27,6 +40,8 @@
 #include <timeapi.h>
 
 namespace MyUtils {
+    bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height);
+    bool LoadTextureFromFile(const char* file_name, GLuint* out_texture, int* out_width, int* out_height);
     std::string GetExecutablePath();
     std::string GetExecutableFolderPath();
     void AddToStartup();

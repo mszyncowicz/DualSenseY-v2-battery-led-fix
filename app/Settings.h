@@ -57,6 +57,7 @@ public:
     int LOUD_COLOR[3] = {255, 255, 255};
     float ScreenshotSoundLoudness = 1;
     int DiscoSpeed = 1;
+    bool DisablePlayerLED = false;
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -69,6 +70,7 @@ public:
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["DisablePlayerLED"] = DisablePlayerLED;
         j["DiscoSpeed"] = DiscoSpeed;
         j["ScreenshotSoundLoudness"] = ScreenshotSoundLoudness;
         j["QUIET_COLOR"] = QUIET_COLOR;
@@ -115,6 +117,7 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("DisablePlayerLED"))       j.at("DisablePlayerLED").get_to(settings.DisablePlayerLED);
         if (j.contains("DiscoSpeed"))       j.at("DiscoSpeed").get_to(settings.DiscoSpeed);
         if (j.contains("ScreenshotSoundLoudness"))       j.at("ScreenshotSoundLoudness").get_to(settings.ScreenshotSoundLoudness);
         if (j.contains("QUIET_COLOR"))       j.at("QUIET_COLOR").get_to(settings.QUIET_COLOR);

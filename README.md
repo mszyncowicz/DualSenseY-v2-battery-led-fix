@@ -5,6 +5,10 @@
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz
 ### Translations → https://crowdin.com/project/dualsensey (If your language is not there, create an issue on github or contact me on discord)
 
+# Problems:
+ - Controller emulation is wonky? Install .NET 8.0 -> https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x86&rid=win-x86&os=win10&apphost_version=8.0.6
+ - Double input in-game? Install HidHide driver and run app as admin -> https://github.com/nefarius/HidHide/releases/download/v1.5.230.0/HidHide_1.5.230_x64.exe
+
 # DualSenseY
 
 **DualSenseY** is a powerful tool designed for controlling and customizing Sony DualSense (PS5) controllers on Windows. It features advanced capabilities for LED control, adaptive trigger configuration, haptics, microphone controls, and even screen capture functionality via the controller's microphone button.

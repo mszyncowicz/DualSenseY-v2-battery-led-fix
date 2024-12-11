@@ -168,73 +168,57 @@ namespace MyUtils {
         return scaled_int;
     }
 
-    bool RestartHIDDevice(const std::string& deviceInstanceID) {
-        // Get a handle to the device information set for all devices
-        HDEVINFO hDevInfo = SetupDiGetClassDevsA(
-            nullptr, // All classes
-            nullptr, // Enumerator
-            nullptr, // Parent window
-            DIGCF_ALLCLASSES | DIGCF_PRESENT // Present devices
-        );
+    std::string USBtoHIDinstance(const std::string& input) {
+        std::string result = input;
 
-        if (hDevInfo == INVALID_HANDLE_VALUE) {
-            std::cerr << "Failed to get device information set." << std::endl;
-            return false;
+        // Replace "USB" with "HID"
+        size_t pos = result.find("USB");
+        if (pos != std::string::npos) {
+            result.replace(pos, 3, "HID");
         }
 
-        SP_DEVINFO_DATA devInfoData = {};
-        devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
+        // Convert the string to uppercase
+        std::transform(result.begin(), result.end(), result.begin(), ::toupper);
 
-        // Enumerate through devices
-        for (DWORD i = 0; SetupDiEnumDeviceInfo(hDevInfo, i, &devInfoData); ++i) {
-            char buffer[512];
-            if (SetupDiGetDeviceInstanceIdA(hDevInfo, &devInfoData, buffer, sizeof(buffer), nullptr)) {
-                std::string currentID(buffer);
+        return result;
+    }
 
-                if (currentID == deviceInstanceID) {
-                    SP_PROPCHANGE_PARAMS params = {};
-                    params.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
-                    params.ClassInstallHeader.InstallFunction = DIF_PROPERTYCHANGE;
-                    params.StateChange = DICS_DISABLE;
-                    params.Scope = DICS_FLAG_GLOBAL;
-                    params.HwProfile = 0;
+    bool IsVersion8OrHigher(const std::string& version) {
+        int major, minor;
+        char dot; // To parse the '.' character
+        std::istringstream versionStream(version);
+        versionStream >> major >> dot >> minor;
 
-                    // Disable the device
-                    if (!SetupDiSetClassInstallParams(hDevInfo, &devInfoData, &params.ClassInstallHeader, sizeof(params))) {
-                        std::cerr << "Failed to set class install params for disabling." << std::endl;
-                        SetupDiDestroyDeviceInfoList(hDevInfo);
-                        return false;
-                    }
+        // Check if the version is 8.0 or higher
+        return (major > 8) || (major == 8 && minor >= 0);
+    }
 
-                    if (!SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, hDevInfo, &devInfoData)) {
-                        std::cerr << "Failed to disable the device." << std::endl;
-                        SetupDiDestroyDeviceInfoList(hDevInfo);
-                        return false;
-                    }
+    bool IsDotNet8OrHigherRuntimeInstalled() {
+        HKEY hKey;
+        const std::string subKey = R"(SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost)";
+        const std::string valueName = "Version";
+        char versionBuffer[256];
+        DWORD bufferSize = sizeof(versionBuffer);
 
-                    // Enable the device
-                    params.StateChange = DICS_ENABLE;
-                    if (!SetupDiSetClassInstallParams(hDevInfo, &devInfoData, &params.ClassInstallHeader, sizeof(params))) {
-                        std::cerr << "Failed to set class install params for enabling." << std::endl;
-                        SetupDiDestroyDeviceInfoList(hDevInfo);
-                        return false;
-                    }
-
-                    if (!SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, hDevInfo, &devInfoData)) {
-                        std::cerr << "Failed to enable the device." << std::endl;
-                        SetupDiDestroyDeviceInfoList(hDevInfo);
-                        return false;
-                    }
-
-                    SetupDiDestroyDeviceInfoList(hDevInfo);
-                    return true;
-                }
+        // Open the registry key
+        if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+            // Query the version value
+            if (RegQueryValueExA(hKey, valueName.c_str(), nullptr, nullptr, (LPBYTE)versionBuffer, &bufferSize) == ERROR_SUCCESS) {
+                std::string version = versionBuffer;
+                RegCloseKey(hKey);
+                return IsVersion8OrHigher(version);
             }
+            RegCloseKey(hKey);
         }
 
-        std::cerr << "Device not found." << std::endl;
-        SetupDiDestroyDeviceInfoList(hDevInfo);
         return false;
+    }
+
+    std::wstring ConvertToWideString(const std::string& str) {
+        int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
+        std::wstring wstr(size_needed, 0);
+        MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstr[0], size_needed);
+        return wstr;
     }
 
     bool GetConfigPathForController(std::string &Path, std::string ControllerID) {

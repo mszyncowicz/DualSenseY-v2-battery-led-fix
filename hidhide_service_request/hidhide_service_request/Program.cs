@@ -3,8 +3,8 @@ using Nefarius.Drivers.HidHide;
 using Nefarius.Utilities.DeviceManagement.PnP;
 using System.Runtime.InteropServices;
 
-public static class NativeMethods
-{
+public static class NativeMethods {
+
     // Declares managed prototypes for unmanaged functions.
     [DllImport("User32.dll", EntryPoint = "MessageBox",
         CharSet = CharSet.Auto)]
@@ -26,10 +26,10 @@ public static class NativeMethods
 }
 
 public class Program {
-    static void Main(string[] args) {
 
+    private static void Main(string[] args) {
         if (args.Length != 2) {
-            NativeMethods.MsgBox(0,"Not enough arguments!", "Error", 0);
+            NativeMethods.MsgBox(0, "Not enough arguments!", "Error", 0);
             return;
         }
 
@@ -39,7 +39,6 @@ public class Program {
             Environment.Exit(0);
             return;
         }
-
 
         string dirFullName = AppDomain.CurrentDomain.BaseDirectory.Replace("utilities\\", "DSX.exe");
         if (!File.Exists(dirFullName)) {
@@ -69,8 +68,7 @@ public class Program {
         Console.WriteLine("Searching device by instance ID...");
         Console.ForegroundColor = ConsoleColor.White;
         PnPDevice Device = PnPDevice.GetDeviceByInstanceId(instanceID);
-        try
-        {
+        try {
             Console.WriteLine("Disabling the device... Please wait");
             Device.Disable();
         }

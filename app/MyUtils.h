@@ -51,7 +51,8 @@ namespace MyUtils {
     int scaleFloatToInt(float input_float);
     std::string currentDateTime();
     std::string currentDateTimeWMS();
-    bool RestartHIDDevice(const std::string& deviceInstanceID);
+    std::string USBtoHIDinstance(const std::string& input);
+    std::wstring ConvertToWideString(const std::string& str);
     bool GetConfigPathForController(std::string& Path, std::string ControllerID);
     bool WriteDefaultConfigPath(std::string Path, std::string ControllerID);
     void RemoveConfig(std::string ControllerID);

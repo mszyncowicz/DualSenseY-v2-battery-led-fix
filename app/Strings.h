@@ -47,7 +47,7 @@ public:
     std::string MicButton = "Microphone button";
     std::string LED_DS4_Unavailable = "LED settings are unavailable while emulating DualShock 4";
     std::string UDPStatus = "UDP Status";
-    std::string Touchpad = "Touchpad";
+    std::string _Touchpad = "Touchpad";
     std::string TouchpadToMouse = "Touchpad as mouse";
     std::string Active = "Active";
     std::string Inactive = "Inactive";
@@ -148,6 +148,7 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["Touchpad"] = _Touchpad;
         j["DisablePlayerLED"] = DisablePlayerLED;
         j["Speed"] = Speed;
         j["AudioEngineNotInitializedError"] = AudioEngineNotInitializedError;
@@ -263,6 +264,9 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("Touchpad"))
+            j.at("Touchpad").get_to(strings._Touchpad);
 
         if (j.contains("DisablePlayerLED"))
             j.at("DisablePlayerLED").get_to(strings.DisablePlayerLED);

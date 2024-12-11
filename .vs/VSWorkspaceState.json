@@ -10,7 +10,10 @@
     ]
   },
   "ExpandedNodes": [
-    ""
+    "",
+    "\\app",
+    "\\hidhide_service_request"
   ],
+  "SelectedNode": "\\app\\ControllerEmulation.h",
   "PreviewInSolutionExplorer": false
 }

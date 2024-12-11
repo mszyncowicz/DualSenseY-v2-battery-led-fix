@@ -836,6 +836,7 @@ private:
     volatile const wchar_t *error = L"";
     int res = 0;
     std::string path = "";
+    std::string instanceid = "";
     wstring lastKnownParent;
     hid_device *handle;
     bool bt_initialized = false;
@@ -890,11 +891,13 @@ public:
                     offset = 1;
                 }
 
+                wstring parent;
+                string stringPath(Path);
+                string convertedPath = convertDeviceId(stringPath);
+                instanceid = convertedPath;
+
                 if (connectionType == Feature::USB)
                 {
-                    wstring parent;
-                    string stringPath(Path);
-                    string convertedPath = convertDeviceId(stringPath);
                     wstring finalS = ctow(convertedPath.c_str());
 
                     int statusf =
@@ -914,6 +917,7 @@ public:
 
                 Running = true;
                 Connected = true;
+                hid_free_enumeration(info);
             }
 
             path = Path;
@@ -958,6 +962,10 @@ public:
 
     wstring GetAudioDeviceInstanceID() {
         return AudioDeviceInstanceID;
+    }
+
+    std::string GetInstanceID() {
+        return instanceid;
     }
 
     const char* GetAudioDeviceName() {

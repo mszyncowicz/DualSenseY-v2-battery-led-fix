@@ -1,4 +1,4 @@
-const int VERSION = 22;
+const int VERSION = 23;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -1284,13 +1284,6 @@ int main()
         appConfig.ShowWindow = false;
     }
 
-    // Load images
-    int my_image_width = 128;
-    int my_image_height = 128;
-    GLuint my_image_texture = 0;
-    bool ret = MyUtils::LoadTextureFromFile("../../MyImage01.jpg", &my_image_texture, &my_image_width, &my_image_height);
-    IM_ASSERT(ret);
-
     while (!glfwWindowShouldClose(window))
     {
 
@@ -1921,7 +1914,7 @@ int main()
                               
                             }
 
-                            if (ImGui::CollapsingHeader(strings.Touchpad.c_str()))
+                            if (ImGui::CollapsingHeader(strings._Touchpad.c_str()))
                             {
                                     // Define the touchpad's preview size in the UI
                                     ImVec2 touchpadSize(300 * io.FontGlobalScale, 140* io.FontGlobalScale);  // Adjusted to keep a similar aspect ratio (1920:900)
@@ -1992,48 +1985,42 @@ int main()
 
                             if (ImGui::CollapsingHeader(strings.EmulationHeader.c_str()))
                             {
-                                if (s.emuStatus == None)
-                                {
-                                    if (ImGui::Button(strings.X360emu.c_str()))
-                                    {
-                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
-                                        s.emuStatus = X360;                                      
+                                    if (s.emuStatus == None) {
+                                        if (ImGui::Button(strings.X360emu.c_str())) {
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            s.emuStatus = X360;
+                                        }
+                                        ImGui::SameLine();
+                                        if (ImGui::Button(strings.DS4emu.c_str())) {
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            DualSense[i].SetLightbar(0, 0, 64);
+                                            s.emuStatus = DS4;
+                                        }
+                                        ImGui::SameLine();
+                                        ImGui::Checkbox(strings.DualShock4V2emu.c_str(), &s.DualShock4V2);
+                                        Tooltip(strings.Tooltip_Dualshock4V2.c_str());
                                     }
-                                    ImGui::SameLine();
-                                    if (ImGui::Button(strings.DS4emu.c_str()))
-                                    {
-                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
-                                        DualSense[i].SetLightbar(0, 0, 64);
-                                        s.emuStatus = DS4;
+                                    else {
+                                        if (ImGui::Button(strings.STOPemu.c_str())) {
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                            s.emuStatus = None;
+                                        }
                                     }
-                                    ImGui::SameLine();
-                                    ImGui::Checkbox(strings.DualShock4V2emu.c_str(), &s.DualShock4V2);
-                                    Tooltip(strings.Tooltip_Dualshock4V2.c_str());
-                                }
-                                else
-                                {
-                                    if (ImGui::Button(strings.STOPemu.c_str()))
-                                    {
-                                        RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
-                                        s.emuStatus = None;
-                                    }
-                                }
-                                
-                                if (!WasElevated)                               
-                                {
-                                    ImGui::Text(strings.ControllerEmuUserMode.c_str());
-                                }
-                                else {
-                                    ImGui::Text(strings.ControllerEmuAppAsAdmin.c_str());
-                                }
 
-                                ImGui::Separator();
+                                    if (!WasElevated) {
+                                        ImGui::Text(strings.ControllerEmuUserMode.c_str());
+                                    }
+                                    else {
+                                        ImGui::Text(strings.ControllerEmuAppAsAdmin.c_str());
+                                    }
 
-                                ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
-                                ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
-                                ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
-                                Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
-                                ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
+                                    ImGui::Separator();
+
+                                    ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
+                                    ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
+                                    ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
+                                    Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
+                                    ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
                             }
 
                             if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {

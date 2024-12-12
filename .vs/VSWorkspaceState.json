@@ -12,8 +12,10 @@
   "ExpandedNodes": [
     "",
     "\\app",
+    "\\AudioPassthrough",
+    "\\AudioPassthrough\\AudioPassthrough",
     "\\hidhide_service_request"
   ],
-  "SelectedNode": "\\app\\ControllerEmulation.h",
+  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough\\AudioPassthrough.csproj",
   "PreviewInSolutionExplorer": false
 }

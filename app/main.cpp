@@ -1,4 +1,4 @@
-const int VERSION = 23;
+const int VERSION = 24;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -201,6 +201,7 @@ void writeEmuController(Dualsense &controller, Settings &settings)
 
     auto lastConnectedTime = std::chrono::high_resolution_clock::now();
     bool wasVirtualControllerStarted = false;
+    EmuStatus lastEmu = None;
 
     while (!stop_thread)
     {
@@ -208,23 +209,28 @@ void writeEmuController(Dualsense &controller, Settings &settings)
         {
             lastConnectedTime = std::chrono::high_resolution_clock::now();
 
-            if (!wasVirtualControllerStarted)
-            {
-                if (settings.emuStatus == X360)
-                {
+            if (!wasVirtualControllerStarted) {
+                if (settings.emuStatus == X360) {
                     v.StartX360();
+                    wasVirtualControllerStarted = true;
+                    lastEmu = X360;
                 }
-                else if (settings.emuStatus == DS4)
-                {
+                else if (settings.emuStatus == DS4) {
                     if (settings.DualShock4V2)
                         v.SetDS4V2();
                     else
                         v.SetDS4V1();
 
                     v.StartDS4();
+                    lastEmu = DS4;
+                    wasVirtualControllerStarted = true;
                 }
-
-                wasVirtualControllerStarted = true;
+            }
+            else if (wasVirtualControllerStarted&& settings.emuStatus != lastEmu) {
+                v.Remove360();
+                v.RemoveDS4();
+                lastEmu == None;
+                wasVirtualControllerStarted = false;
             }
 
             auto start = std::chrono::high_resolution_clock::now();
@@ -319,17 +325,18 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 std::this_thread::sleep_for(POLL_INTERVAL - elapsed);
             }
         }
-        else
-        {
+        else {
             auto now = std::chrono::high_resolution_clock::now();
             if (wasVirtualControllerStarted && now - lastConnectedTime > DISCONNECT_DELAY)
             {
                 v.Remove360();
                 v.RemoveDS4();
+                lastEmu == None;
                 wasVirtualControllerStarted = false;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
+
     }
 
     v.Free();
@@ -1987,14 +1994,14 @@ int main()
                             {
                                     if (s.emuStatus == None) {
                                         if (ImGui::Button(strings.X360emu.c_str())) {
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                             s.emuStatus = X360;
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         }
                                         ImGui::SameLine();
                                         if (ImGui::Button(strings.DS4emu.c_str())) {
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
-                                            DualSense[i].SetLightbar(0, 0, 64);
                                             s.emuStatus = DS4;
+                                            DualSense[i].SetLightbar(0, 0, 64);
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         }
                                         ImGui::SameLine();
                                         ImGui::Checkbox(strings.DualShock4V2emu.c_str(), &s.DualShock4V2);

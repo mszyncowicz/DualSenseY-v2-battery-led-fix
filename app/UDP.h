@@ -131,16 +131,23 @@ public:
 
     float getFloatValue(const nlohmann::json& param) {
         if (param.is_null()) {
-            return 0;
+            return 0.0f;
         }
-        else if (param.is_number_float()) {
+        else if (param.is_number_float() || param.is_number()) {
             return param.get<float>();
         }
-        else if (param.is_number()) {
-            return param.get<float>();
+        else if (param.is_string()) {
+            try {
+                // Convert the string to float
+                return std::stof(param.get<std::string>());
+            } catch (const std::invalid_argument& e) {
+                return 0.0f;
+            } catch (const std::out_of_range& e) {
+                return 0.0f;
+            }
         }
         else {
-            return 0;
+            return 0.0f;
         }
     }
 
@@ -214,6 +221,7 @@ public:
                 uint8_t triggers[11];
                 Trigger::TriggerMode mode = Trigger::Off;
                 AudioEdit edit;
+                AudioPlay play;
              
                 int type = getParameterValue(instr["type"]);
                 int intParam0 = getParameterValue(instr["parameters"][0]);
@@ -818,10 +826,10 @@ public:
                 case 20: // Haptic feedback
                 {
                     //cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;
-                    thisSettings.CurrentHapticFile = getParameterValueAsString(instr["parameters"][0]);
-                    thisSettings.DontPlayIfAlreadyPlaying = getBoolValue(instr["parameters"][1]);
-                    thisSettings.Loop = getBoolValue(instr["parameters"][2]);
-
+                    play.File = getParameterValueAsString(instr["parameters"][0]);
+                    play.DontPlayIfAlreadyPlaying = getBoolValue(instr["parameters"][1]);
+                    play.Loop = getBoolValue(instr["parameters"][2]);
+                    thisSettings.AudioPlayQueue.push_back(play);
                     break;
                 }
                 case 21: // Edit audio            

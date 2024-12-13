@@ -1,4 +1,4 @@
-const int VERSION = 24;
+const int VERSION = 25;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -851,27 +851,19 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                     udpServer.thisSettings.ControllerInput
                         .RightTriggerForces[10]);
 
-                if (udpServer.thisSettings.CurrentHapticFile != "")
-                {
-                    controller.LoadSound(
-                        std::string("UDP-" +
-                                    udpServer.thisSettings.CurrentHapticFile)
-                            .c_str(),
-                        udpServer.thisSettings.CurrentHapticFile.c_str());
-                    controller.PlayHaptics(
-                        std::string("UDP-" +
-                                    udpServer.thisSettings.CurrentHapticFile)
-                            .c_str(),
-                        udpServer.thisSettings.DontPlayIfAlreadyPlaying,
-                        udpServer.thisSettings.Loop);
-                    udpServer.thisSettings.CurrentHapticFile = "";
-                    //cout << " UDP played " << std::string("UDP-" + udpServer.thisSettings.CurrentHapticFile).c_str() << endl;
+                while (!udpServer.thisSettings.AudioPlayQueue.empty()) {
+                    AudioPlay& play = udpServer.thisSettings.AudioPlayQueue.front();
+
+                    controller.LoadSound("UDP-" + play.File, play.File);
+                    controller.PlayHaptics("UDP-" + play.File, play.DontPlayIfAlreadyPlaying, play.Loop);
+
+                    cout << "Play: " << play.File << " | " << play.DontPlayIfAlreadyPlaying << " | " << play.Loop << endl;
+                    udpServer.thisSettings.AudioPlayQueue.erase(udpServer.thisSettings.AudioPlayQueue.begin());
                 }
 
                 while (!udpServer.thisSettings.AudioEditQueue.empty())
                 {
-                    AudioEdit &edit =
-                        udpServer.thisSettings.AudioEditQueue.front();
+                    AudioEdit &edit = udpServer.thisSettings.AudioEditQueue.front();
 
                     switch (edit.EditType)
                     {
@@ -891,8 +883,8 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                         break;
                     }
 
-                    udpServer.thisSettings.AudioEditQueue.erase(
-                        udpServer.thisSettings.AudioEditQueue.begin());
+                    //cout << "Edit: " << edit.File << " | " << edit.EditType << " | " << edit.Value << endl;
+                    udpServer.thisSettings.AudioEditQueue.erase(udpServer.thisSettings.AudioEditQueue.begin());
                 }
 
                 std::chrono::high_resolution_clock::time_point Now =

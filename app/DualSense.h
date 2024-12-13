@@ -1640,6 +1640,8 @@ public:
     void StopAllHaptics() {
         for (const auto& [key, value] : CurrentlyPlayedSounds) {
             ma_sound_stop(value.get());
+            ma_sound_set_looping(value.get(), false);
+            CurrentlyPlayedSounds.erase(key);
         }      
     }
 
@@ -1647,6 +1649,8 @@ public:
         for (const auto& [key, value] : CurrentlyPlayedSounds) {
             if (key.rfind(String, 0) == 0) { // rfind with pos=0 checks the prefix
                 ma_sound_stop(value.get());
+                ma_sound_set_looping(value.get(), false);
+                CurrentlyPlayedSounds.erase(key);
             }
         }
     }
@@ -1671,6 +1675,7 @@ public:
         if (connectionType == Feature::USB && AudioInitialized && !AudioDeviceNotFound) {
             auto it = soundMap.find(soundName);
             if (it == soundMap.end()) {
+                cout << "sound not found" << endl;
                 return false;
             }
 
@@ -1679,14 +1684,17 @@ public:
             // Return if the sound is already playing and DontPlayIfAlreadyPlaying is set to true
             auto it2 = CurrentlyPlayedSounds.find(soundName);
             if (it2 != CurrentlyPlayedSounds.end()) {
-                if (DontPlayIfAlreadyPlaying && ma_sound_is_playing(it2->second.get())) {
-                    return false;
+                if (ma_sound_is_playing(it2->second.get()) || ma_sound_is_looping(it2->second.get())) {
+                    if (DontPlayIfAlreadyPlaying) {
+                        return false;
+                    }
                 }
             }
 
             // Create a new instance of the sound with a custom deleter
             auto deleter = [](ma_sound* sound) {
                 if (sound) {
+                    ma_sound_stop(sound);
                     ma_sound_uninit(sound);
                     delete sound;
                 }
@@ -1695,12 +1703,13 @@ public:
             std::shared_ptr<ma_sound> newSound(new ma_sound, deleter);
             ma_result result = ma_sound_init_copy(&engine, originalSound.get(), 0, NULL, newSound.get());
             if (result != MA_SUCCESS) {
+                soundMap.erase(it);
                 std::cerr << "Failed to create a new sound instance. Error: " << result << std::endl;
                 return false;
             }
 
+
             // Add to the currently played sounds map
-            //newSound.get()->pEndCallbackUserData = &LoopUntilStoppedManually;
             //newSound.get()->endCallback = ma_sound_end_proc;
 
             if (LoopUntilStoppedManually) {

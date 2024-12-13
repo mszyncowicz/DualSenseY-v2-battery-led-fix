@@ -11,11 +11,8 @@
   },
   "ExpandedNodes": [
     "",
-    "\\app",
-    "\\AudioPassthrough",
-    "\\AudioPassthrough\\AudioPassthrough",
-    "\\hidhide_service_request"
+    "\\app"
   ],
-  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough\\AudioPassthrough.csproj",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

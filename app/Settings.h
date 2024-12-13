@@ -14,6 +14,12 @@ struct AudioEdit {
     float Value = 0;
 };
 
+struct AudioPlay {
+    std::string File = "";
+    bool DontPlayIfAlreadyPlaying = false; 
+    bool Loop = false;
+};
+
 class Settings
 {
 public:
@@ -64,6 +70,7 @@ public:
     bool DontPlayIfAlreadyPlaying = false;
     bool Loop = false;
     std::vector<AudioEdit> AudioEditQueue;
+    std::vector<AudioPlay> AudioPlayQueue;
 
     EmuStatus emuStatus = None;
 

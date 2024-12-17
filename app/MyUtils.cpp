@@ -3,6 +3,97 @@
 #define SYSERROR()  errno
 
 namespace MyUtils {
+    void SaveImGuiColorsToFile(const ImGuiStyle& style) {
+        OPENFILENAMEW ofn;
+
+        char szFileName[MAX_PATH] = "";
+
+        ZeroMemory(&ofn, sizeof(ofn));
+
+        ofn.lStructSize = sizeof(ofn); 
+        ofn.hwndOwner = NULL;
+        ofn.lpstrFilter = (LPCWSTR)L"DualSenseY Style (*.dsst)\0*.dsst";
+        ofn.lpstrFile = (LPWSTR)szFileName;
+        ofn.nMaxFile = MAX_PATH;
+        ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+        ofn.lpstrDefExt = (LPCWSTR)L"dscf";
+
+        GetSaveFileNameW(&ofn);
+
+        std::wstring ws( ofn.lpstrFile ); 
+        std::string filename = std::string( ws.begin(), ws.end() );
+
+        std::ofstream file(filename);
+
+        if (file.is_open()) {
+            for (int i = 0; i < ImGuiCol_COUNT; ++i) {
+                const ImVec4& color = style.Colors[i];
+                file << "style.Colors[" << i << "] = ImVec4("
+                     << color.x << ", " << color.y << ", " << color.z << ", " << color.w << ");" << std::endl;
+            }
+            file.close();
+            printf("ImGui style colors saved to %s\n", filename);
+        } else {
+            printf("Unable to open file for writing.\n");
+        }
+    }
+
+    void LoadImGuiColorsFromFile(ImGuiStyle& style) {
+        OPENFILENAMEW ofn;
+        char szFileName[MAX_PATH] = "";
+
+        ZeroMemory(&ofn, sizeof(ofn));
+
+        ofn.lStructSize = sizeof(ofn); 
+        ofn.hwndOwner = NULL;
+        ofn.lpstrFilter = (LPCWSTR)L"DualSenseY Style (*.dsst)\0*.dsst";
+        ofn.lpstrFile = (LPWSTR)szFileName;
+        ofn.nMaxFile = MAX_PATH;
+        ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+        ofn.lpstrDefExt = (LPCWSTR)L"dscf";
+
+        GetOpenFileNameW(&ofn);
+
+        std::wstring ws( ofn.lpstrFile ); 
+        std::string filename = std::string( ws.begin(), ws.end() );
+
+        std::ifstream file(filename);
+        std::string line;
+
+        if (file.is_open()) {
+            while (std::getline(file, line)) {
+                int index;
+                float r, g, b, a;
+                if (sscanf(line.c_str(), "style.Colors[%d] = ImVec4(%f, %f, %f, %f);", &index, &r, &g, &b, &a) == 5) {
+                    style.Colors[index] = ImVec4(r, g, b, a);
+                }
+            }
+            file.close();
+            printf("ImGui style colors loaded from %s\n", filename);
+        } else {
+            printf("Unable to open file for reading.\n");
+        }
+    }
+
+    void LoadImGuiColorsFromFilepath(ImGuiStyle& style, std::string filename) {
+        std::ifstream file(filename);
+        std::string line;
+
+        if (file.is_open()) {
+            while (std::getline(file, line)) {
+                int index;
+                float r, g, b, a;
+                if (sscanf(line.c_str(), "style.Colors[%d] = ImVec4(%f, %f, %f, %f);", &index, &r, &g, &b, &a) == 5) {
+                    style.Colors[index] = ImVec4(r, g, b, a);
+                }
+            }
+            file.close();
+            printf("ImGui style colors loaded from %s\n", filename);
+        } else {
+            printf("Unable to open file for reading.\n");
+        }
+    }
+
     bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
     {
         // Load from file
@@ -181,37 +272,6 @@ namespace MyUtils {
         std::transform(result.begin(), result.end(), result.begin(), ::toupper);
 
         return result;
-    }
-
-    bool IsVersion8OrHigher(const std::string& version) {
-        int major, minor;
-        char dot; // To parse the '.' character
-        std::istringstream versionStream(version);
-        versionStream >> major >> dot >> minor;
-
-        // Check if the version is 8.0 or higher
-        return (major > 8) || (major == 8 && minor >= 0);
-    }
-
-    bool IsDotNet8OrHigherRuntimeInstalled() {
-        HKEY hKey;
-        const std::string subKey = R"(SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost)";
-        const std::string valueName = "Version";
-        char versionBuffer[256];
-        DWORD bufferSize = sizeof(versionBuffer);
-
-        // Open the registry key
-        if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-            // Query the version value
-            if (RegQueryValueExA(hKey, valueName.c_str(), nullptr, nullptr, (LPBYTE)versionBuffer, &bufferSize) == ERROR_SUCCESS) {
-                std::string version = versionBuffer;
-                RegCloseKey(hKey);
-                return IsVersion8OrHigher(version);
-            }
-            RegCloseKey(hKey);
-        }
-
-        return false;
     }
 
     std::wstring ConvertToWideString(const std::string& str) {

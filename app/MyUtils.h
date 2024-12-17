@@ -8,9 +8,14 @@
 #endif
 #include <GLFW/glfw3.h>
 
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+#include <GLFW/glfw3native.h>
 
 #include "stb_image.h"
 
+#include <dwmapi.h>
 #include <string>
 #include <fstream>
 #include <ctime>
@@ -38,8 +43,16 @@
 #include <TlHelp32.h>
 #include <SetupAPI.h>
 #include <timeapi.h>
+#include <iostream>
+#include <commdlg.h>
+#include <fstream> 
+
+#pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
+    void SaveImGuiColorsToFile(const ImGuiStyle& style);
+    void LoadImGuiColorsFromFile(ImGuiStyle& style);
+    void LoadImGuiColorsFromFilepath(ImGuiStyle& style, std::string filename);
     bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height);
     bool LoadTextureFromFile(const char* file_name, GLuint* out_texture, int* out_width, int* out_height);
     std::string GetExecutablePath();

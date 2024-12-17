@@ -1,4 +1,4 @@
-const int VERSION = 25;
+﻿const int VERSION = 25;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -13,6 +13,7 @@ const int VERSION = 25;
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <algorithm>
+#include "../out/build/x64-Debug/vcpkg_installed/x64-windows/include/GL/glcorearb.h"
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
@@ -1068,6 +1069,7 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
     tray.run();
 }
 
+
 int main()
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
@@ -1173,6 +1175,7 @@ int main()
 
     CloseHandle(snapshot);
 
+   
     // Setup window
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -1212,6 +1215,8 @@ int main()
     {
         return 1;
     }
+
+  
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
@@ -1223,11 +1228,30 @@ int main()
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-    
 
-    auto &style = ImGui::GetStyle();
-    style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(1.0, 1.0, 1.0, 1.0);
-    style.Colors[ImGuiCol_TableBorderLight] = ImVec4(1.0, 1.0, 1.0, 1.0);
+    int imageWidth, imageHeight, channels;
+    stbi_uc* backgroundTexture = stbi_load("textures\\background.png", &imageWidth, &imageHeight, &channels, 4); // Load as RGBA
+    bool BackgroundTextureLoaded = false;
+
+    if (!backgroundTexture) {
+        // Error handling
+        printf("Failed to load texture\n");
+    }
+    else {
+        BackgroundTextureLoaded = true;
+    }
+
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, backgroundTexture);
+
+    stbi_image_free(backgroundTexture); // Free the image data after loading into GPU
+    
     deque<Settings> ControllerSettings;
     vector<thread> readThreads;  // Store the threads for each controller
     vector<thread> writeThreads; // Audio to LED threads
@@ -1242,7 +1266,7 @@ int main()
     InitializeAudioEndpoint();
 
     UDP udpServer;
-    
+
     ImGuiIO &io = ImGui::GetIO();
 
      static const ImWchar polishGlyphRange[] = {
@@ -1276,15 +1300,37 @@ int main()
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
     bool WindowHiddenOnStartup = false;
   
-
     if (appConfig.HideWindowOnStartup) {
         IsMinimized = true;
         WindowHiddenOnStartup = true;
         appConfig.ShowWindow = false;
     }
 
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 5.3f;
+    style.FrameRounding = 2.3f;
+    style.ScrollbarRounding = 0;
+    if(appConfig.DefaultStyleFilepath != "")
+        MyUtils::LoadImGuiColorsFromFilepath(style, appConfig.DefaultStyleFilepath);
+
+    HWND hwnd = glfwGetWin32Window(window);
+    BOOL useDarkMode = TRUE;
+
+    if (useDarkMode) {
+        if (FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode)))) {
+            fprintf(stderr, "Failed to set dark mode for window.\n");
+        }
+
+        DWORD color = 0x000000; 
+        if (FAILED(DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &color, sizeof(color)))) {
+            fprintf(stderr, "Failed to set caption color.\n");
+        }
+    }
+
     while (!glfwWindowShouldClose(window))
     {
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
 
         if (IsMinimized && appConfig.HideToTray || IsMinimized && !appConfig.HideToTray && appConfig.HideWindowOnStartup && WindowHiddenOnStartup) {
             glfwHideWindow(window);
@@ -1300,46 +1346,7 @@ int main()
 
         start_cycle();
         ImGui::NewFrame();
-
-        ImGuiStyle& style = ImGui::GetStyle();
-        style.WindowRounding = 5.3f;
-        style.FrameRounding = 2.3f;
-        style.ScrollbarRounding = 0;
-
-        style.Colors[ImGuiCol_Text]                  = ImVec4(0.90f, 0.90f, 0.90f, 0.90f);
-        style.Colors[ImGuiCol_TextDisabled]          = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-        style.Colors[ImGuiCol_WindowBg]              = ImVec4(0.0f, 0.00f, 0.0f, 1.00f);
-        style.Colors[ImGuiCol_PopupBg]               = ImVec4(0.05f, 0.05f, 0.10f, 0.85f);
-        style.Colors[ImGuiCol_Border]                = ImVec4(0.70f, 0.70f, 0.70f, 0.65f);
-        style.Colors[ImGuiCol_BorderShadow]          = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-        style.Colors[ImGuiCol_FrameBg]               = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-        style.Colors[ImGuiCol_FrameBgHovered]        = ImVec4(0.90f, 0.80f, 0.80f, 0.40f);
-        style.Colors[ImGuiCol_FrameBgActive]         = ImVec4(0.90f, 0.65f, 0.65f, 0.45f);
-        style.Colors[ImGuiCol_TitleBg]               = ImVec4(0.00f, 0.00f, 0.00f, 0.83f);
-        style.Colors[ImGuiCol_TitleBgCollapsed]      = ImVec4(0.40f, 0.40f, 0.80f, 0.20f);
-        style.Colors[ImGuiCol_TitleBgActive]         = ImVec4(0.00f, 0.00f, 0.00f, 0.87f);
-        style.Colors[ImGuiCol_MenuBarBg]             = ImVec4(0.01f, 0.01f, 0.02f, 0.80f);
-        style.Colors[ImGuiCol_ScrollbarBg]           = ImVec4(0.20f, 0.25f, 0.30f, 0.60f);
-        style.Colors[ImGuiCol_ScrollbarGrab]         = ImVec4(0.55f, 0.53f, 0.55f, 0.51f);
-        style.Colors[ImGuiCol_ScrollbarGrabHovered]  = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
-        style.Colors[ImGuiCol_ScrollbarGrabActive]   = ImVec4(0.56f, 0.56f, 0.56f, 0.91f);
-        style.Colors[ImGuiCol_CheckMark]             = ImVec4(0.0f, 1.0f, 0.0f, 0.83f);
-        style.Colors[ImGuiCol_SliderGrab]            = ImVec4(0.75f, 0.70f, 0.70f, 0.62f);
-        style.Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.30f, 0.30f, 0.30f, 0.84f);
-        style.Colors[ImGuiCol_Button]                = ImVec4(0.48f, 0.72f, 0.89f, 0.49f);
-        style.Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.50f, 0.69f, 0.99f, 0.68f);
-        style.Colors[ImGuiCol_ButtonActive]          = ImVec4(0.80f, 0.50f, 0.50f, 1.00f);
-        style.Colors[ImGuiCol_Header]                = ImVec4(0.1f, 0.1f, 0.1f, 0.1f);
-        style.Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.2f, 0.2f, 0.2f, 1.00f);
-        style.Colors[ImGuiCol_HeaderActive]          = ImVec4(0.38f, 0.62f, 0.83f, 1.00f);
-        style.Colors[ImGuiCol_ResizeGrip]            = ImVec4(1.00f, 1.00f, 1.00f, 0.85f);
-        style.Colors[ImGuiCol_ResizeGripHovered]     = ImVec4(1.00f, 1.00f, 1.00f, 0.60f);
-        style.Colors[ImGuiCol_ResizeGripActive]      = ImVec4(1.00f, 1.00f, 1.00f, 0.90f);
-        style.Colors[ImGuiCol_PlotLines]             = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-        style.Colors[ImGuiCol_PlotLinesHovered]      = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-        style.Colors[ImGuiCol_PlotHistogram]         = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-        style.Colors[ImGuiCol_PlotHistogramHovered]  = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-        style.Colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.00f, 0.00f, 1.00f, 0.35f);
+    
 
         // Get the viewport size (size of the application window)
         
@@ -1358,7 +1365,17 @@ int main()
         int screenHeight = mode->height;
  
         io.FontGlobalScale = CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
-        
+
+        if(BackgroundTextureLoaded)
+        {
+            if (ImGui::Begin("Background", nullptr, window_flags)) {
+                ImVec2 availSize = ImGui::GetContentRegionAvail();
+                ImGui::Image((void*)(intptr_t)textureID, availSize);
+                ImGui::End();
+            }
+        }
+
+        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
         if (ImGui::Begin("Main", nullptr, window_flags))
         {
             // Limit these functions for better CPU usage 
@@ -2097,11 +2114,92 @@ int main()
                 }
                 else
                 {
+                    if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
+                                ImGui::SetNextItemWidth(120.0f);
+                                if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
+                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];                                    
+                                    appConfig.Language = selectedLanguage;
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+
+                                if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+
+                                    if (!IsRunAsAdministrator()) {
+                                        ElevateNow();
+                                    }
+                                }
+                                Tooltip(strings.Tooltip_RunAsAdmin.c_str());
+
+                                if (ImGui::Checkbox(strings.HideToTray.c_str() , &appConfig.HideToTray)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip(strings.Tooltip_HideToTray.c_str());
+
+                                if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
+
+                                if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
+                                    if (appConfig.RunWithWindows) {
+                                        MyUtils::AddToStartup();
+                                    }
+                                    else {
+                                        MyUtils::RemoveFromStartup();
+                                    }
+
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                                Tooltip(strings.RunWithWindows.c_str());
+
+                                if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
+                                    Config::WriteAppConfigToFile(appConfig);
+                                }
+                            }
+                }
+
+                if (ImGui::CollapsingHeader(strings.Style.c_str())) {
+                    if (ImGui::Button(strings.SaveStyleToFile.c_str())) {
+                        MyUtils::SaveImGuiColorsToFile(style);
+                    }
+
+                    if (ImGui::Button(strings.LoadStyleFromFile.c_str())) {
+                        MyUtils::LoadImGuiColorsFromFile(style);
+                    }
+
+                    if (ImGui::Button(strings.SetDefaultStyleFile.c_str())) {
+                        std::string stylePath = Config::GetStylePath();
+                        if (stylePath != "") {
+                            appConfig.DefaultStyleFilepath = stylePath;
+                            Config::WriteAppConfigToFile(appConfig);
+                        }    
+                    }
+
+                    ImGui::Separator();
+                    for (int i = 0; i < ImGuiCol_COUNT; ++i) {
+                        ImVec4* color = &style.Colors[i];
+                        const char* colorName = ImGui::GetStyleColorName(i);
+
+                        ImGui::Text("%s:", colorName);
+                        ImGui::SameLine();
+
+                        ImGui::PushItemWidth(ImGui::GetWindowWidth() / 10.0f - 10);
+                        ImGui::SliderFloat(std::string(std::string("R##") + colorName).c_str(), &color->x, 0.0f, 1.0f);
+                        ImGui::SameLine();
+                        ImGui::SliderFloat(std::string(std::string("G##") + colorName).c_str(), &color->y, 0.0f, 1.0f);
+                        ImGui::SameLine();
+                        ImGui::SliderFloat(std::string(std::string("B##") + colorName).c_str(), &color->z, 0.0f, 1.0f);
+                        ImGui::SameLine();
+                        ImGui::SliderFloat(std::string(std::string("A##") + colorName).c_str(), &color->w, 0.0f, 1.0f);
+                        ImGui::PopItemWidth();
+                    }
+ 
                 }
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(33)); // 30 FPS
+        std::this_thread::sleep_for(std::chrono::milliseconds(16)); // 60 FPS
 
         ImGui::End();
         ImGui::Render();

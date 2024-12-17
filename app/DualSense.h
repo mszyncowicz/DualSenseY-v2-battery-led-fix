@@ -786,6 +786,7 @@ public:
 class Dualsense
 {
 private:
+    std::chrono::high_resolution_clock::time_point LastTimeReconnected = std::chrono::high_resolution_clock::now();
     std::chrono::steady_clock::time_point lastPlayTime;
     std::chrono::milliseconds cooldownDuration{300}; // Cooldown duration (1 second)
 
@@ -1328,6 +1329,11 @@ public:
 
     void InitializeAudioEngine()
     {
+        std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
+        if ((Now - LastTimeReconnected) < 5s){
+            return;
+        }
+
         if (!AudioInitialized && !AudioDeviceNotFound && connectionType == Feature::USB && Connected)
         {
             CComPtr<IMMDeviceEnumerator> pEnumerator;
@@ -1429,6 +1435,9 @@ public:
                 AudioDeviceNotFound = true;
                 return;
             }
+            else {
+                AudioDeviceNotFound = false;
+            }
 
             if (ma_context_init(NULL, 0, NULL, &context) != MA_SUCCESS)
             {
@@ -1481,6 +1490,9 @@ public:
                 AudioInitialized = false;
                 AudioDeviceNotFound = true;
                 return;
+            }
+            else {
+                AudioDeviceNotFound = false;
             }
 
                 ma_channel channel;
@@ -1799,7 +1811,8 @@ public:
                 {
                     cout << "Bluetooth connection detected." << endl;
                 }
-              
+
+                LastTimeReconnected = std::chrono::high_resolution_clock::now();
                 return DualsenseUtils::Reconnect_Result::Reconnected;
             }
         }

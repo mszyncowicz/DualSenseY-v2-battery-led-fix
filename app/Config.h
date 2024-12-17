@@ -14,9 +14,11 @@ namespace Config {
         bool RunWithWindows = false;
         bool ShowConsole = false;
         std::string Language = "en";
+        std::string DefaultStyleFilepath = "";
 
         nlohmann::json to_json() const {
             nlohmann::json j;
+            j["DefaultStyleFilepath"] = DefaultStyleFilepath;
             j["ElevateOnStartup"] = ElevateOnStartup;
             j["HideToTray"] = HideToTray;
             //j["ShowWindow"] = ShowWindow;
@@ -38,6 +40,7 @@ namespace Config {
             if (j.contains("RunWithWindows"))       j.at("RunWithWindows").get_to(appconfig.RunWithWindows);
             if (j.contains("ShowConsole"))       j.at("ShowConsole").get_to(appconfig.ShowConsole);
             if (j.contains("Language"))       j.at("Language").get_to(appconfig.Language);
+            if (j.contains("DefaultStyleFilepath"))       j.at("DefaultStyleFilepath").get_to(appconfig.DefaultStyleFilepath);
 
             return appconfig;
         }
@@ -125,6 +128,30 @@ namespace Config {
         ofn.nMaxFile = MAX_PATH;
         ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
         ofn.lpstrDefExt = (LPCWSTR)L"dscf";
+
+        GetOpenFileNameW(&ofn);
+
+
+        wstring ws( ofn.lpstrFile ); 
+        string filename = string( ws.begin(), ws.end() );
+
+        return filename;
+    }
+
+    static std::string GetStylePath() {
+        OPENFILENAMEW ofn;
+
+        char szFileName[MAX_PATH] = "";
+
+        ZeroMemory(&ofn, sizeof(ofn));
+
+        ofn.lStructSize = sizeof(ofn); 
+        ofn.hwndOwner = NULL;
+        ofn.lpstrFilter = (LPCWSTR)L"DualSenseY Style (*.dsst)\0*.dsst";
+        ofn.lpstrFile = (LPWSTR)szFileName;
+        ofn.nMaxFile = MAX_PATH;
+        ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+        ofn.lpstrDefExt = (LPCWSTR)L"dsst";
 
         GetOpenFileNameW(&ofn);
 

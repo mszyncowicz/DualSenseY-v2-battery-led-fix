@@ -6,6 +6,10 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string Style = "Style";
+    std::string SaveStyleToFile = "Save style to file";
+    std::string LoadStyleFromFile = "Load style from file";
+    std::string SetDefaultStyleFile = "Set default style file";
     std::string DisablePlayerLED = "Disable player LED";
     std::string Speed = "Speed";
     std::string AudioEngineNotInitializedError = "Audio engine wasn't initialized, haptic feedback not available";
@@ -148,6 +152,10 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["Style"] = Style;
+        j["SaveStyleToFile"] = SaveStyleToFile;
+        j["LoadStyleFromFile"] = LoadStyleFromFile;
+        j["SetDefaultStyleFile"] = SetDefaultStyleFile;
         j["Touchpad"] = _Touchpad;
         j["DisablePlayerLED"] = DisablePlayerLED;
         j["Speed"] = Speed;
@@ -264,6 +272,18 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("Style"))
+            j.at("Style").get_to(strings.Style);
+
+        if (j.contains("SaveStyleToFile"))
+            j.at("SaveStyleToFile").get_to(strings.SaveStyleToFile);
+
+        if (j.contains("LoadStyleFromFile"))
+            j.at("LoadStyleFromFile").get_to(strings.LoadStyleFromFile);
+
+        if (j.contains("SetDefaultStyleFile"))
+            j.at("SetDefaultStyleFile").get_to(strings.SetDefaultStyleFile);
 
         if (j.contains("Touchpad"))
             j.at("Touchpad").get_to(strings._Touchpad);

@@ -2176,6 +2176,15 @@ int main()
                         }    
                     }
 
+                    if (ImGui::Button(strings.RemoveDefaultStyle.c_str())) {
+                        appConfig.DefaultStyleFilepath = "";
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
+
+                    if (ImGui::Button(strings.ResetStyle.c_str())) {
+                        style = ImGuiStyle();
+                    }
+
                     ImGui::Separator();
                     for (int i = 0; i < ImGuiCol_COUNT; ++i) {
                         ImVec4* color = &style.Colors[i];

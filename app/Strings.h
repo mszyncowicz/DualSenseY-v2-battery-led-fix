@@ -10,6 +10,8 @@ public:
     std::string SaveStyleToFile = "Save style to file";
     std::string LoadStyleFromFile = "Load style from file";
     std::string SetDefaultStyleFile = "Set default style file";
+    std::string ResetStyle = "Reset style";
+    std::string RemoveDefaultStyle = "Remove default style config";
     std::string DisablePlayerLED = "Disable player LED";
     std::string Speed = "Speed";
     std::string AudioEngineNotInitializedError = "Audio engine wasn't initialized, haptic feedback not available";
@@ -152,6 +154,8 @@ public:
     {
         nlohmann::json j;
         // GUI Strings
+        j["ResetStyle"] = ResetStyle;
+        j["RemoveDefaultStyle"] = RemoveDefaultStyle;
         j["Style"] = Style;
         j["SaveStyleToFile"] = SaveStyleToFile;
         j["LoadStyleFromFile"] = LoadStyleFromFile;
@@ -272,6 +276,12 @@ public:
     static Strings from_json(const nlohmann::json &j)
     {
         Strings strings;
+
+        if (j.contains("ResetStyle"))
+            j.at("ResetStyle").get_to(strings.ResetStyle);
+
+        if (j.contains("RemoveDefaultStyle"))
+            j.at("RemoveDefaultStyle").get_to(strings.RemoveDefaultStyle);
 
         if (j.contains("Style"))
             j.at("Style").get_to(strings.Style);

@@ -5,7 +5,14 @@
 ### If you want to buy me a coffee → https://ko-fi.com/wujekfoliarz
 ### Translations → https://crowdin.com/project/dualsensey (If your language is not there, create an issue on github or contact me on discord)
 
+# Is this related to DSX?
+ - No, it's a free alternative for those who need it and a hobby project.
+
+# How do I activate UDP?
+ - All you need to do is run a game with dualsense mod installed, it will turn to active as soon as it receives data
+
 # Problems:
+ - I get a pop-up that says ViGEmBus is not installed! -> https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe
  - Controller emulation is wonky? Install .NET 8.0 -> https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x86&rid=win-x86&os=win10&apphost_version=8.0.6
  - Double input in-game? Install HidHide driver and run app as admin -> https://github.com/nefarius/HidHide/releases/download/v1.5.230.0/HidHide_1.5.230_x64.exe
 

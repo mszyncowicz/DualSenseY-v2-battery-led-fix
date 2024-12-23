@@ -1,4 +1,4 @@
-﻿const int VERSION = 25;
+﻿const int VERSION = 26;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -566,8 +566,8 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
 
                 if (settings.RumbleToAT_RigidMode) {
                     // stiffness
-                    leftForces[1] = settings.SwapTriggersRumbleToAT ? settings.rrumble : settings.lrumble;
-                    rightForces[1] = settings.SwapTriggersRumbleToAT ? settings.lrumble : settings.rrumble;
+                    leftForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxRightTriggerRigid, settings.rrumble) : min(settings.MaxLeftTriggerRigid, settings.lrumble);
+                    rightForces[1] = settings.SwapTriggersRumbleToAT ? min(settings.MaxLeftTriggerRigid, settings.lrumble) : min(settings.MaxRightTriggerRigid, settings.rrumble);
 
                     // set threshold
                     leftForces[0] = settings.SwapTriggersRumbleToAT ? 255 - settings.rrumble: 255 - settings.lrumble; 
@@ -1475,7 +1475,7 @@ int main()
                             if (configPath != "") {
                                 s = Config::ReadFromFile(configPath);
                                 if (s.emuStatus != None) {
-                                    RunAsyncHidHideRequest(id, "hide");
+                                    RunAsyncHidHideRequest(DualSense.back().GetPath(), "hide");
                                 }
                             }
 
@@ -1639,7 +1639,14 @@ int main()
 
                                         ImGui::SliderInt(strings.MaxRightFrequency.c_str(), &s.MaxRightRumbleToATFrequency, 0, 25);
                                         Tooltip(strings.Tooltip_MaxFrequency.c_str());
-                                    }                                 
+                                    }
+                                    else {
+                                        ImGui::SliderInt(strings.MaxLeftIntensity.c_str(), &s.MaxLeftTriggerRigid, 0, 255);
+                                        Tooltip(strings.Tooltip_MaxIntensity.c_str());
+
+                                        ImGui::SliderInt(strings.MaxRightIntensity.c_str(), &s.MaxRightTriggerRigid, 0, 255);
+                                        Tooltip(strings.Tooltip_MaxIntensity.c_str());
+                                    }
                                 }
 
                                 ImGui::Separator();
@@ -1874,32 +1881,31 @@ int main()
                                 {
                                     if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
                                     {
-                                        STARTUPINFO si;
+                                        STARTUPINFOW si;
                                         PROCESS_INFORMATION pi;
 
                                         ZeroMemory(&si, sizeof(si));
                                         si.cb = sizeof(si);
                                         ZeroMemory(&pi, sizeof(pi));
 
-                                        string id = DualSense[i].GetAudioDeviceName();
-                                        string arg1 = string("\"") + id + string("\"");
-                                        string command = "utilities\\AudioPassthrough.exe " + arg1;
+                                        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+                                        std::string narrowId = DualSense[i].GetAudioDeviceName(); // Assuming narrow string return
+                                        std::wstring wideId = converter.from_bytes(narrowId);
+                                        std::wstring arg1 = L"\"" + wideId + L"\"";
+                                        std::wstring command = L"utilities\\AudioPassthrough.exe " + arg1;
 
-                                        cout << "Starting audio to haptics" << endl << "Arg1: " << arg1 << endl;
+                                        std::wcout << L"Starting audio to haptics" << std::endl << L"Arg1: " << arg1 << std::endl;
 
-                                        if (CreateProcess(NULL,   // No module name (use command line)
-                                            (LPSTR)command.c_str(),        // Command line
-                                            NULL,            // Process handle not inheritable
-                                            NULL,            // Thread handle not inheritable
-                                            FALSE,          // Set handle inheritance to FALSE
-                                            0,              // No creation flags
-                                            NULL,           // Use parent's environment block
-                                            NULL,           // Use parent's starting directory 
-                                            &si,            // Pointer to STARTUPINFO structure
-                                            &pi)            // Pointer to PROCESS_INFORMATION structure
-                                        )
+                                        if (CreateProcessW(NULL, 
+                                            (LPWSTR)command.c_str(), 
+                                            NULL, NULL, 
+                                            FALSE, 
+                                            0, 
+                                            NULL, 
+                                            NULL, 
+                                            &si, 
+                                            &pi))
                                         {
-                                            // Close process and thread handles. 
                                             CloseHandle(pi.hProcess);
                                             CloseHandle(pi.hThread);
                                         }
@@ -2056,6 +2062,12 @@ int main()
                                     std::string configPath = Config::GetConfigPath();
                                     if (configPath != "") {
                                         s = Config::ReadFromFile(configPath);
+                                        if (s.emuStatus == None) {
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                        }
+                                        else {
+                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                        }
                                         s.ControllerInput.ID = DualSense[i].GetPath();
                                     }                                   
                                 }

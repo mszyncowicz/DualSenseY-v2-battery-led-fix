@@ -48,7 +48,7 @@ namespace AudioPassthrough {
                 device = null;
 
                 foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                    try {
+                    try {                    
                         if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
                             device = mmdevice;
                             break;
@@ -79,6 +79,7 @@ namespace AudioPassthrough {
             device = null;
             foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
                 try {
+                    //MessageBox.Show(mmdevice.FriendlyName.ToLower() + " | " + arg.ToLower());
                     if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
                         device = mmdevice;
                         audioID = instanceID;

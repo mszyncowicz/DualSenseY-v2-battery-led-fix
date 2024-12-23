@@ -10,11 +10,8 @@
     ]
   },
   "ExpandedNodes": [
-    "",
-    "\\app",
-    "\\AudioPassthrough",
-    "\\AudioPassthrough\\AudioPassthrough"
+    ""
   ],
-  "SelectedNode": "\\app\\DualSense.h",
+  "SelectedNode": "\\C:\\Users\\Igor\\Source\\Repos\\ImGuiProjectTemplate\\CMakeLists.txt\\DSX.exe (app\\DSX.exe)",
   "PreviewInSolutionExplorer": false
 }

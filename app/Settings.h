@@ -47,6 +47,8 @@ public:
     int MaxLeftRumbleToATFrequency = 25;
     int MaxRightRumbleToATIntensity = 255;
     int MaxRightRumbleToATFrequency = 25;
+    int MaxLeftTriggerRigid = 255;
+    int MaxRightTriggerRigid = 255;
     bool DualShock4V2 = false;
     bool TouchpadAsSelectStart = false;
     bool SwapTriggersShortcut = false;
@@ -112,6 +114,8 @@ public:
         j["MaxLeftRumbleToATFrequency"] = MaxLeftRumbleToATFrequency;
         j["MaxRightRumbleToATIntensity"] = MaxRightRumbleToATIntensity;
         j["MaxRightRumbleToATFrequency"] = MaxRightRumbleToATFrequency;
+        j["MaxLeftTriggerRigid"] = MaxLeftTriggerRigid;
+        j["MaxRightTriggerRigid"] = MaxRightTriggerRigid;
         j["SwapTriggersShortcut"] = SwapTriggersShortcut;
         j["HapticsToTriggers"] = HapticsToTriggers;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
@@ -124,6 +128,8 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("MaxLeftTriggerRigid"))       j.at("MaxLeftTriggerRigid").get_to(settings.MaxLeftTriggerRigid);
+        if (j.contains("MaxRightTriggerRigid"))       j.at("MaxRightTriggerRigid").get_to(settings.MaxRightTriggerRigid);
         if (j.contains("DisablePlayerLED"))       j.at("DisablePlayerLED").get_to(settings.DisablePlayerLED);
         if (j.contains("DiscoSpeed"))       j.at("DiscoSpeed").get_to(settings.DiscoSpeed);
         if (j.contains("ScreenshotSoundLoudness"))       j.at("ScreenshotSoundLoudness").get_to(settings.ScreenshotSoundLoudness);

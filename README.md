@@ -15,6 +15,7 @@
  - I get a pop-up that says ViGEmBus is not installed! -> https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe
  - Controller emulation is wonky? Install .NET 8.0 -> https://aka.ms/dotnet-core-applaunch?missing_runtime=true&arch=x86&rid=win-x86&os=win10&apphost_version=8.0.6
  - Double input in-game? Install HidHide driver and run app as admin -> https://github.com/nefarius/HidHide/releases/download/v1.5.230.0/HidHide_1.5.230_x64.exe
+ - The app renders a black screen on my laptop! -> Run the application with your dedicated GPU instead of iGPU
 
 # DualSenseY
 

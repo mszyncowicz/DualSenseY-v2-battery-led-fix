@@ -229,7 +229,7 @@ namespace MyUtils {
             if (deviceEnumerator)
                 deviceEnumerator->Release();
             client->DeviceChanged = false;
-            //InitializeAudioEndpoint();
+            InitializeAudioEndpoint();
         }
 
         float peakValue = 0.0f;

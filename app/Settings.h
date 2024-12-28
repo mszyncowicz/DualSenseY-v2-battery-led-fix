@@ -58,6 +58,7 @@ public:
     int LeftAnalogDeadzone = 0;
     int RightAnalogDeadzone = 0;
     bool TriggersAsButtons = false;
+    float AudioToTriggersMaxFloatValue = 5.0f;
     int QUIET_THRESHOLD = 85;   // Below this is considered quiet
     int MEDIUM_THRESHOLD = 170; // Below this is medium, above is loud
     int QUIET_COLOR[3] = {10, 10, 10};
@@ -117,6 +118,7 @@ public:
         j["MaxLeftTriggerRigid"] = MaxLeftTriggerRigid;
         j["MaxRightTriggerRigid"] = MaxRightTriggerRigid;
         j["SwapTriggersShortcut"] = SwapTriggersShortcut;
+        j["AudioToTriggersMaxFloatValue"] = AudioToTriggersMaxFloatValue;
         j["HapticsToTriggers"] = HapticsToTriggers;
         j["emuStatus"] = static_cast<int>(emuStatus); // Assuming EmuStatus is an enum
         return j;
@@ -128,6 +130,7 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("AudioToTriggersMaxFloatValue"))       j.at("AudioToTriggersMaxFloatValue").get_to(settings.AudioToTriggersMaxFloatValue);
         if (j.contains("MaxLeftTriggerRigid"))       j.at("MaxLeftTriggerRigid").get_to(settings.MaxLeftTriggerRigid);
         if (j.contains("MaxRightTriggerRigid"))       j.at("MaxRightTriggerRigid").get_to(settings.MaxRightTriggerRigid);
         if (j.contains("DisablePlayerLED"))       j.at("DisablePlayerLED").get_to(settings.DisablePlayerLED);

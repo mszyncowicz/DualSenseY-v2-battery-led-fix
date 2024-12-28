@@ -2,7 +2,7 @@
 
 using json = nlohmann::json;
 
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh"};
+std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko"};
 
 class Strings
 {
@@ -93,6 +93,7 @@ public:
     std::string HideToTray = "Hide to tray";
     std::string HideWindowOnStartup = "Hide window on startup";
     std::string RunWithWindows = "Run with Windows";
+    std::string Scale = "Scale";
 
     // Tooltips
     std::string Tooltip_Dualshock4V2 = "Emulates the second revision of DualShock 4, older games will not recognise it";
@@ -182,7 +183,7 @@ json Strings::to_json() const
     ADD_MEMBER(MicButton);
     ADD_MEMBER(LED_DS4_Unavailable);
     ADD_MEMBER(UDPStatus);
-    ADD_MEMBER(_Touchpad);
+    j["Touchpad"] = _Touchpad;
     ADD_MEMBER(TouchpadToMouse);
     ADD_MEMBER(Active);
     ADD_MEMBER(Inactive);
@@ -220,6 +221,7 @@ json Strings::to_json() const
     ADD_MEMBER(HideToTray);
     ADD_MEMBER(HideWindowOnStartup);
     ADD_MEMBER(RunWithWindows);
+    ADD_MEMBER(Scale);
 
     // Tooltips
     ADD_MEMBER(Tooltip_Dualshock4V2);
@@ -261,6 +263,7 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(Scale);
     GET_MEMBER(Style);
     GET_MEMBER(SaveStyleToFile);
     GET_MEMBER(LoadStyleFromFile);
@@ -308,7 +311,7 @@ Strings Strings::from_json(const json &j)
     GET_MEMBER(MicButton);
     GET_MEMBER(LED_DS4_Unavailable);
     GET_MEMBER(UDPStatus);
-    GET_MEMBER(_Touchpad);
+    if (j.contains("Touchpad")) j.at("Touchpad").get_to(strings._Touchpad);
     GET_MEMBER(TouchpadToMouse);
     GET_MEMBER(Active);
     GET_MEMBER(Inactive);

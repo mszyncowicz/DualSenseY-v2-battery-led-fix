@@ -1,8 +1,248 @@
 #include "MyUtils.h"
 #include <errno.h>
+#include "IMMNotificationClient.h"
 #define SYSERROR()  errno
 
+NotificationClient *client;
+IMMDeviceEnumerator *deviceEnumerator = nullptr;
+IMMDevice *device = nullptr;
+IAudioMeterInformation *meterInfo = nullptr;
+
 namespace MyUtils {
+
+    BOOL IsRunAsAdministrator()
+    {
+        BOOL fIsRunAsAdmin = FALSE;
+        DWORD dwError = ERROR_SUCCESS;
+        PSID pAdministratorsGroup = NULL;
+
+        // Allocate and initialize a SID of the administrators group.
+        SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+        if (!AllocateAndInitializeSid(
+            &NtAuthority, 
+            2, 
+            SECURITY_BUILTIN_DOMAIN_RID, 
+            DOMAIN_ALIAS_RID_ADMINS, 
+            0, 0, 0, 0, 0, 0, 
+            &pAdministratorsGroup))
+        {
+            dwError = GetLastError();
+            goto Cleanup;
+        }
+
+        // Determine whether the SID of administrators group is enabled in 
+        // the primary access token of the process.
+        if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin))
+        {
+            dwError = GetLastError();
+            goto Cleanup;
+        }
+
+    Cleanup:
+        // Centralized cleanup for all allocated resources.
+        if (pAdministratorsGroup)
+        {
+            FreeSid(pAdministratorsGroup);
+            pAdministratorsGroup = NULL;
+        }
+
+        // Throw the error if something failed in the function.
+        if (ERROR_SUCCESS != dwError)
+        {
+            throw dwError;
+        }
+
+        return fIsRunAsAdmin;
+    }
+
+    void ElevateNow()
+    {
+        BOOL bAlreadyRunningAsAdministrator = FALSE;
+        try
+        {
+            bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
+        }
+        catch(...)
+        {
+            std::cout << "Failed to determine if application was running with admin rights" << std::endl;
+            DWORD dwErrorCode = GetLastError();
+            TCHAR szMessage[256];
+            _stprintf_s(szMessage, ARRAYSIZE(szMessage), _T("Error code returned was 0x%08lx"), dwErrorCode);
+            std::cout << szMessage << std::endl;
+        }
+
+        if (!bAlreadyRunningAsAdministrator)
+        {
+            wchar_t szPath[MAX_PATH];
+            if (GetModuleFileNameW(NULL, szPath, ARRAYSIZE(szPath)))
+            {
+                // Launch itself as admin
+                SHELLEXECUTEINFOW sei = { sizeof(sei) };
+                sei.lpVerb = L"runas";
+                sei.lpFile = szPath;
+                sei.hwnd = NULL;
+                sei.nShow = SW_NORMAL;
+
+                if (!ShellExecuteExW(&sei))
+                {
+                    DWORD dwError = GetLastError();
+                    if (dwError == ERROR_CANCELLED)
+                    {
+                        std::cout << "End user did not allow elevation" << std::endl;
+                    }
+                }
+                else
+                {
+                    _exit(1);  // Quit itself
+                }
+            }
+        }
+    }
+
+    float CalculateScaleFactor(int screenWidth, int screenHeight) {
+        // Choose a baseline resolution, e.g., 1920x1080
+        const int baseWidth = 1920;
+        const int baseHeight = 1080;
+
+        // Calculate the scale factor based on the vertical or horizontal scale difference
+        float widthScale = static_cast<float>(screenWidth) / baseWidth;
+        float heightScale = static_cast<float>(screenHeight) / baseHeight;
+
+        // Use an average or the larger scale factor, depending on preference
+        return (widthScale + heightScale) / 1.2f;
+    }
+
+    void StartHidHideRequest(std::string ID, std::string arg) {
+        STARTUPINFO si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        si.dwFlags = STARTF_USESHOWWINDOW; // Use this flag to control window visibility
+        si.wShowWindow = SW_HIDE;          // Set to SW_HIDE to prevent the window from showing
+
+        ZeroMemory(&pi, sizeof(pi));
+
+        std::string arg1 = "\"" + ID + "\"";
+        std::string arg2 = " \"" + arg + "\" ";
+        std::string command = "utilities\\hidhide_service_request.exe " + arg1 + arg2;
+
+        if (CreateProcess(NULL,              // No module name (use command line)
+                          (LPSTR)command.c_str(), // Command line
+                          NULL,               // Process handle not inheritable
+                          NULL,               // Thread handle not inheritable
+                          FALSE,              // Set handle inheritance to FALSE
+                          0,                  // No creation flags
+                          NULL,               // Use parent's environment block
+                          NULL,               // Use parent's starting directory 
+                          &si,                // Pointer to STARTUPINFO structure
+                          &pi)                // Pointer to PROCESS_INFORMATION structure
+           ) {
+            // Close process and thread handles. 
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+    }
+
+    void RunAsyncHidHideRequest(std::string ID, std::string arg) {
+        std::thread asyncThread(StartHidHideRequest, ID, arg);
+        asyncThread.detach();  // Detach the thread to run independently
+    }
+
+    void InitializeAudioEndpoint()
+    {
+        CoInitialize(nullptr);
+
+        CoCreateInstance(__uuidof(MMDeviceEnumerator),
+                         nullptr,
+                         CLSCTX_ALL,
+                         __uuidof(IMMDeviceEnumerator),
+                         (void **)&deviceEnumerator);
+        deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
+
+        client = new NotificationClient();
+        deviceEnumerator->RegisterEndpointNotificationCallback(client);
+
+        device->Activate(__uuidof(IAudioMeterInformation),
+                         CLSCTX_ALL,
+                         nullptr,
+                         (void **)&meterInfo);
+
+        CoUninitialize();
+    }
+
+    void DeinitializeAudioEndpoint()
+    {
+        if (meterInfo)
+        {
+            meterInfo->Release();
+            meterInfo = nullptr;
+        }
+
+        if (device)
+        {
+            device->Release();
+            device = nullptr;
+        }
+
+        if (client)
+        {
+            deviceEnumerator->UnregisterEndpointNotificationCallback(client);
+            delete client;
+            client = nullptr;
+        }
+
+        if (deviceEnumerator)
+        {
+            deviceEnumerator->Release();
+            deviceEnumerator = nullptr;
+        }
+
+        CoUninitialize();
+    }
+
+    std::string WStringToString(const std::wstring& wstr)
+    {
+	    std::string str;
+	    size_t size;
+	    str.resize(wstr.length());
+	    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
+	    return str;
+    }
+
+    void MoveCursor(int x, int y)
+    {
+        POINT p;
+        if (GetCursorPos(&p)) {
+            SetCursorPos(p.x + x, p.y + y);
+        }
+    }
+
+    float GetCurrentAudioPeak()
+    {
+        if (client->DeviceChanged)
+        {
+            if (meterInfo)
+                meterInfo->Release();
+            if (device)
+                device->Release();
+            if (deviceEnumerator)
+                deviceEnumerator->Release();
+            client->DeviceChanged = false;
+            //InitializeAudioEndpoint();
+        }
+
+        float peakValue = 0.0f;
+        if (meterInfo->GetPeakValue(&peakValue) == S_OK)
+        {
+            return peakValue;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
     void SaveImGuiColorsToFile(const ImGuiStyle& style) {
         OPENFILENAMEW ofn;
 
@@ -242,8 +482,7 @@ namespace MyUtils {
         return sanitized;
     }
 
-    int scaleFloatToInt(float input_float) {
-        const float max_float = 0.0500000f;
+    int scaleFloatToInt(float input_float, float max_float) {
         const int max_int = 255;
     
         // Ensure input is within the valid range

@@ -1,9 +1,8 @@
-﻿const int VERSION = 26;
+﻿const int VERSION = 27;
 
 #include "MyUtils.h"
 #include "DualSense.h"
 #include "ControllerEmulation.h"
-#include "IMMNotificationClient.h"
 #include "cycle.hpp"
 #include "miniaudio.h"
 #include "Config.h"
@@ -30,142 +29,6 @@ static void glfw_error_callback(int error, const char *description);
 deque<Dualsense> DualSense;
 std::atomic<bool> stop_thread{false}; // Flag to signal the thread to stop
 
-NotificationClient *client;
-IMMDeviceEnumerator *deviceEnumerator = nullptr;
-IMMDevice *device = nullptr;
-IAudioMeterInformation *meterInfo = nullptr;
-
-void StartHidHideRequest(std::string ID, std::string arg) {
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESHOWWINDOW; // Use this flag to control window visibility
-    si.wShowWindow = SW_HIDE;          // Set to SW_HIDE to prevent the window from showing
-
-    ZeroMemory(&pi, sizeof(pi));
-
-    std::string arg1 = "\"" + ID + "\"";
-    std::string arg2 = " \"" + arg + "\" ";
-    std::string command = "utilities\\hidhide_service_request.exe " + arg1 + arg2;
-
-    if (CreateProcess(NULL,              // No module name (use command line)
-                      (LPSTR)command.c_str(), // Command line
-                      NULL,               // Process handle not inheritable
-                      NULL,               // Thread handle not inheritable
-                      FALSE,              // Set handle inheritance to FALSE
-                      0,                  // No creation flags
-                      NULL,               // Use parent's environment block
-                      NULL,               // Use parent's starting directory 
-                      &si,                // Pointer to STARTUPINFO structure
-                      &pi)                // Pointer to PROCESS_INFORMATION structure
-       ) {
-        // Close process and thread handles. 
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-    }
-}
-
-void RunAsyncHidHideRequest(std::string ID, std::string arg) {
-    std::thread asyncThread(StartHidHideRequest, ID, arg);
-    asyncThread.detach();  // Detach the thread to run independently
-}
-
-void InitializeAudioEndpoint()
-{
-    CoInitialize(nullptr);
-
-    CoCreateInstance(__uuidof(MMDeviceEnumerator),
-                     nullptr,
-                     CLSCTX_ALL,
-                     __uuidof(IMMDeviceEnumerator),
-                     (void **)&deviceEnumerator);
-    deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device);
-
-    client = new NotificationClient();
-    deviceEnumerator->RegisterEndpointNotificationCallback(client);
-
-    device->Activate(__uuidof(IAudioMeterInformation),
-                     CLSCTX_ALL,
-                     nullptr,
-                     (void **)&meterInfo);
-
-    CoUninitialize();
-}
-
-void DeinitializeAudioEndpoint()
-{
-    if (meterInfo)
-    {
-        meterInfo->Release();
-        meterInfo = nullptr;
-    }
-
-    if (device)
-    {
-        device->Release();
-        device = nullptr;
-    }
-
-    if (client)
-    {
-        deviceEnumerator->UnregisterEndpointNotificationCallback(client);
-        delete client;
-        client = nullptr;
-    }
-
-    if (deviceEnumerator)
-    {
-        deviceEnumerator->Release();
-        deviceEnumerator = nullptr;
-    }
-
-    CoUninitialize();
-}
-
-string WStringToString(const wstring& wstr)
-{
-	string str;
-	size_t size;
-	str.resize(wstr.length());
-	wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
-	return str;
-}
-
-void MoveCursor(int x, int y)
-{
-    POINT p;
-    if (GetCursorPos(&p)) {
-        SetCursorPos(p.x + x, p.y + y);
-    }
-}
-
-float GetCurrentAudioPeak()
-{
-    if (client->DeviceChanged)
-    {
-        if (meterInfo)
-            meterInfo->Release();
-        if (device)
-            device->Release();
-        if (deviceEnumerator)
-            deviceEnumerator->Release();
-        client->DeviceChanged = false;
-        InitializeAudioEndpoint();
-    }
-
-    float peakValue = 0.0f;
-    if (meterInfo->GetPeakValue(&peakValue) == S_OK)
-    {
-        return peakValue;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
 void readControllerState(Dualsense &controller)
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
@@ -177,7 +40,6 @@ void readControllerState(Dualsense &controller)
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
-
 
 void Tooltip(const char* text) {
     ImGui::SameLine();
@@ -439,18 +301,18 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             if (settings.emuStatus != X360 && settings.X360Shortcut && controller.State.micBtn && controller.State.DpadLeft) {
                 X360animationplayed = false;
                 X360readyfornew = true;
-                RunAsyncHidHideRequest(controller.GetPath(), "hide");
+                MyUtils::RunAsyncHidHideRequest(controller.GetPath(), "hide");
                 settings.emuStatus = X360;
             }
 
             if (settings.emuStatus != DS4 && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
-                RunAsyncHidHideRequest(controller.GetPath(), "hide");
+                MyUtils::RunAsyncHidHideRequest(controller.GetPath(), "hide");
                 settings.emuStatus = DS4;
                 controller.SetLightbar(0, 0, 64);
             }
 
             if (settings.emuStatus != None && settings.StopEmuShortcut && controller.State.micBtn && controller.State.DpadDown) {
-                RunAsyncHidHideRequest(controller.GetPath(), "show");
+                MyUtils::RunAsyncHidHideRequest(controller.GetPath(), "show");
                 settings.emuStatus = None;
             }
 
@@ -512,7 +374,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
 
                 if (fabs(deltaX) > settings.swipeThreshold || fabs(deltaY) > settings.swipeThreshold) {
 
-                    MoveCursor(deltaX * settings.swipeThreshold, deltaY * settings.swipeThreshold);
+                    MyUtils::MoveCursor(deltaX * settings.swipeThreshold, deltaY * settings.swipeThreshold);
                 }
 
                 // Update the last touchpad position
@@ -607,8 +469,8 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 }
 
                 Peaks peaks = controller.GetAudioPeaks();
-                int ScaledLeftActuator = MyUtils::scaleFloatToInt(peaks.LeftActuator);
-                int ScaledRightActuator = MyUtils::scaleFloatToInt(peaks.RightActuator);
+                int ScaledLeftActuator = MyUtils::scaleFloatToInt(peaks.LeftActuator, settings.AudioToTriggersMaxFloatValue);
+                int ScaledRightActuator = MyUtils::scaleFloatToInt(peaks.RightActuator, settings.AudioToTriggersMaxFloatValue);
                 int leftForces[3] = { 0 };
                 int rightForces[3] = { 0 };
 
@@ -659,7 +521,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
 
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
             {
-                int peak = static_cast<int>(GetCurrentAudioPeak() * 500);
+                int peak = static_cast<int>(MyUtils::GetCurrentAudioPeak() * 500);
 
                 int r = 0, g = 0, b = 0;
 
@@ -929,108 +791,6 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
     }
 }
 
-BOOL IsRunAsAdministrator()
-{
-    BOOL fIsRunAsAdmin = FALSE;
-    DWORD dwError = ERROR_SUCCESS;
-    PSID pAdministratorsGroup = NULL;
-
-    // Allocate and initialize a SID of the administrators group.
-    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-    if (!AllocateAndInitializeSid(
-        &NtAuthority, 
-        2, 
-        SECURITY_BUILTIN_DOMAIN_RID, 
-        DOMAIN_ALIAS_RID_ADMINS, 
-        0, 0, 0, 0, 0, 0, 
-        &pAdministratorsGroup))
-    {
-        dwError = GetLastError();
-        goto Cleanup;
-    }
-
-    // Determine whether the SID of administrators group is enabled in 
-    // the primary access token of the process.
-    if (!CheckTokenMembership(NULL, pAdministratorsGroup, &fIsRunAsAdmin))
-    {
-        dwError = GetLastError();
-        goto Cleanup;
-    }
-
-Cleanup:
-    // Centralized cleanup for all allocated resources.
-    if (pAdministratorsGroup)
-    {
-        FreeSid(pAdministratorsGroup);
-        pAdministratorsGroup = NULL;
-    }
-
-    // Throw the error if something failed in the function.
-    if (ERROR_SUCCESS != dwError)
-    {
-        throw dwError;
-    }
-
-    return fIsRunAsAdmin;
-}
-
-void ElevateNow()
-{
-    BOOL bAlreadyRunningAsAdministrator = FALSE;
-    try
-    {
-        bAlreadyRunningAsAdministrator = IsRunAsAdministrator();
-    }
-    catch(...)
-    {
-        std::cout << "Failed to determine if application was running with admin rights" << std::endl;
-        DWORD dwErrorCode = GetLastError();
-        TCHAR szMessage[256];
-        _stprintf_s(szMessage, ARRAYSIZE(szMessage), _T("Error code returned was 0x%08lx"), dwErrorCode);
-        std::cout << szMessage << std::endl;
-    }
-
-    if (!bAlreadyRunningAsAdministrator)
-    {
-        wchar_t szPath[MAX_PATH];
-        if (GetModuleFileNameW(NULL, szPath, ARRAYSIZE(szPath)))
-        {
-            // Launch itself as admin
-            SHELLEXECUTEINFOW sei = { sizeof(sei) };
-            sei.lpVerb = L"runas";
-            sei.lpFile = szPath;
-            sei.hwnd = NULL;
-            sei.nShow = SW_NORMAL;
-
-            if (!ShellExecuteExW(&sei))
-            {
-                DWORD dwError = GetLastError();
-                if (dwError == ERROR_CANCELLED)
-                {
-                    std::cout << "End user did not allow elevation" << std::endl;
-                }
-            }
-            else
-            {
-                _exit(1);  // Quit itself
-            }
-        }
-    }
-}
-
-float CalculateScaleFactor(int screenWidth, int screenHeight) {
-    // Choose a baseline resolution, e.g., 1920x1080
-    const int baseWidth = 1920;
-    const int baseHeight = 1080;
-
-    // Calculate the scale factor based on the vertical or horizontal scale difference
-    float widthScale = static_cast<float>(screenWidth) / baseWidth;
-    float heightScale = static_cast<float>(screenHeight) / baseHeight;
-
-    // Use an average or the larger scale factor, depending on preference
-    return (widthScale + heightScale) / 1.2f;
-}
-
 void setTaskbarIcon(GLFWwindow* window) {
     int width, height, nrChannels;
     unsigned char* img = stbi_load("utilities/icon.png", &width, &height, &nrChannels, 4);
@@ -1068,7 +828,6 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
     tray.run();
 }
-
 
 int main()
 {
@@ -1126,7 +885,7 @@ int main()
     }
 
     if (appConfig.ElevateOnStartup) {
-        ElevateNow();
+        MyUtils::ElevateNow();
     }
     else {
         cout << "Not elevating" << endl;
@@ -1136,7 +895,7 @@ int main()
     std::thread trayThread(mTray, std::ref(tray), std::ref(appConfig));
     trayThread.detach();
 
-    bool WasElevated = IsRunAsAdministrator();
+    bool WasElevated = MyUtils::IsRunAsAdministrator();
 
     // Write default english to file
     Strings enStrings;
@@ -1263,7 +1022,7 @@ int main()
     int ControllerCount = DualsenseUtils::GetControllerCount();
     std::chrono::high_resolution_clock::time_point LastControllerCheck = std::chrono::high_resolution_clock::now();
 
-    InitializeAudioEndpoint();
+    MyUtils::InitializeAudioEndpoint();
 
     UDP udpServer;
 
@@ -1278,6 +1037,8 @@ int main()
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
       else if (appConfig.Language == "zh")
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+      else if (appConfig.Language == "ko")
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
       else {
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
       }
@@ -1327,6 +1088,7 @@ int main()
         }
     }
 
+    static bool show_popup = false;
     while (!glfwWindowShouldClose(window))
     {
         int windowWidth, windowHeight;
@@ -1347,7 +1109,6 @@ int main()
         start_cycle();
         ImGui::NewFrame();
     
-
         // Get the viewport size (size of the application window)
         
         ImVec2 window_size = io.DisplaySize;
@@ -1364,7 +1125,7 @@ int main()
         int screenWidth = mode->width;
         int screenHeight = mode->height;
  
-        io.FontGlobalScale = CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
+        io.FontGlobalScale = MyUtils::CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
 
         if(BackgroundTextureLoaded)
         {
@@ -1475,7 +1236,7 @@ int main()
                             if (configPath != "") {
                                 s = Config::ReadFromFile(configPath);
                                 if (s.emuStatus != None) {
-                                    RunAsyncHidHideRequest(DualSense.back().GetPath(), "hide");
+                                    MyUtils::RunAsyncHidHideRequest(DualSense.back().GetPath(), "hide");
                                 }
                             }
 
@@ -1615,8 +1376,16 @@ int main()
                                 ImGui::Checkbox(strings.RumbleToAT.c_str(), &s.RumbleToAT);
                                 Tooltip(strings.Tooltip_RumbleToAT.c_str());
 
-                                ImGui::Checkbox(strings.HapticsToTriggers.c_str(), &s.HapticsToTriggers);
-                                Tooltip(strings.Tooltip_HapticsToTriggers.c_str());
+                                if(HF_status == DualsenseUtils::HapticFeedbackStatus::Working){
+                                    ImGui::Checkbox(strings.HapticsToTriggers.c_str(), &s.HapticsToTriggers);
+                                    Tooltip(strings.Tooltip_HapticsToTriggers.c_str());
+                                    if(s.HapticsToTriggers)
+                                    {
+                                        ImGui::SameLine();
+                                        ImGui::SetNextItemWidth(100);
+                                        ImGui::SliderFloat(strings.Scale.c_str(), &s.AudioToTriggersMaxFloatValue, 0.01f, 10.0f);
+                                    }
+                                }
 
                                 if (s.RumbleToAT || s.HapticsToTriggers) {
                                     ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
@@ -1918,7 +1687,7 @@ int main()
                                     ImGui::Checkbox(strings.UseHeadset.c_str(), &s.UseHeadset);
 
                                     ImGui::Separator();
-                                    ImGui::Text( WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
+                                    ImGui::Text( MyUtils::WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
                                     ImGui::Text(DualSense[i].GetAudioDeviceName());
                                 }
                                 else
@@ -2010,13 +1779,13 @@ int main()
                                     if (s.emuStatus == None) {
                                         if (ImGui::Button(strings.X360emu.c_str())) {
                                             s.emuStatus = X360;
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         }
                                         ImGui::SameLine();
                                         if (ImGui::Button(strings.DS4emu.c_str())) {
                                             s.emuStatus = DS4;
                                             DualSense[i].SetLightbar(0, 0, 64);
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         }
                                         ImGui::SameLine();
                                         ImGui::Checkbox(strings.DualShock4V2emu.c_str(), &s.DualShock4V2);
@@ -2024,7 +1793,7 @@ int main()
                                     }
                                     else {
                                         if (ImGui::Button(strings.STOPemu.c_str())) {
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                            MyUtils:: RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
                                             s.emuStatus = None;
                                         }
                                     }
@@ -2063,10 +1832,10 @@ int main()
                                     if (configPath != "") {
                                         s = Config::ReadFromFile(configPath);
                                         if (s.emuStatus == None) {
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
                                         }
                                         else {
-                                            RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
                                         }
                                         s.ControllerInput.ID = DualSense[i].GetPath();
                                     }                                   
@@ -2089,8 +1858,8 @@ int main()
                                 if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
                                     Config::WriteAppConfigToFile(appConfig);
 
-                                    if (!IsRunAsAdministrator()) {
-                                        ElevateNow();
+                                    if (!MyUtils::IsRunAsAdministrator()) {
+                                        MyUtils::ElevateNow();
                                     }
                                 }
                                 Tooltip(strings.Tooltip_RunAsAdmin.c_str());
@@ -2137,8 +1906,8 @@ int main()
                                 if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
                                     Config::WriteAppConfigToFile(appConfig);
 
-                                    if (!IsRunAsAdministrator()) {
-                                        ElevateNow();
+                                    if (!MyUtils::IsRunAsAdministrator()) {
+                                        MyUtils::ElevateNow();
                                     }
                                 }
                                 Tooltip(strings.Tooltip_RunAsAdmin.c_str());
@@ -2170,8 +1939,9 @@ int main()
                                 }
                             }
                 }
+            }
 
-                if (ImGui::CollapsingHeader(strings.Style.c_str())) {
+            if (ImGui::CollapsingHeader(strings.Style.c_str())) {
                     if (ImGui::Button(strings.SaveStyleToFile.c_str())) {
                         MyUtils::SaveImGuiColorsToFile(style);
                     }
@@ -2216,7 +1986,6 @@ int main()
                         ImGui::PopItemWidth();
                     }
  
-                }
             }
         }
 
@@ -2259,7 +2028,7 @@ int main()
     if(WasElevated)
     {
         for (Dualsense& ds : DualSense) {
-            StartHidHideRequest(ds.GetPath(), "show");
+            MyUtils::StartHidHideRequest(ds.GetPath(), "show");
         }
     }
 
@@ -2277,7 +2046,7 @@ int main()
     glfwTerminate();
     hid_exit();
 
-    DeinitializeAudioEndpoint();
+    MyUtils::DeinitializeAudioEndpoint();
     //_CrtDumpMemoryLeaks();
 
     timeEndPeriod(1);

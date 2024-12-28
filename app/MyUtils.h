@@ -47,9 +47,21 @@
 #include <commdlg.h>
 #include <fstream> 
 
+
+
 #pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
+    void StartHidHideRequest(std::string ID, std::string arg);
+    void RunAsyncHidHideRequest(std::string ID, std::string arg);
+    float CalculateScaleFactor(int screenWidth, int screenHeight);
+    void ElevateNow();
+    BOOL IsRunAsAdministrator();
+    void DeinitializeAudioEndpoint();
+    void MoveCursor(int x, int y);
+    float GetCurrentAudioPeak();
+    std::string WStringToString(const std::wstring& wstr);
+    void InitializeAudioEndpoint();
     void SaveImGuiColorsToFile(const ImGuiStyle& style);
     void LoadImGuiColorsFromFile(ImGuiStyle& style);
     void LoadImGuiColorsFromFilepath(ImGuiStyle& style, std::string filename);
@@ -61,7 +73,7 @@ namespace MyUtils {
     void RemoveFromStartup();
     std::string GetImagesFolderPath();
     std::string GetLocalFolderPath();
-    int scaleFloatToInt(float input_float);
+    int scaleFloatToInt(float input_float, float max_float);
     std::string currentDateTime();
     std::string currentDateTimeWMS();
     std::string USBtoHIDinstance(const std::string& input);

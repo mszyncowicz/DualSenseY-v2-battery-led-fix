@@ -9,7 +9,7 @@
  - No, it's a free alternative for those who need it and a hobby project.
 
 # How do I activate UDP?
- - All you need to do is run a game with dualsense mod installed, it will turn to active as soon as it receives data
+ - All you need to do is run a game with dualsense mod installed, it will turn to active as soon as it receives data (If the mod asks for a port, use 6969)
 
 # Problems:
  - I get a pop-up that says ViGEmBus is not installed! -> https://github.com/nefarius/ViGEmBus/releases/download/v1.22.0/ViGEmBus_1.22.0_x64_x86_arm64.exe

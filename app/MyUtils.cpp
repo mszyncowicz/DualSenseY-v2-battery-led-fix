@@ -1,5 +1,6 @@
 #include "MyUtils.h"
 #include <errno.h>
+#include <codecvt>
 #include "IMMNotificationClient.h"
 #define SYSERROR()  errno
 
@@ -9,6 +10,28 @@ IMMDevice *device = nullptr;
 IAudioMeterInformation *meterInfo = nullptr;
 
 namespace MyUtils {
+    void StartAudioToHaptics(const std::string& Name) {
+        STARTUPINFOW si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        std::string narrowId = Name; // Assuming narrow string return
+        std::wstring wideId = converter.from_bytes(narrowId);
+        std::wstring arg1 = L"\"" + wideId + L"\"";
+        std::wstring command = L"utilities\\AudioPassthrough.exe " + arg1;
+
+        std::wcout << L"Starting audio to haptics" << std::endl << L"Arg1: " << arg1 << std::endl;
+
+        if (CreateProcessW(NULL, (LPWSTR)command.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+        {
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+    }
 
     BOOL IsRunAsAdministrator()
     {

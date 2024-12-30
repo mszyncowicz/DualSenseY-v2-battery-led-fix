@@ -10,8 +10,10 @@
     ]
   },
   "ExpandedNodes": [
-    ""
+    "",
+    "\\AudioPassthrough",
+    "\\cmake"
   ],
-  "SelectedNode": "\\C:\\Users\\Igor\\Source\\Repos\\ImGuiProjectTemplate\\CMakeLists.txt\\DSX.exe (app\\DSX.exe)\\Settings.h",
+  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough.sln",
   "PreviewInSolutionExplorer": false
 }

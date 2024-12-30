@@ -52,6 +52,7 @@
 #pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
+    void StartAudioToHaptics(const std::string& Name);
     void StartHidHideRequest(std::string ID, std::string arg);
     void RunAsyncHidHideRequest(std::string ID, std::string arg);
     float CalculateScaleFactor(int screenWidth, int screenHeight);

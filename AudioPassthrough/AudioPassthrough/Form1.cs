@@ -1,5 +1,8 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AudioPassthrough {
@@ -24,14 +27,24 @@ namespace AudioPassthrough {
 
         public Form1(string[] args) {
             InitializeComponent();
+
             if (args.Length == 0) {
                 MessageBox.Show("No arguments!");
                 Environment.Exit(0);
             }
             arg = args[0];
+
+            Process[] processes = Process.GetProcessesByName("AudioPassthrough");
+            foreach(Process process in processes) {
+                string windowTitle = WindowHelper.GetWindowTitle(process.Id);
+                if (windowTitle.Contains(arg)) {
+                    Environment.Exit(0); // Close the app if audio to haptics is already running for this controller
+                }
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e) {
+            this.Focus();
             new Thread(LookForNewDevice).Start();
             StartAudioToHaptics(arg.ToLower());
         }
@@ -48,7 +61,7 @@ namespace AudioPassthrough {
                 device = null;
 
                 foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                    try {                    
+                    try {
                         if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
                             device = mmdevice;
                             break;
@@ -103,6 +116,8 @@ namespace AudioPassthrough {
                     return;
                 }
             }
+
+            this.Text = device.FriendlyName;
 
             // AUDIO PASSTHROUGH STREAM
             setNewPlayback();
@@ -231,5 +246,45 @@ namespace AudioPassthrough {
 
             Environment.Exit(0);
         }
+    }
+
+    internal class WindowHelper
+    {
+        // FindWindowEx to find the window by process ID
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string windowTitle);
+
+        // Get the window title
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern int GetWindowText(IntPtr hwnd, StringBuilder lpString, int nMaxCount);
+
+        // Enumerate through windows
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+        // Delegate for EnumWindowsProc callback
+        public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+
+        public static string GetWindowTitle(int processId)
+        {
+            StringBuilder windowTitle = new StringBuilder(255);
+            EnumWindows((hwnd, lParam) =>
+            {
+                // Compare the process ID of the window with the one we're looking for
+                int pid;
+                GetWindowThreadProcessId(hwnd, out pid);
+                if (pid == processId)
+                {
+                    GetWindowText(hwnd, windowTitle, windowTitle.Capacity);
+                    return false; // Stop enumeration once we have the window title
+                }
+                return true;
+            }, IntPtr.Zero);
+
+            return windowTitle.ToString();
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern int GetWindowThreadProcessId(IntPtr hwnd, out int processId);
     }
 }

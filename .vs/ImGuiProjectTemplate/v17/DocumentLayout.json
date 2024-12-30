@@ -3,36 +3,69 @@
   "WorkspaceRootPath": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Strings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\MyUtils.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Settings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Strings.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\cycle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\cycle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\MyUtils.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\stb_image.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\MyUtils.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\DualSense.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico||{177559E0-D141-11D0-92DF-00A0C9138C45}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\icon.ico||{177559E0-D141-11D0-92DF-00A0C9138C45}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memcpy.asm||{8B382828-6202-11D1-8870-0000F87579D2}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\miniaudio.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\miniaudio.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector||{3B902123-F8A7-4915-9F01-361F908088D0}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\cycle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\cycle.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring||{3B902123-F8A7-4915-9F01-361F908088D0}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.rc||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\icon.rc||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\IMMNotificationClient.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -47,25 +80,12 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\UDP.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\DualSense.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\Config.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring||{3B902123-F8A7-4915-9F01-361F908088D0}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\delete_scalar.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
@@ -80,14 +100,7 @@
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xtree||{3B902123-F8A7-4915-9F01-361F908088D0}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\type_traits||{3B902123-F8A7-4915-9F01-361F908088D0}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico||{177559E0-D141-11D0-92DF-00A0C9138C45}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:app\\icon.ico||{177559E0-D141-11D0-92DF-00A0C9138C45}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ControllerEmulation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -190,16 +203,10 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\malloc.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\new_scalar.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector||{3B902123-F8A7-4915-9F01-361F908088D0}|"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\throw.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
@@ -342,7 +349,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 17,
+          "SelectedChildIndex": 18,
           "Children": [
             {
               "$type": "Bookmark",
@@ -390,28 +397,77 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MyUtils.cpp",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp",
-              "RelativeDocumentMoniker": "app\\MyUtils.cpp",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp",
-              "RelativeToolTip": "app\\MyUtils.cpp",
-              "ViewState": "AQIAAM0AAAAAAAAAAAD4v5cAAAAaAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-11-03T16:44:22.547Z",
+              "DocumentIndex": 7,
+              "Title": "icon.ico - Icon [256x256, 32 bit, PNG]",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico",
+              "RelativeDocumentMoniker": "app\\icon.ico",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico - Icon [256x256, 32 bit, PNG]",
+              "RelativeToolTip": "app\\icon.ico - Icon [256x256, 32 bit, PNG]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001525|",
+              "WhenOpened": "2024-11-15T13:06:43.034Z",
+              "EditorCaption": " - Icon [256x256, 32 bit, PNG]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DualSense.h",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h",
+              "RelativeDocumentMoniker": "app\\DualSense.h",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h",
+              "RelativeToolTip": "app\\DualSense.h",
+              "ViewState": "AQIAACIFAAAAAAAAAAD4vzQFAAArAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-10-20T15:20:20.448Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "MyUtils.h",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h",
-              "RelativeDocumentMoniker": "app\\MyUtils.h",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h",
-              "RelativeToolTip": "app\\MyUtils.h",
-              "ViewState": "AQIAADkAAAAAAAAAAAD4v0sAAAA7AAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-18T22:36:49.093Z"
+              "DocumentIndex": 1,
+              "Title": "main.cpp",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
+              "RelativeDocumentMoniker": "app\\main.cpp",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
+              "RelativeToolTip": "app\\main.cpp",
+              "ViewState": "AQIAAD4CAAAAAAAAAAAAAEQCAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-10-20T12:41:40.759Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "vector",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
+              "ViewState": "AQIAAFEDAAAAAAAAAAAowGIDAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-11-02T10:57:55.601Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "memcpy.asm",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memcpy.asm",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memcpy.asm",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memcpy.asm",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memcpy.asm",
+              "ViewState": "AQIAAKUBAAAAAAAAAADwv74BAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-12-29T14:15:52.005Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "xutility",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
+              "ViewState": "AQIAAP0RAAAAAAAAAAAowA4SAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-11-23T19:24:55.818Z"
             },
             {
               "$type": "Document",
@@ -421,63 +477,40 @@
               "RelativeDocumentMoniker": "app\\Settings.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Settings.h",
               "RelativeToolTip": "app\\Settings.h",
-              "ViewState": "AQIAABwAAAAAAAAAAAAAADwAAAAsAAAA",
+              "ViewState": "AQIAAHYAAAAAAAAAAAD4v38AAAA3AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-10-31T12:33:02.442Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "session.h",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
-              "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
-              "RelativeToolTip": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
-              "ViewState": "AQIAANgAAAAAAAAAAAAkwOsAAAAQAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-18T20:13:18.714Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "Strings.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h",
               "RelativeDocumentMoniker": "app\\Strings.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Strings.h",
               "RelativeToolTip": "app\\Strings.h",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAGcAAAAiAAAA",
+              "ViewState": "AQIAAPYAAAAAAAAAAAAAAA8BAAA5AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-12T18:40:49.868Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "imgui.cpp",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
-              "RelativeDocumentMoniker": "external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
-              "RelativeToolTip": "external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
-              "ViewState": "AQIAALYaAAAAAAAAAADgv8YaAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-10-20T17:07:11.213Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "main.cpp",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
-              "RelativeDocumentMoniker": "app\\main.cpp",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\main.cpp",
-              "RelativeToolTip": "app\\main.cpp",
-              "ViewState": "AQIAABMCAAAAAAAAAAAAAIAGAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-10-20T12:41:40.759Z",
+              "WhenOpened": "2024-11-12T18:40:49.868Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 5,
+              "Title": "MyUtils.cpp",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp",
+              "RelativeDocumentMoniker": "app\\MyUtils.cpp",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.cpp",
+              "RelativeToolTip": "app\\MyUtils.cpp",
+              "ViewState": "AQIAAAMAAAAAAAAAAAAAABUAAAAjAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-11-03T16:44:22.547Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "stb_image.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\stb_image.h",
               "RelativeDocumentMoniker": "app\\stb_image.h",
@@ -485,35 +518,60 @@
               "RelativeToolTip": "app\\stb_image.h",
               "ViewState": "AQIAAC4DAAAAAAAAAAAIwEMDAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-11-18T20:16:16.885Z"
+              "WhenOpened": "2024-11-18T20:16:16.885Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "UDP.h",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\UDP.h",
-              "RelativeDocumentMoniker": "app\\UDP.h",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\UDP.h",
-              "RelativeToolTip": "app\\UDP.h",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAB4AAAA+AAAA",
+              "DocumentIndex": 4,
+              "Title": "MyUtils.h",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h",
+              "RelativeDocumentMoniker": "app\\MyUtils.h",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\MyUtils.h",
+              "RelativeToolTip": "app\\MyUtils.h",
+              "ViewState": "AQIAACQAAAAAAAAAAAD4vzYAAAA0AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-10-31T11:45:45.927Z"
+              "WhenOpened": "2024-11-18T22:36:49.093Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 17,
+              "Title": "icon.rc",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.rc",
+              "RelativeDocumentMoniker": "app\\icon.rc",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.rc",
+              "RelativeToolTip": "app\\icon.rc",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
+              "WhenOpened": "2024-12-29T13:27:17.277Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "miniaudio.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\miniaudio.h",
               "RelativeDocumentMoniker": "app\\miniaudio.h",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\miniaudio.h",
               "RelativeToolTip": "app\\miniaudio.h",
-              "ViewState": "AQIAAIIIAQAAAAAAAAAWwJYIAQAAAAAA",
+              "ViewState": "AQIAADFHAAAAAAAAAAAowEJHAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2024-10-20T15:24:23.611Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 12,
+              "Title": "xmemory",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
+              "ViewState": "AQIAAPEAAAAAAAAAAADgv/gAAAAKAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-10-21T14:42:33.677Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "cycle.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\cycle.cpp",
               "RelativeDocumentMoniker": "app\\cycle.cpp",
@@ -525,7 +583,79 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 16,
+              "Title": "exe_common.inl",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
+              "ViewState": "AQIAADwAAAAAAAAAAAAAwE0AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2024-10-20T16:38:01.673Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "UDP.h",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\UDP.h",
+              "RelativeDocumentMoniker": "app\\UDP.h",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\UDP.h",
+              "RelativeToolTip": "app\\UDP.h",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAB4AAAA+AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-10-31T11:45:45.927Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "regex",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
+              "ViewState": "AQIAALMAAAAAAAAAAAAAAMYAAAAMAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-11-18T20:13:20.296Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "xstring",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
+              "ViewState": "AQIAAHwBAAAAAAAAAAAowI0BAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-11-15T20:35:17.59Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "imgui.cpp",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
+              "RelativeDocumentMoniker": "external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
+              "RelativeToolTip": "external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui.cpp",
+              "ViewState": "AQIAALYaAAAAAAAAAADgv8YaAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-10-20T17:07:11.213Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "session.h",
+              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
+              "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
+              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
+              "RelativeToolTip": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\session.h",
+              "ViewState": "AQIAANgAAAAAAAAAAAAkwOsAAAAQAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-11-18T20:13:18.714Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
               "Title": "IMMNotificationClient.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\IMMNotificationClient.h",
               "RelativeDocumentMoniker": "app\\IMMNotificationClient.h",
@@ -537,19 +667,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "DualSense.h",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h",
-              "RelativeDocumentMoniker": "app\\DualSense.h",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\DualSense.h",
-              "RelativeToolTip": "app\\DualSense.h",
-              "ViewState": "AQIAAEEHAAAAAAAAAAAqwMAHAAArAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-10-20T15:20:20.448Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 21,
               "Title": "Config.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Config.h",
               "RelativeDocumentMoniker": "app\\Config.h",
@@ -561,7 +679,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 23,
               "Title": "delete_scalar.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\delete_scalar.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\delete_scalar.cpp",
@@ -573,19 +691,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "exe_common.inl",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_common.inl",
-              "ViewState": "AQIAAA4BAAAAAAAAAAAewC0BAAAPAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2024-10-20T16:38:01.673Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 31,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\CMakeLists.txt",
               "RelativeDocumentMoniker": "app\\CMakeLists.txt",
@@ -597,7 +703,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 26,
               "Title": "xtree",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xtree",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xtree",
@@ -609,7 +715,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 27,
               "Title": "type_traits",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\type_traits",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\type_traits",
@@ -621,7 +727,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 24,
               "Title": "delete_scalar_size.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\delete_scalar_size.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\delete_scalar_size.cpp",
@@ -633,7 +739,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 25,
               "Title": "memory",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\memory",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\memory",
@@ -645,54 +751,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
-              "Title": "xstring",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xstring",
-              "ViewState": "AQIAAPQBAAAAAAAAAADgvwQCAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-11-15T20:35:17.59Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 21,
-              "Title": "xutility",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xutility",
-              "ViewState": "AQIAAKYBAAAAAAAAAADgv7gBAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-11-23T19:24:55.818Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "xmemory",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xmemory",
-              "ViewState": "AQIAAPEAAAAAAAAAAADgvwEBAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-10-21T14:42:33.677Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 23,
-              "Title": "icon.ico",
-              "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico",
-              "RelativeDocumentMoniker": "app\\icon.ico",
-              "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.ico",
-              "RelativeToolTip": "app\\icon.ico",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001525|",
-              "WhenOpened": "2024-11-15T13:06:43.034Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 34,
               "Title": "thread",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\thread",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\thread",
@@ -704,7 +763,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 28,
               "Title": "ControllerEmulation.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ControllerEmulation.h",
               "RelativeDocumentMoniker": "app\\ControllerEmulation.h",
@@ -716,7 +775,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 30,
               "Title": "report_runtime_error.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\internal\\report_runtime_error.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\internal\\report_runtime_error.cpp",
@@ -728,7 +787,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 35,
               "Title": "deque",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\deque",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\deque",
@@ -740,7 +799,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 93,
+              "DocumentIndex": 95,
               "Title": "xatomic.h",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xatomic.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xatomic.h",
@@ -752,7 +811,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 29,
               "Title": "atomic",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\atomic",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\atomic",
@@ -764,7 +823,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 32,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\CMakeLists.txt",
               "RelativeDocumentMoniker": "CMakeLists.txt",
@@ -776,7 +835,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 33,
               "Title": "prsht.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\um\\prsht.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\um\\prsht.h",
@@ -788,7 +847,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 37,
               "Title": "debug_heap.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
@@ -800,19 +859,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 40,
               "Title": "memset.asm",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memset.asm",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memset.asm",
               "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memset.asm",
               "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\x64\\memset.asm",
-              "ViewState": "AQIAAPcAAAAAAAAAAABBwA0BAAAAAAAA",
+              "ViewState": "AQIAAPUAAAAAAAAAAABRwA0BAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2024-11-16T10:00:46.703Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 36,
               "Title": "cycle.hpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\cycle.hpp",
               "RelativeDocumentMoniker": "app\\cycle.hpp",
@@ -824,7 +883,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 43,
               "Title": "abort.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\abort.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\abort.cpp",
@@ -836,7 +895,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 39,
               "Title": "corecrt_internal.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\inc\\corecrt_internal.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\inc\\corecrt_internal.h",
@@ -848,7 +907,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 38,
               "Title": "filesystem.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\filesystem.h",
               "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\filesystem.h",
@@ -860,7 +919,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 44,
               "Title": "terminate.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\misc\\terminate.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\misc\\terminate.cpp",
@@ -872,7 +931,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 45,
               "Title": "exe_main.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_main.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\exe_main.cpp",
@@ -884,19 +943,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 41,
               "Title": "Form1.cs",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\AudioPassthrough\\AudioPassthrough\\Form1.cs",
               "RelativeDocumentMoniker": "AudioPassthrough\\AudioPassthrough\\Form1.cs",
               "ToolTip": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\AudioPassthrough\\AudioPassthrough\\Form1.cs",
               "RelativeToolTip": "AudioPassthrough\\AudioPassthrough\\Form1.cs",
-              "ViewState": "AQIAACEAAAAAAAAAAIBJwDoAAAAVAAAA",
+              "ViewState": "AQIAAB4AAAAAAAAAAIBZwDoAAAAVAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-11-29T14:31:11.506Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 42,
               "Title": "assert.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\assert.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\assert.cpp",
@@ -908,7 +967,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 46,
               "Title": "CMakeSettings.json",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\CMakeSettings.json",
               "RelativeDocumentMoniker": "CMakeSettings.json",
@@ -919,7 +978,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 50,
               "Title": "gs_report.c",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\gs_report.c",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\gs_report.c",
@@ -931,7 +990,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 47,
               "Title": "CppProperties.json",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\CppProperties.json",
               "RelativeDocumentMoniker": "CppProperties.json",
@@ -943,7 +1002,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 49,
               "Title": "json.hpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\json\\include\\nlohmann\\json.hpp",
               "RelativeDocumentMoniker": "json\\include\\nlohmann\\json.hpp",
@@ -955,7 +1014,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 48,
               "Title": "thread.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\thread.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\startup\\thread.cpp",
@@ -967,7 +1026,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 47,
+              "DocumentIndex": 51,
               "Title": "sharedmutex.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\stl\\sharedmutex.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\stl\\sharedmutex.cpp",
@@ -979,7 +1038,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 52,
               "Title": "ViGEmClient.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\ViGEmClient\\src\\ViGEmClient.cpp",
               "RelativeDocumentMoniker": "ViGEmClient\\src\\ViGEmClient.cpp",
@@ -991,7 +1050,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 53,
               "Title": "launch.vs.json",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\.vs\\launch.vs.json",
               "RelativeDocumentMoniker": ".vs\\launch.vs.json",
@@ -1004,19 +1063,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 53,
-              "Title": "regex",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\regex",
-              "ViewState": "AQIAALUAAAAAAAAAAAAwwMoAAABAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-11-18T20:13:20.296Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 52,
+              "DocumentIndex": 56,
               "Title": "util.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h",
               "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\cpr-src\\include\\cpr\\util.h",
@@ -1028,7 +1075,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
+              "DocumentIndex": 54,
               "Title": "assert.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\assert.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\ucrt\\assert.h",
@@ -1040,7 +1087,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 55,
               "Title": "Client.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\ViGEmClient\\include\\ViGEm\\Client.h",
               "RelativeDocumentMoniker": "ViGEmClient\\include\\ViGEm\\Client.h",
@@ -1052,7 +1099,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 54,
+              "DocumentIndex": 57,
               "Title": "malloc.cpp",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\malloc.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\malloc.cpp",
@@ -1064,7 +1111,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 55,
+              "DocumentIndex": 58,
               "Title": "new_scalar.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\new_scalar.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\new_scalar.cpp",
@@ -1076,19 +1123,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 56,
-              "Title": "vector",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\vector",
-              "ViewState": "AQIAANoKAAAAAAAAAAAewO0KAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2024-11-02T10:57:55.601Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 57,
+              "DocumentIndex": 59,
               "Title": "throw.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\throw.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\vcruntime\\throw.cpp",
@@ -1100,7 +1135,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 58,
+              "DocumentIndex": 60,
               "Title": "thread0.cpp",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\stl\\thread0.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\crt\\src\\stl\\thread0.cpp",
@@ -1112,7 +1147,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 59,
+              "DocumentIndex": 61,
               "Title": "tray.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\traypp\\tray\\src\\core\\windows\\tray.cpp",
               "RelativeDocumentMoniker": "traypp\\tray\\src\\core\\windows\\tray.cpp",
@@ -1124,7 +1159,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 67,
+              "DocumentIndex": 69,
               "Title": "icon.rc - 0 - Icon [256x256, 32 bit, PNG]",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.rc",
               "RelativeDocumentMoniker": "app\\icon.rc",
@@ -1136,7 +1171,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 60,
+              "DocumentIndex": 62,
               "Title": "xloctime",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xloctime",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\xloctime",
@@ -1148,7 +1183,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 65,
+              "DocumentIndex": 67,
               "Title": "ElevateUAC.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\AppData\\Local\\Temp\\7zO092CDC0A\\ElevateUAC.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\7zO092CDC0A\\ElevateUAC.cpp",
@@ -1159,7 +1194,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 66,
+              "DocumentIndex": 68,
               "Title": "vcpkg.cmake",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
               "RelativeDocumentMoniker": "external\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
@@ -1171,7 +1206,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 63,
+              "DocumentIndex": 65,
               "Title": "stdafx.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\AppData\\Local\\Temp\\7zO09224E9B\\stdafx.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\7zO09224E9B\\stdafx.cpp",
@@ -1182,7 +1217,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 64,
+              "DocumentIndex": 66,
               "Title": "stdafx.h",
               "DocumentMoniker": "C:\\Users\\Igor\\AppData\\Local\\Temp\\7zO0924FF8B\\stdafx.h",
               "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\7zO0924FF8B\\stdafx.h",
@@ -1193,7 +1228,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 61,
+              "DocumentIndex": 63,
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\traypp\\example\\simple\\main.cpp",
               "RelativeDocumentMoniker": "traypp\\example\\simple\\main.cpp",
@@ -1205,7 +1240,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 68,
+              "DocumentIndex": 70,
               "Title": "icon.rc",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\icon.rc",
               "RelativeDocumentMoniker": "app\\icon.rc",
@@ -1216,7 +1251,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 70,
+              "DocumentIndex": 72,
               "Title": "ControllerEmulation.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ControllerEmulation.cpp",
               "RelativeDocumentMoniker": "app\\ControllerEmulation.cpp",
@@ -1227,7 +1262,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 69,
+              "DocumentIndex": 71,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\ViGEmClient\\CMakeLists.txt",
               "RelativeDocumentMoniker": "ViGEmClient\\CMakeLists.txt",
@@ -1239,7 +1274,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 92,
+              "DocumentIndex": 94,
               "Title": "minwindef.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\shared\\minwindef.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\shared\\minwindef.h",
@@ -1251,7 +1286,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 71,
+              "DocumentIndex": 73,
               "Title": "Common.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\ViGEmClient\\include\\ViGEm\\Common.h",
               "RelativeDocumentMoniker": "ViGEmClient\\include\\ViGEm\\Common.h",
@@ -1263,7 +1298,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 72,
+              "DocumentIndex": 74,
               "Title": "ranges",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\ranges",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\ranges",
@@ -1275,7 +1310,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 74,
+              "DocumentIndex": 76,
               "Title": "imgui_widgets.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui_widgets.cpp",
               "RelativeDocumentMoniker": "external\\vcpkg\\buildtrees\\imgui\\src\\v1.90.2-4442117b09.clean\\imgui_widgets.cpp",
@@ -1287,7 +1322,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 73,
+              "DocumentIndex": 75,
               "Title": "gdipluspath.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\um\\gdipluspath.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\um\\gdipluspath.h",
@@ -1299,7 +1334,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 75,
+              "DocumentIndex": 77,
               "Title": "from_json.hpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\json\\include\\nlohmann\\detail\\conversions\\from_json.hpp",
               "RelativeDocumentMoniker": "json\\include\\nlohmann\\detail\\conversions\\from_json.hpp",
@@ -1311,7 +1346,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 84,
+              "DocumentIndex": 86,
               "Title": "Client.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\ViGEm\\Client.h",
               "RelativeDocumentMoniker": "app\\ViGEm\\Client.h",
@@ -1322,7 +1357,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 77,
+              "DocumentIndex": 79,
               "Title": "string",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\string",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\string",
@@ -1334,7 +1369,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 76,
+              "DocumentIndex": 78,
               "Title": "json.hpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\json\\single_include\\nlohmann\\json.hpp",
               "RelativeDocumentMoniker": "json\\single_include\\nlohmann\\json.hpp",
@@ -1346,7 +1381,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 78,
+              "DocumentIndex": 80,
               "Title": "Stopwatch.hpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\Stopwatch.hpp",
               "RelativeDocumentMoniker": "app\\Stopwatch.hpp",
@@ -1357,7 +1392,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 89,
+              "DocumentIndex": 91,
               "Title": "Makefile",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\Makefile",
               "RelativeDocumentMoniker": "Makefile",
@@ -1369,7 +1404,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 90,
+              "DocumentIndex": 92,
               "Title": ".pre-commit-config.yaml",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\.pre-commit-config.yaml",
               "RelativeDocumentMoniker": ".pre-commit-config.yaml",
@@ -1381,7 +1416,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 80,
+              "DocumentIndex": 82,
               "Title": "asio.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\asiocmake-src\\src\\asio.cpp",
               "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\asiocmake-src\\src\\asio.cpp",
@@ -1392,7 +1427,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 79,
+              "DocumentIndex": 81,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\out\\build\\x64-Debug\\_deps\\asiocmake-src\\CMakeLists.txt",
               "RelativeDocumentMoniker": "out\\build\\x64-Debug\\_deps\\asiocmake-src\\CMakeLists.txt",
@@ -1403,7 +1438,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 88,
+              "DocumentIndex": 90,
               "Title": "atlcomcli.h",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\atlmfc\\include\\atlcomcli.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\atlmfc\\include\\atlcomcli.h",
@@ -1415,7 +1450,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 85,
+              "DocumentIndex": 87,
               "Title": "imrad-preview.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\AppData\\Local\\Temp\\imrad-preview.cpp",
               "RelativeDocumentMoniker": "..\\..\\..\\AppData\\Local\\Temp\\imrad-preview.cpp",
@@ -1426,7 +1461,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 62,
+              "DocumentIndex": 64,
               "Title": "ostream",
               "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\ostream",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.40.33807\\include\\ostream",
@@ -1438,7 +1473,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 83,
+              "DocumentIndex": 85,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\hidapi\\windows\\CMakeLists.txt",
               "RelativeDocumentMoniker": "hidapi\\windows\\CMakeLists.txt",
@@ -1450,7 +1485,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 86,
+              "DocumentIndex": 88,
               "Title": "wgl_context.c",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\glfw3\\src\\3.4-2448ff4533.clean\\src\\wgl_context.c",
               "RelativeDocumentMoniker": "external\\vcpkg\\buildtrees\\glfw3\\src\\3.4-2448ff4533.clean\\src\\wgl_context.c",
@@ -1462,7 +1497,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 87,
+              "DocumentIndex": 89,
               "Title": "win32_window.c",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\external\\vcpkg\\buildtrees\\glfw3\\src\\3.4-2448ff4533.clean\\src\\win32_window.c",
               "RelativeDocumentMoniker": "external\\vcpkg\\buildtrees\\glfw3\\src\\3.4-2448ff4533.clean\\src\\win32_window.c",
@@ -1474,7 +1509,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 82,
+              "DocumentIndex": 84,
               "Title": "getparentdevice.h",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\getparentdevice.h",
               "RelativeDocumentMoniker": "app\\getparentdevice.h",
@@ -1485,7 +1520,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 81,
+              "DocumentIndex": 83,
               "Title": "getparentdevice.cpp",
               "DocumentMoniker": "C:\\Users\\Igor\\source\\repos\\ImGuiProjectTemplate\\app\\getparentdevice.cpp",
               "RelativeDocumentMoniker": "app\\getparentdevice.cpp",
@@ -1496,7 +1531,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 91,
+              "DocumentIndex": 93,
               "Title": "CMake Overview Pages",
               "DocumentMoniker": "CMake Overview Pages",
               "ToolTip": "CMake Overview Pages",

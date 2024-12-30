@@ -1330,7 +1330,7 @@ public:
     void InitializeAudioEngine()
     {
         std::chrono::high_resolution_clock::time_point Now = std::chrono::high_resolution_clock::now();
-        if ((Now - LastTimeReconnected) < 5s){
+        if ((Now - LastTimeReconnected) < 2s){
             return;
         }
 

@@ -67,6 +67,12 @@ public:
     float ScreenshotSoundLoudness = 1;
     int DiscoSpeed = 1;
     bool DisablePlayerLED = false;
+    bool RunAudioToHapticsOnStart = false;
+    bool WasAudioToHapticsRan = false;
+    bool WasAudioToHapticsCheckboxChecked = false;
+    bool HapticsToLED = false;
+    bool SpeakerToLED = false;
+    float HapticsAndSpeakerToLedScale = 0.5f;
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -80,6 +86,10 @@ public:
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["HapticsAndSpeakerToLedScale"] = HapticsAndSpeakerToLedScale;
+        j["SpeakerToLED"] = SpeakerToLED;
+        j["HapticsToLED"] = HapticsToLED;
+        j["RunAudioToHapticsOnStart"] = RunAudioToHapticsOnStart;
         j["DisablePlayerLED"] = DisablePlayerLED;
         j["DiscoSpeed"] = DiscoSpeed;
         j["ScreenshotSoundLoudness"] = ScreenshotSoundLoudness;
@@ -130,6 +140,10 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("HapticsAndSpeakerToLedScale"))       j.at("HapticsAndSpeakerToLedScale").get_to(settings.HapticsAndSpeakerToLedScale);
+        if (j.contains("SpeakerToLED"))       j.at("SpeakerToLED").get_to(settings.SpeakerToLED);
+        if (j.contains("HapticsToLED"))       j.at("HapticsToLED").get_to(settings.HapticsToLED);
+        if (j.contains("RunAudioToHapticsOnStart"))       j.at("RunAudioToHapticsOnStart").get_to(settings.RunAudioToHapticsOnStart);
         if (j.contains("AudioToTriggersMaxFloatValue"))       j.at("AudioToTriggersMaxFloatValue").get_to(settings.AudioToTriggersMaxFloatValue);
         if (j.contains("MaxLeftTriggerRigid"))       j.at("MaxLeftTriggerRigid").get_to(settings.MaxLeftTriggerRigid);
         if (j.contains("MaxRightTriggerRigid"))       j.at("MaxRightTriggerRigid").get_to(settings.MaxRightTriggerRigid);

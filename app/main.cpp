@@ -1,4 +1,4 @@
-﻿const int VERSION = 27;
+﻿const int VERSION = 28;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -463,12 +463,12 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 }            
             }
 
+            Peaks peaks = controller.GetAudioPeaks();
             if (settings.HapticsToTriggers && !settings.CurrentlyUsingUDP) {
                 if (settings.RumbleToAT && settings.lrumble > 0 || settings.RumbleToAT && settings.rrumble > 0) {
                     goto skiphapticstotriggers;
                 }
-
-                Peaks peaks = controller.GetAudioPeaks();
+         
                 int ScaledLeftActuator = MyUtils::scaleFloatToInt(peaks.LeftActuator, settings.AudioToTriggersMaxFloatValue);
                 int ScaledRightActuator = MyUtils::scaleFloatToInt(peaks.RightActuator, settings.AudioToTriggersMaxFloatValue);
                 int leftForces[3] = { 0 };
@@ -522,6 +522,14 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
             {
                 int peak = static_cast<int>(MyUtils::GetCurrentAudioPeak() * 500);
+
+                if (settings.HapticsToLED){
+                    float CurrentHighestPeak = max(peaks.LeftActuator, peaks.RightActuator);
+                    peak = MyUtils::scaleFloatToInt(CurrentHighestPeak, settings.HapticsAndSpeakerToLedScale);
+                }
+                else if (settings.SpeakerToLED) {
+                    peak = MyUtils::scaleFloatToInt(peaks.Speaker, settings.HapticsAndSpeakerToLedScale);
+                }
 
                 int r = 0, g = 0, b = 0;
 
@@ -833,8 +841,8 @@ int main()
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
     timeBeginPeriod(1);
-    //glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
-    //glaiel::crashlogs::begin_monitoring();
+    glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
+    glaiel::crashlogs::begin_monitoring();
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(10605);
@@ -868,7 +876,7 @@ int main()
         cout << "Version check failed" << endl;
     }
 
-    // Download latest updater
+    // Download latest updater  
     cpr::Response response = cpr::Get(cpr::Url{ "https://github.com/WujekFoliarz/DualSenseY-v2/raw/refs/heads/master/Updater.exe" });
     if (response.status_code == 200) {
         std::ofstream outFile("Updater.exe", std::ios::binary);
@@ -883,6 +891,7 @@ int main()
         // Handle HTTP errors
         std::cerr << "Failed to download file. HTTP status code: " << response.status_code << std::endl;
     }
+    
 
     if (appConfig.ElevateOnStartup) {
         MyUtils::ElevateNow();
@@ -1136,6 +1145,8 @@ int main()
             }
         }
 
+        bool ShowNonControllerConfig = true;
+
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
         if (ImGui::Begin("Main", nullptr, window_flags))
         {
@@ -1267,6 +1278,7 @@ int main()
             }
 
             int ActiveDualsenseCount = DualSense.size();
+            ImGui::Separator();
 
             for (int i = 0; i < ActiveDualsenseCount; i++)
             {
@@ -1294,9 +1306,7 @@ int main()
                                         _exit(0);
                                      }
                                 }
-                            }
-
-                            ImGui::Separator();
+                            }                            
 
                             if (!udpServer.isActive || !s.UseUDP)
                             {
@@ -1308,7 +1318,7 @@ int main()
                                         ImGui::Checkbox(strings.DisablePlayerLED.c_str(), &s.DisablePlayerLED);
 
                                         if (!s.DiscoMode && !s.BatteryLightbar) {
-                                            ImGui::Checkbox(strings.AudioToLED.c_str(), &s.AudioToLED);
+                                            ImGui::Checkbox(strings.AudioToLED.c_str(), &s.AudioToLED);                                        
                                             Tooltip(strings.Tooltip_AudioToLED.c_str());
                                         }
 
@@ -1322,6 +1332,15 @@ int main()
 
                                         if (s.AudioToLED) {
                                             ImGui::Separator();
+                                            if(!s.SpeakerToLED)
+                                                ImGui::Checkbox(strings.UseControllerActuatorsInsteadOfSystemAudio.c_str(), &s.HapticsToLED);
+                                            if(!s.HapticsToLED)
+                                                ImGui::Checkbox(strings.UseControllerSpeakerInsteadOfSystemAudio.c_str(), &s.SpeakerToLED);
+                                            if (s.SpeakerToLED || s.HapticsToLED) {
+                                                ImGui::SameLine();
+                                                ImGui::SetNextItemWidth(100);
+                                                ImGui::SliderFloat(strings.Scale.c_str(), &s.HapticsAndSpeakerToLedScale, 0.01f, 1.0f);
+                                            }
                                             ImGui::Text(strings.QuietColor.c_str());
                                             ImGui::SliderInt(string(strings.LED_Red + "##q").c_str(), &s.QUIET_COLOR[0], 0, 255);
                                             ImGui::SliderInt(string(strings.LED_Green + "##q").c_str(), &s.QUIET_COLOR[1], 0, 255);
@@ -1631,6 +1650,11 @@ int main()
                             }
                             
 
+                            if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working && s.RunAudioToHapticsOnStart && !s.WasAudioToHapticsRan && !s.WasAudioToHapticsCheckboxChecked) {
+                                    MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
+                                    s.WasAudioToHapticsRan = true;
+                            }
+
                             if (ImGui::CollapsingHeader(strings.HapticFeedback.c_str()))
                             {
                                 ImGui::Text(strings.StandardRumble.c_str());
@@ -1646,38 +1670,15 @@ int main()
 
                                 ImGui::Separator();
 
+                                if (ImGui::Checkbox(strings.RunAudioToHapticsOnStart.c_str(), &s.RunAudioToHapticsOnStart)) {
+                                    s.WasAudioToHapticsCheckboxChecked = true;
+                                }
+
                                 if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
                                 {
                                     if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
                                     {
-                                        STARTUPINFOW si;
-                                        PROCESS_INFORMATION pi;
-
-                                        ZeroMemory(&si, sizeof(si));
-                                        si.cb = sizeof(si);
-                                        ZeroMemory(&pi, sizeof(pi));
-
-                                        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-                                        std::string narrowId = DualSense[i].GetAudioDeviceName(); // Assuming narrow string return
-                                        std::wstring wideId = converter.from_bytes(narrowId);
-                                        std::wstring arg1 = L"\"" + wideId + L"\"";
-                                        std::wstring command = L"utilities\\AudioPassthrough.exe " + arg1;
-
-                                        std::wcout << L"Starting audio to haptics" << std::endl << L"Arg1: " << arg1 << std::endl;
-
-                                        if (CreateProcessW(NULL, 
-                                            (LPWSTR)command.c_str(), 
-                                            NULL, NULL, 
-                                            FALSE, 
-                                            0, 
-                                            NULL, 
-                                            NULL, 
-                                            &si, 
-                                            &pi))
-                                        {
-                                            CloseHandle(pi.hProcess);
-                                            CloseHandle(pi.hThread);
-                                        }
+                                        MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
                                     };
                                     Tooltip(strings.Tooltip_StartAudioToHaptics.c_str());
 
@@ -1814,6 +1815,7 @@ int main()
                                     ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
                             }
 
+                            ShowNonControllerConfig = false;
                             if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
                                 ImGui::SetNextItemWidth(120.0f);
                                 if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
@@ -1893,51 +1895,55 @@ int main()
                         }
                     }
                 }
-                else
-                {
-                    if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
-                                ImGui::SetNextItemWidth(120.0f);
-                                if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
-                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];                                    
-                                    appConfig.Language = selectedLanguage;
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
+                else {
+                    ShowNonControllerConfig = true;
+                }
+            }
 
-                                if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
-                                    Config::WriteAppConfigToFile(appConfig);
+            if(ShowNonControllerConfig)
+            {
+                if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
+                    ImGui::SetNextItemWidth(120.0f);
+                    if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
+                        const std::string& selectedLanguage = languages[selectedLanguageIndex];
+                        appConfig.Language = selectedLanguage;
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
 
-                                    if (!MyUtils::IsRunAsAdministrator()) {
-                                        MyUtils::ElevateNow();
-                                    }
-                                }
-                                Tooltip(strings.Tooltip_RunAsAdmin.c_str());
+                    if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
+                        Config::WriteAppConfigToFile(appConfig);
 
-                                if (ImGui::Checkbox(strings.HideToTray.c_str() , &appConfig.HideToTray)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.Tooltip_HideToTray.c_str());
+                        if (!MyUtils::IsRunAsAdministrator()) {
+                            MyUtils::ElevateNow();
+                        }
+                    }
+                    Tooltip(strings.Tooltip_RunAsAdmin.c_str());
 
-                                if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
+                    if (ImGui::Checkbox(strings.HideToTray.c_str(), &appConfig.HideToTray)) {
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
+                    Tooltip(strings.Tooltip_HideToTray.c_str());
 
-                                if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
-                                    if (appConfig.RunWithWindows) {
-                                        MyUtils::AddToStartup();
-                                    }
-                                    else {
-                                        MyUtils::RemoveFromStartup();
-                                    }
+                    if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
+                    Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
 
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.RunWithWindows.c_str());
+                    if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
+                        if (appConfig.RunWithWindows) {
+                            MyUtils::AddToStartup();
+                        }
+                        else {
+                            MyUtils::RemoveFromStartup();
+                        }
 
-                                if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                            }
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
+                    Tooltip(strings.RunWithWindows.c_str());
+
+                    if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
+                        Config::WriteAppConfigToFile(appConfig);
+                    }
                 }
             }
 

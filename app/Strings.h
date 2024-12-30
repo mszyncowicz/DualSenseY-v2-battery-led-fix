@@ -8,6 +8,9 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string UseControllerSpeakerInsteadOfSystemAudio = "Use speaker audio peaks instead of system audio";
+    std::string UseControllerActuatorsInsteadOfSystemAudio = "Use actuator audio peaks instead of system audio";
+    std::string RunAudioToHapticsOnStart = "Run audio to haptics on start";
     std::string Style = "Style";
     std::string SaveStyleToFile = "Save style to file";
     std::string LoadStyleFromFile = "Load style from file";
@@ -136,6 +139,9 @@ json Strings::to_json() const
     #define ADD_MEMBER(name) j[#name] = name;
     
     // GUI Strings
+    ADD_MEMBER(UseControllerSpeakerInsteadOfSystemAudio);
+    ADD_MEMBER(UseControllerActuatorsInsteadOfSystemAudio);
+    ADD_MEMBER(RunAudioToHapticsOnStart);
     ADD_MEMBER(Style);
     ADD_MEMBER(SaveStyleToFile);
     ADD_MEMBER(LoadStyleFromFile);
@@ -263,6 +269,9 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(UseControllerSpeakerInsteadOfSystemAudio);
+    GET_MEMBER(UseControllerActuatorsInsteadOfSystemAudio);
+    GET_MEMBER(RunAudioToHapticsOnStart);
     GET_MEMBER(Scale);
     GET_MEMBER(Style);
     GET_MEMBER(SaveStyleToFile);

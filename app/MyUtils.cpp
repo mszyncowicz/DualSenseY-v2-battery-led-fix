@@ -10,6 +10,18 @@ IMMDevice *device = nullptr;
 IAudioMeterInformation *meterInfo = nullptr;
 
 namespace MyUtils {
+    int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax)
+    {
+        if (oldMin == oldMax)
+        {
+            throw std::invalid_argument("Old minimum and maximum cannot be equal.");
+        }
+        float ratio = static_cast<float>(newMax - newMin) /
+                      static_cast<float>(oldMax - oldMin);
+        float scaledValue = (value - oldMin) * ratio + newMin;
+        return std::clamp(static_cast<int>(scaledValue), newMin, newMax);
+    }
+
     void StartAudioToHaptics(const std::string& Name) {
         STARTUPINFOW si;
         PROCESS_INFORMATION pi;

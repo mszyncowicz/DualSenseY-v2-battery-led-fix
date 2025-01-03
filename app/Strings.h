@@ -8,6 +8,9 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string OverrideDS4Lightbar = "Override DS4 lightbar";
+    std::string FullyRetractWhenNoData = "Fully retract the triggers when there is no incoming data";
+    std::string TouchpadAsRightStick = "Use touchpad as right analog stick";
     std::string UseControllerSpeakerInsteadOfSystemAudio = "Use speaker audio peaks instead of system audio";
     std::string UseControllerActuatorsInsteadOfSystemAudio = "Use actuator audio peaks instead of system audio";
     std::string RunAudioToHapticsOnStart = "Run audio to haptics on start";
@@ -139,6 +142,9 @@ json Strings::to_json() const
     #define ADD_MEMBER(name) j[#name] = name;
     
     // GUI Strings
+    ADD_MEMBER(OverrideDS4Lightbar);
+    ADD_MEMBER(FullyRetractWhenNoData);
+    ADD_MEMBER(TouchpadAsRightStick);
     ADD_MEMBER(UseControllerSpeakerInsteadOfSystemAudio);
     ADD_MEMBER(UseControllerActuatorsInsteadOfSystemAudio);
     ADD_MEMBER(RunAudioToHapticsOnStart);
@@ -269,6 +275,9 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(OverrideDS4Lightbar);
+    GET_MEMBER(FullyRetractWhenNoData);
+    GET_MEMBER(TouchpadAsRightStick);
     GET_MEMBER(UseControllerSpeakerInsteadOfSystemAudio);
     GET_MEMBER(UseControllerActuatorsInsteadOfSystemAudio);
     GET_MEMBER(RunAudioToHapticsOnStart);

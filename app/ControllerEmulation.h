@@ -5,18 +5,6 @@
 #include <iostream>
 #include <stdexcept>
 
-int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax)
-{
-    if (oldMin == oldMax)
-    {
-        throw std::invalid_argument("Old minimum and maximum cannot be equal.");
-    }
-    float ratio = static_cast<float>(newMax - newMin) /
-                  static_cast<float>(oldMax - oldMin);
-    float scaledValue = (value - oldMin) * ratio + newMin;
-    return clamp(static_cast<int>(scaledValue), newMin, newMax);
-}
-
 class Rotors
 {
 public:
@@ -168,10 +156,10 @@ public:
             report.wButtons = buttons;
             report.bLeftTrigger = state.L2;
             report.bRightTrigger = state.R2;
-            report.sThumbLX = ConvertRange(state.LX, 0, 255, -32767, 32766);
-            report.sThumbLY = ConvertRange(state.LY, 255, 0, -32767, 32766);
-            report.sThumbRX = ConvertRange(state.RX, 0, 255, -32767, 32766);
-            report.sThumbRY = ConvertRange(state.RY, 255, 0, -32767, 32766);
+            report.sThumbLX = MyUtils::ConvertRange(state.LX, 0, 255, -32767, 32766);
+            report.sThumbLY = MyUtils::ConvertRange(state.LY, 255, 0, -32767, 32766);
+            report.sThumbRX = MyUtils::ConvertRange(state.RX, 0, 255, -32767, 32766);
+            report.sThumbRY = MyUtils::ConvertRange(state.RY, 255, 0, -32767, 32766);
             vigem_target_x360_update(client, x360, report);
             return true;
         

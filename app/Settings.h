@@ -73,6 +73,9 @@ public:
     bool HapticsToLED = false;
     bool SpeakerToLED = false;
     float HapticsAndSpeakerToLedScale = 0.5f;
+    bool OverrideDS4Lightbar = false;
+    bool TouchpadToRXRY = false;
+    bool FullyRetractTriggers = true;
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -86,6 +89,9 @@ public:
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+        j["FullyRetractTriggers"] = FullyRetractTriggers;
+        j["OverrideDS4Lightbar"] = OverrideDS4Lightbar;
+        j["TouchpadToRXRY"] = TouchpadToRXRY;
         j["HapticsAndSpeakerToLedScale"] = HapticsAndSpeakerToLedScale;
         j["SpeakerToLED"] = SpeakerToLED;
         j["HapticsToLED"] = HapticsToLED;
@@ -140,6 +146,9 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("FullyRetractTriggers"))       j.at("FullyRetractTriggers").get_to(settings.FullyRetractTriggers);
+        if (j.contains("OverrideDS4Lightbar"))       j.at("OverrideDS4Lightbar").get_to(settings.OverrideDS4Lightbar);
+        if (j.contains("TouchpadToRXRY"))       j.at("TouchpadToRXRY").get_to(settings.TouchpadToRXRY);
         if (j.contains("HapticsAndSpeakerToLedScale"))       j.at("HapticsAndSpeakerToLedScale").get_to(settings.HapticsAndSpeakerToLedScale);
         if (j.contains("SpeakerToLED"))       j.at("SpeakerToLED").get_to(settings.SpeakerToLED);
         if (j.contains("HapticsToLED"))       j.at("HapticsToLED").get_to(settings.HapticsToLED);

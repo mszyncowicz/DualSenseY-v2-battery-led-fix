@@ -11,9 +11,10 @@
   },
   "ExpandedNodes": [
     "",
+    "\\app",
     "\\AudioPassthrough",
-    "\\cmake"
+    "\\AudioPassthrough\\AudioPassthrough"
   ],
-  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough.sln",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

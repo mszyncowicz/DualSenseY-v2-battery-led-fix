@@ -52,6 +52,7 @@
 #pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
+    int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax);
     void StartAudioToHaptics(const std::string& Name);
     void StartHidHideRequest(std::string ID, std::string arg);
     void RunAsyncHidHideRequest(std::string ID, std::string arg);
@@ -85,4 +86,3 @@ namespace MyUtils {
     void SaveBitmapFromClipboard(const char* filename);
     void TakeScreenShot();
 }
-

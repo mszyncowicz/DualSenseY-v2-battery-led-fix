@@ -1,4 +1,4 @@
-﻿const int VERSION = 28;
+﻿const int VERSION = 29;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -156,6 +156,11 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 }
             }
 
+            if (settings.TouchpadToRXRY && controller.State.trackPadTouch0.IsActive) {
+                editedButtonState.RX = MyUtils::ConvertRange(controller.State.trackPadTouch0.X, 0, 1919, 0, 255);
+                editedButtonState.RY = MyUtils::ConvertRange(controller.State.trackPadTouch0.Y, 0, 1079, 0, 255);
+            }
+
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -305,7 +310,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 settings.emuStatus = X360;
             }
 
-            if (settings.emuStatus != DS4 && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
+            if ((settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
                 MyUtils::RunAsyncHidHideRequest(controller.GetPath(), "hide");
                 settings.emuStatus = DS4;
                 controller.SetLightbar(0, 0, 64);
@@ -388,7 +393,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 wasTouching = false;
             }
             
-            if(!settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
+            if(!settings.CurrentlyUsingUDP && (settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && X360animationplayed)
             {
                 controller.SetLightbar(settings.ControllerInput.Red,settings.ControllerInput.Green,settings.ControllerInput.Blue);
             }
@@ -460,7 +465,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
 
                     controller.SetLeftTrigger(Trigger::Pulse_B, leftForces[0], leftForces[1], leftForces[2],0,0,0,0,0,0,0,0);
                     controller.SetRightTrigger(Trigger::Pulse_B,rightForces[0], rightForces[1], rightForces[2],0,0,0,0,0,0,0,0);
-                }            
+                }           
             }
 
             Peaks peaks = controller.GetAudioPeaks();
@@ -514,12 +519,55 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             }
             skiphapticstotriggers:
 
+            if (settings.FullyRetractTriggers) {
+
+                if (settings.RumbleToAT || settings.RumbleToAT_RigidMode) {
+                    if (settings.HapticsToTriggers && (peaks.LeftActuator > 0 || peaks.RightActuator > 0)) {
+                        goto skiprumbleretract;
+                    }
+
+                    if (settings.lrumble == 0) {
+                        if(!settings.SwapTriggersRumbleToAT)
+                            controller.SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        else
+                            controller.SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    }
+                    if (settings.rrumble == 0) {
+                        if(!settings.SwapTriggersRumbleToAT)
+                            controller.SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        else
+                            controller.SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    }
+                }
+
+                skiprumbleretract:
+                if (settings.HapticsToTriggers)
+                {
+                    if (settings.lrumble > 0 || settings.rrumble > 0)
+                        goto skipretract;
+
+                    if (peaks.LeftActuator <= 0) {
+                        if(!settings.SwapTriggersRumbleToAT)
+                            controller.SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        else
+                            controller.SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    }
+                    if (peaks.RightActuator <= 0) {
+                        if(!settings.SwapTriggersRumbleToAT)
+                            controller.SetRightTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        else
+                            controller.SetLeftTrigger(Trigger::Rigid_B, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    }
+                }               
+            }
+            skipretract:
+
             if (settings.TriggersAsButtons && !settings.CurrentlyUsingUDP && settings.emuStatus != None) {
                 controller.SetLeftTrigger(Trigger::Rigid,40,255,255,255,255,255,255,255,255,255,255);
                 controller.SetRightTrigger(Trigger::Rigid,40,255,255,255,255,255,255,255,255,255,255);
             }
 
-            if (settings.AudioToLED && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed)
+            if (settings.AudioToLED && !settings.CurrentlyUsingUDP && (settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && X360animationplayed)
             {
                 int peak = static_cast<int>(MyUtils::GetCurrentAudioPeak() * 500);
 
@@ -558,7 +606,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 controller.SetLightbar(r, g, b);
             }
 
-            if (settings.DiscoMode && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed) {
+            if (settings.DiscoMode && !settings.CurrentlyUsingUDP && (settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && X360animationplayed) {
                 constexpr int DEFAULT_SPEED = 1;
                 int speed = settings.DiscoSpeed;
                 int step = DEFAULT_SPEED * speed;
@@ -604,7 +652,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             }
 
 
-            if (settings.BatteryLightbar && !settings.CurrentlyUsingUDP && settings.emuStatus != DS4 && X360animationplayed) {
+            if (settings.BatteryLightbar && !settings.CurrentlyUsingUDP && (settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && X360animationplayed) {
                 int batteryLevel = controller.State.battery.Level;
 
                 if(batteryLevel > 20)
@@ -1310,7 +1358,7 @@ int main()
 
                             if (!udpServer.isActive || !s.UseUDP)
                             {
-                                if(s.emuStatus != DS4)
+                                if((s.emuStatus != DS4 || s.OverrideDS4Lightbar))
                                 {
                                     if (ImGui::CollapsingHeader(strings.LedSection.c_str())) {
                                         ImGui::Separator();
@@ -1332,15 +1380,25 @@ int main()
 
                                         if (s.AudioToLED) {
                                             ImGui::Separator();
-                                            if(!s.SpeakerToLED)
-                                                ImGui::Checkbox(strings.UseControllerActuatorsInsteadOfSystemAudio.c_str(), &s.HapticsToLED);
-                                            if(!s.HapticsToLED)
-                                                ImGui::Checkbox(strings.UseControllerSpeakerInsteadOfSystemAudio.c_str(), &s.SpeakerToLED);
-                                            if (s.SpeakerToLED || s.HapticsToLED) {
-                                                ImGui::SameLine();
-                                                ImGui::SetNextItemWidth(100);
-                                                ImGui::SliderFloat(strings.Scale.c_str(), &s.HapticsAndSpeakerToLedScale, 0.01f, 1.0f);
+                                            if(HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
+                                            {
+                                                if (!s.SpeakerToLED) {
+                                                    ImGui::Checkbox(strings.UseControllerActuatorsInsteadOfSystemAudio.c_str(), &s.HapticsToLED);
+                                                }
+                                                if (!s.HapticsToLED) {
+                                                    ImGui::Checkbox(strings.UseControllerSpeakerInsteadOfSystemAudio.c_str(), &s.SpeakerToLED);
+                                                }
+                                                if (s.SpeakerToLED || s.HapticsToLED) {
+                                                    ImGui::SameLine();
+                                                    ImGui::SetNextItemWidth(100);
+                                                    ImGui::SliderFloat(strings.Scale.c_str(), &s.HapticsAndSpeakerToLedScale, 0.01f, 1.0f);
+                                                }
                                             }
+                                            else if (DualsenseUtils::HapticFeedbackStatus::BluetoothNotUSB) {
+                                                s.SpeakerToLED = false;
+                                                s.HapticsToLED = false;
+                                            }
+
                                             ImGui::Text(strings.QuietColor.c_str());
                                             ImGui::SliderInt(string(strings.LED_Red + "##q").c_str(), &s.QUIET_COLOR[0], 0, 255);
                                             ImGui::SliderInt(string(strings.LED_Green + "##q").c_str(), &s.QUIET_COLOR[1], 0, 255);
@@ -1405,8 +1463,11 @@ int main()
                                         ImGui::SliderFloat(strings.Scale.c_str(), &s.AudioToTriggersMaxFloatValue, 0.01f, 10.0f);
                                     }
                                 }
+                               
 
                                 if (s.RumbleToAT || s.HapticsToTriggers) {
+                                    ImGui::Checkbox(strings.FullyRetractWhenNoData.c_str(), &s.FullyRetractTriggers);
+
                                     ImGui::Checkbox(strings.SwapTriggersRumbleToAT.c_str(), &s.SwapTriggersRumbleToAT);
                                     Tooltip(strings.Tooltip_SwapTriggersRumbleToAT.c_str());
 
@@ -1813,6 +1874,8 @@ int main()
                                     ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
                                     Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
                                     ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
+                                    ImGui::Checkbox(strings.TouchpadAsRightStick.c_str(), &s.TouchpadToRXRY);
+                                    ImGui::Checkbox(strings.OverrideDS4Lightbar.c_str(), &s.OverrideDS4Lightbar);
                             }
 
                             ShowNonControllerConfig = false;

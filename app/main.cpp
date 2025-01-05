@@ -1,4 +1,4 @@
-﻿const int VERSION = 29;
+﻿const int VERSION = 30;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -12,6 +12,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <algorithm>
+#include <urlmon.h>
 #include "../out/build/x64-Debug/vcpkg_installed/x64-windows/include/GL/glcorearb.h"
 
 //#define _CRTDBG_MAP_ALLOC
@@ -290,6 +291,9 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 X360readyfornew = true;             
                 x360emuanimation = 0;
                 colorStateX360EMU = 0;
+            }
+            else if (settings.emuStatus == DS4 && !X360animationplayed) {
+                X360animationplayed = true;
             }
             else if (settings.emuStatus == None && !X360animationplayed) {
                 X360animationplayed = true;
@@ -887,66 +891,56 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
-    timeBeginPeriod(1);
     glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
     glaiel::crashlogs::begin_monitoring();
+    std::cout << "Begun monitoring" << std::endl;  
+    timeBeginPeriod(1);
+    
     //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
     //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //_CrtSetBreakAlloc(10605);
 
-    int res = hid_init();
-
-    if (res != 0)
+    Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
+    
+    if(appConfig.ShowConsole == false)
     {
-        std::cerr << "HIDAPI initialization failed!" << std::endl;
+        FreeConsole();
     }
 
-    Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
-
-    if(appConfig.ShowConsole == false)
-        FreeConsole();
- 
     bool UpdateAvailable = false;
     try {
-        std::string response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version")).text;
-        int version = stoi(response);
+        std::cout << "Downloading version string" << std::endl;
+        cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version"));
 
-        if (version > VERSION) {
-            cout << "Update available!" << endl;
-            UpdateAvailable = true;
+        if(response.status_code == 200)
+        {
+            if(response.text != "")
+            {
+                int version = stoi(response.text);
+                if (version > VERSION) {
+                    cout << "Update available!" << endl;
+                    UpdateAvailable = true;
+                }
+                else {
+                    cout << "Application is up-to-date! Remote version: " << version << endl;
+                }
+            }
         }
         else {
-            cout << "Application is up-to-date!" << endl;
+            std::cout << "Version could not be downloaded " << response.status_code << std::endl;
         }
     }
-    catch (...) {
+    catch (const std::exception &e) {
         cout << "Version check failed" << endl;
     }
-
-    // Download latest updater  
-    cpr::Response response = cpr::Get(cpr::Url{ "https://github.com/WujekFoliarz/DualSenseY-v2/raw/refs/heads/master/Updater.exe" });
-    if (response.status_code == 200) {
-        std::ofstream outFile("Updater.exe", std::ios::binary);
-        if (outFile) {
-            outFile << response.text;  // Write the response content to the file
-            outFile.close();
-            std::cout << "File downloaded successfully: Updater.exe" << std::endl;
-        } else {
-            std::cerr << "Error opening file for writing." << std::endl;
-        }
-    } else {
-        // Handle HTTP errors
-        std::cerr << "Failed to download file. HTTP status code: " << response.status_code << std::endl;
-    }
-    
-
+ 
     if (appConfig.ElevateOnStartup) {
         MyUtils::ElevateNow();
     }
     else {
         cout << "Not elevating" << endl;
     }
+    
 
     Tray::Tray tray("test", "utilities\\icon.ico");
     std::thread trayThread(mTray, std::ref(tray), std::ref(appConfig));
@@ -996,6 +990,7 @@ int main()
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
     {
+        MessageBox(0, "GLFW could not be initialized!", "Error", 0);
         return 1;
     }
 
@@ -1029,12 +1024,12 @@ int main()
                                     nullptr);
     if (window == nullptr)
     {
+        MessageBox(0, "Window could not be created!", "Error", 0);
         return 1;
     }
 
   
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -1349,10 +1344,26 @@ int main()
                             if (UpdateAvailable) {
                                 ImGui::SameLine();
                                 if (ImGui::Button(strings.InstallLatestUpdate.c_str())) {
-                                     if(filesystem::exists("Updater.exe")) {
-                                        system("start Updater.exe");
-                                        _exit(0);
-                                     }
+                                    std::cout << "Downloading updater.exe" << std::endl;
+                                    cpr::Response response = cpr::Get(cpr::Url{ "https://github.com/WujekFoliarz/DualSenseY-v2/raw/refs/heads/master/Updater.exe" });
+                                    if (response.status_code == 200) {
+                                        std::ofstream outFile("Updater.exe", std::ios::binary);
+                                        if (outFile) {
+                                            outFile << response.text;  // Write the response content to the file
+                                            outFile.close();
+                                            std::cout << "File downloaded successfully: Updater.exe" << std::endl;
+                                        } else {
+                                            std::cerr << "Error opening file for writing." << std::endl;
+                                        }
+                                    } else {
+                                        // Handle HTTP errors
+                                        std::cerr << "Failed to download file. HTTP status code: " << response.status_code << std::endl;
+                                    } 
+
+                                    if(filesystem::exists("Updater.exe")) {
+                                       system("start Updater.exe");
+                                       _exit(0);
+                                    }
                                 }
                             }                            
 

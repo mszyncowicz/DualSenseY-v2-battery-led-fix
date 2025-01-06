@@ -1,4 +1,4 @@
-﻿const int VERSION = 30;
+﻿const int VERSION = 31;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -314,7 +314,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 settings.emuStatus = X360;
             }
 
-            if ((settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
+            if (settings.emuStatus != DS4 && settings.DS4Shortcut && controller.State.micBtn && controller.State.DpadRight) {
                 MyUtils::RunAsyncHidHideRequest(controller.GetPath(), "hide");
                 settings.emuStatus = DS4;
                 controller.SetLightbar(0, 0, 64);
@@ -1140,6 +1140,10 @@ int main()
         }
     }
 
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int screenWidth = mode->width;
+    int screenHeight = mode->height;
+
     static bool show_popup = false;
     while (!glfwWindowShouldClose(window))
     {
@@ -1172,10 +1176,6 @@ int main()
         ImGui::SetNextWindowSize(window_size);
         ImGui::SetNextWindowPos(
             ImVec2(0, 0)); // Position at the top-left corner
-
-        const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        int screenWidth = mode->width;
-        int screenHeight = mode->height;
  
         io.FontGlobalScale = MyUtils::CalculateScaleFactor(screenHeight, screenHeight);  // Adjust the scale factor as needed
 

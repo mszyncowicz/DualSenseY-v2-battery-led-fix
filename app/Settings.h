@@ -76,6 +76,22 @@ public:
     bool OverrideDS4Lightbar = false;
     bool TouchpadToRXRY = false;
     bool FullyRetractTriggers = true;
+    bool TouchpadToHaptics = false;
+    float TouchpadToHapticsFrequency = 20.0f;
+    bool GyroToMouse = false;
+    float GyroToMouseSensitivity = 0.010f;
+    bool GyroToRightAnalogStick = false;
+    int L2Threshold = 100;
+    float GyroToRightAnalogStickSensitivity = 5.0f;
+    float GyroToRightAnalogStickDeadzone = 0.005f;
+    int GyroToRightAnalogStickMinimumStickValue = 64;
+    bool StopWriting = false;
+    bool StopWritingShortcut = false;
+    int L2Deadzone = 0;
+    int R2Deadzone = 0;
+    bool GyroToMouseShortcut = false;
+    bool GyroToRightAnalogStickShortcut = false;
+    bool R2ToMouseClick = false;
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -89,6 +105,23 @@ public:
     nlohmann::json to_json() const {
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
+
+        j["R2ToMouseClick"] = R2ToMouseClick;
+        j["GyroToRightAnalogStickShortcut"] = GyroToRightAnalogStickShortcut;
+        j["GyroToMouseShortcut"] = GyroToMouseShortcut;
+        j["L2Deadzone"] = L2Deadzone;
+        j["R2Deadzone"] = R2Deadzone;
+        j["StopWritingShortcut"] = StopWritingShortcut;
+        j["StopWriting"] = StopWriting;
+        j["GyroToRightAnalogStickSensitivity"] = GyroToRightAnalogStickSensitivity;
+        j["GyroToRightAnalogStickDeadzone"] = GyroToRightAnalogStickDeadzone;
+        j["GyroToRightAnalogStickMinimumStickValue"] = GyroToRightAnalogStickMinimumStickValue;
+        j["GyroToMouseSensitivity"] = GyroToMouseSensitivity;
+        j["GyroToMouse"] = GyroToMouse;
+        j["GyroToRightAnalogStick"] = GyroToRightAnalogStick;
+        j["L2Threshold"] = L2Threshold;
+        j["TouchpadToHaptics"] = TouchpadToHaptics;
+        j["TouchpadToHapticsFrequency"] = TouchpadToHapticsFrequency;
         j["FullyRetractTriggers"] = FullyRetractTriggers;
         j["OverrideDS4Lightbar"] = OverrideDS4Lightbar;
         j["TouchpadToRXRY"] = TouchpadToRXRY;
@@ -146,6 +179,20 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("R2ToMouseClick"))       j.at("R2ToMouseClick").get_to(settings.R2ToMouseClick);
+        if (j.contains("GyroToRightAnalogStickShortcut"))       j.at("GyroToRightAnalogStickShortcut").get_to(settings.GyroToRightAnalogStickShortcut);
+        if (j.contains("GyroToMouseShortcut"))       j.at("GyroToMouseShortcut").get_to(settings.GyroToMouseShortcut);
+        if (j.contains("L2Deadzone"))       j.at("L2Deadzone").get_to(settings.L2Deadzone);
+        if (j.contains("R2Deadzone"))       j.at("R2Deadzone").get_to(settings.R2Deadzone);
+        if (j.contains("StopWritingShortcut"))       j.at("StopWritingShortcut").get_to(settings.StopWritingShortcut);
+        if (j.contains("StopWriting"))       j.at("StopWriting").get_to(settings.StopWriting);
+        if (j.contains("GyroToRightAnalogStickMinimumStickValue"))       j.at("GyroToRightAnalogStickMinimumStickValue").get_to(settings.GyroToRightAnalogStickMinimumStickValue);
+        if (j.contains("GyroToRightAnalogStickDeadzone"))       j.at("GyroToRightAnalogStickDeadzone").get_to(settings.GyroToRightAnalogStickDeadzone);
+        if (j.contains("GyroToRightAnalogStickSensitivity"))       j.at("GyroToRightAnalogStickSensitivity").get_to(settings.GyroToRightAnalogStickSensitivity);
+        if (j.contains("GyroToRightAnalogStick"))       j.at("GyroToRightAnalogStick").get_to(settings.GyroToRightAnalogStick);
+        if (j.contains("GyroToMouseSensitivity"))       j.at("GyroToMouseSensitivity").get_to(settings.GyroToMouseSensitivity);
+        if (j.contains("GyroToMouse"))       j.at("GyroToMouse").get_to(settings.GyroToMouse);
+        if (j.contains("L2Threshold"))       j.at("L2Threshold").get_to(settings.L2Threshold);
         if (j.contains("FullyRetractTriggers"))       j.at("FullyRetractTriggers").get_to(settings.FullyRetractTriggers);
         if (j.contains("OverrideDS4Lightbar"))       j.at("OverrideDS4Lightbar").get_to(settings.OverrideDS4Lightbar);
         if (j.contains("TouchpadToRXRY"))       j.at("TouchpadToRXRY").get_to(settings.TouchpadToRXRY);

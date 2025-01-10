@@ -242,9 +242,9 @@ public:
 class Accelerometer
 {
 public:
-    int16_t X;
-    int16_t Y;
-    int16_t Z;
+    int X;
+    int Y;
+    int Z;
     uint32_t SensorTimestamp;
 
     Accelerometer()
@@ -830,6 +830,35 @@ private:
         }
     }
 
+    static void data_callback_playback(ma_device* device, void* output, const void* input, ma_uint32 frameCount) {
+        float* pOutputSamples = (float*)output;
+        Dualsense* self = (Dualsense*)device->pUserData;
+
+        if (self->TouchpadToHaptics && self->State.trackPadTouch0.IsActive)         
+        {
+            static float phase = 0.0f; 
+            float normalizedX = self->State.trackPadTouch0.X / 1979.0f;
+            const float phaseIncrement = (2.0f * 3.14 * self->TouchpadToHapticsFrequency) / 48000.0f;
+            float channel3Amplitude = 1.0f - normalizedX;
+            float channel4Amplitude = normalizedX;
+
+            for (ma_uint32 frame = 0; frame < frameCount; ++frame) {
+                float sineValue = sinf(phase);
+
+                phase += phaseIncrement;
+                if (phase >= 2.0f * 3.14) {
+                    phase -= 2.0f * 3.14;
+                }
+
+                pOutputSamples[frame * 4 + 2] = channel3Amplitude * sineValue;
+                pOutputSamples[frame * 4 + 3] = channel4Amplitude * sineValue;
+
+                pOutputSamples[frame * 4 + 0] = 0.0f; 
+                pOutputSamples[frame * 4 + 1] = 0.0f;
+            }
+        }
+    }
+
     int offset = 0;
     uint8_t connectionType;
     bool Running = false;
@@ -865,6 +894,8 @@ private:
 
 public:
     bool Connected = false;
+    bool TouchpadToHaptics = false;
+    float TouchpadToHapticsFrequency = 50.0f;
     ButtonState State;
     Dualsense(std::string Path = "")
     {
@@ -1046,23 +1077,23 @@ public:
                 ((ButtonStates[39 + offset] & 0xF0) >> 4);
             buttonState.TouchPacketNum = (uint8_t)(ButtonStates[41 + offset]);
 
-            buttonState.gyro.X =
+            buttonState.accelerometer.X =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[16 + offset],
                                                     ButtonStates[17 + offset]});
-            buttonState.gyro.Y =
+            buttonState.accelerometer.Y =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[18 + offset],
                                                     ButtonStates[19 + offset]});
-            buttonState.gyro.Z =
+            buttonState.accelerometer.Z =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[20 + offset],
                                                     ButtonStates[21 + offset]});
 
-            buttonState.accelerometer.X =
+            buttonState.gyro.X =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[22 + offset],
                                                     ButtonStates[23 + offset]});
-            buttonState.accelerometer.Y =
+            buttonState.gyro.Y =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[24 + offset],
                                                     ButtonStates[25 + offset]});
-            buttonState.accelerometer.Z =
+            buttonState.gyro.Z =
                 bit_cast<int16_t>(array<uint8_t, 2>{ButtonStates[26 + offset],
                                                     ButtonStates[27 + offset]});
 
@@ -1172,7 +1203,7 @@ public:
                 outReport[33] = CurSettings.LeftTriggerForces[10];
                 outReport[34] = 0;
                 outReport[35] = 0;
-                outReport[36] = 0;
+                outReport[36] = 0x04;
                 outReport[37] = 0;
                 outReport[38] = 0;
                 outReport[39] = CurSettings._Brightness;
@@ -1549,8 +1580,8 @@ public:
                 deviceconfig.playback.channelMixMode = ma_channel_mix_mode_default;
                 deviceconfig.sampleRate = 48000;
                 deviceconfig.playback.shareMode = ma_share_mode_shared;
-                //deviceconfig.pUserData = this;
-                //deviceconfig.dataCallback = data_callback;
+                deviceconfig.pUserData = this;
+                deviceconfig.dataCallback = data_callback_playback;
                 
 
                 if (ma_device_init(NULL, &deviceconfig, &device) != MA_SUCCESS)
@@ -1813,6 +1844,8 @@ public:
                 }
 
                 LastTimeReconnected = std::chrono::high_resolution_clock::now();
+                soundMap.clear();
+                CurrentlyPlayedSounds.clear();
                 return DualsenseUtils::Reconnect_Result::Reconnected;
             }
         }

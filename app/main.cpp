@@ -1,4 +1,4 @@
-﻿const int VERSION = 31;
+﻿const int VERSION = 32;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -30,7 +30,7 @@ static void glfw_error_callback(int error, const char *description);
 deque<Dualsense> DualSense;
 std::atomic<bool> stop_thread{false}; // Flag to signal the thread to stop
 
-void readControllerState(Dualsense &controller)
+void readControllerState(Dualsense &controller, Settings &settings)
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
     while (!stop_thread)
@@ -162,6 +162,74 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 editedButtonState.RY = MyUtils::ConvertRange(controller.State.trackPadTouch0.Y, 0, 1079, 0, 255);
             }
 
+            if (settings.GyroToRightAnalogStick && (controller.State.L2 >= settings.L2Threshold)) {
+                if (fabs(controller.State.RX - 128) <= 80 && fabs(controller.State.RY - 128) <= 80) 
+                {
+                    float accelY = controller.State.accelerometer.X;
+                    float accelX = controller.State.accelerometer.Y;
+
+                    const float maxAccelValue = 10000.0f;
+
+                    float normalizedAccelX = accelX / maxAccelValue;
+                    float normalizedAccelY = accelY / maxAccelValue;
+
+                    if (fabs(normalizedAccelX) < settings.GyroToRightAnalogStickDeadzone) {
+                        normalizedAccelX = 0.0f;
+                    }
+                    else {
+                        normalizedAccelX = (normalizedAccelX > 0 ? normalizedAccelX - settings.GyroToRightAnalogStickDeadzone : normalizedAccelX + settings.GyroToRightAnalogStickDeadzone) / (1.0f - settings.GyroToRightAnalogStickDeadzone);
+                    }
+
+                    if (fabs(normalizedAccelY) < settings.GyroToRightAnalogStickDeadzone) {
+                        normalizedAccelY = 0.0f; 
+                    }
+                    else {
+                        normalizedAccelY = (normalizedAccelY > 0 ? normalizedAccelY - settings.GyroToRightAnalogStickDeadzone : normalizedAccelY + settings.GyroToRightAnalogStickDeadzone) / (1.0f - settings.GyroToRightAnalogStickDeadzone);
+                    }
+
+                    const float sensitivity = settings.GyroToRightAnalogStickSensitivity * 5;
+
+                    float adjustedX = -normalizedAccelX * sensitivity;
+                    float adjustedY = -normalizedAccelY * sensitivity;
+
+                    int accelAnalogStickX;
+                    if (adjustedX > 0) {
+                        accelAnalogStickX = 128 + max(static_cast<int>(settings.GyroToRightAnalogStickMinimumStickValue), static_cast<int>(adjustedX * 127.0f));
+                    }
+                    else if (adjustedX < 0) {
+                        accelAnalogStickX = 128 - max(static_cast<int>(settings.GyroToRightAnalogStickMinimumStickValue), static_cast<int>(-adjustedX * 128.0f));
+                    }
+                    else {
+                        accelAnalogStickX = 128;  // Center if no movement
+                    }
+
+                    int accelAnalogStickY;
+                    if (adjustedY > 0) {
+                        accelAnalogStickY = 128 + max(static_cast<int>(settings.GyroToRightAnalogStickMinimumStickValue), static_cast<int>(adjustedY * 127.0f));
+                    }
+                    else if (adjustedY < 0) {
+                        accelAnalogStickY = 128 - max(static_cast<int>(settings.GyroToRightAnalogStickMinimumStickValue), static_cast<int>(-adjustedY * 128.0f));
+                    }
+                    else {
+                        accelAnalogStickY = 128;  // Center if no movement
+                    }
+
+                    editedButtonState.RX = controller.State.RX + (accelAnalogStickX - 127);
+                    editedButtonState.RY = controller.State.RY + (accelAnalogStickY - 127);
+                }
+            }
+
+            if (controller.State.L2 < settings.L2Deadzone)
+            {
+                editedButtonState.L2 = 0;
+                editedButtonState.L2Btn = false;
+            }
+            if (controller.State.R2 < settings.R2Deadzone)
+            {
+                editedButtonState.R2 = 0;
+                editedButtonState.R2Btn = false;
+            }
+           
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -241,12 +309,12 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
     led[2] = 0;
     int x360emuanimation = 0;
     bool lastMic = false;
-    bool lastMic2 = false;
-    bool lastMic3 = false;
+    bool MicShortcutTriggered = false;
     bool mic = false;
     float touchpadLastX = 0;
     float touchpadLastY = 0;
     float touchpad1LastY = 0;
+    bool wasR2Clicked = false;
     bool wasTouching = false;
     bool wasTouching1 = false;
     bool wasTouchpadClicked = false;
@@ -263,6 +331,10 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
     {
         if (true)
         {
+            if (!lastMic && MicShortcutTriggered) {
+                MicShortcutTriggered = false;
+            }
+
             if (settings.emuStatus == X360 && !X360animationplayed) {
                 if (colorStateX360EMU < 20) {
                     x360emuanimation += direction * step;
@@ -299,12 +371,30 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 X360animationplayed = true;
             }
 
-            if (controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && !lastMic2) {
+            if (controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && !MicShortcutTriggered)
+            {
                 settings.SwapTriggersRumbleToAT = settings.SwapTriggersRumbleToAT ? settings.SwapTriggersRumbleToAT = false : settings.SwapTriggersRumbleToAT = true;
-                lastMic2 = true;
+                MicShortcutTriggered = true;
             }
-            else if(!controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && lastMic2){
-                lastMic2 = false;
+
+            if (controller.State.micBtn && controller.State.L1 && settings.GyroToMouseShortcut && !MicShortcutTriggered) {
+                settings.GyroToMouse = settings.GyroToMouse ? settings.GyroToMouse = false : settings.GyroToMouse = true;
+                MicShortcutTriggered = true;
+            }
+
+            if (controller.State.micBtn && controller.State.L2 && settings.GyroToRightAnalogStickShortcut && !MicShortcutTriggered) {
+                settings.GyroToRightAnalogStick = settings.GyroToRightAnalogStick ? settings.GyroToRightAnalogStick = false : settings.GyroToRightAnalogStick = true;
+                MicShortcutTriggered = true;
+            }
+
+            if (controller.State.micBtn && controller.State.triangle && settings.StopWritingShortcut && !MicShortcutTriggered) {
+                settings.StopWriting = settings.StopWriting ? settings.StopWriting = false : settings.StopWriting = true;
+                MicShortcutTriggered = true;
+
+                if(settings.StopWriting)
+                    controller.PlayHaptics("halted");
+                else
+                    controller.PlayHaptics("resumed");
             }
 
             if (settings.emuStatus != X360 && settings.X360Shortcut && controller.State.micBtn && controller.State.DpadLeft) {
@@ -325,12 +415,22 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 settings.emuStatus = None;
             }
 
-            if (settings.TouchpadToMouseShortcut && controller.State.micBtn && controller.State.touchBtn && !lastMic3) {
+            if (settings.TouchpadToMouseShortcut && controller.State.micBtn && controller.State.touchBtn && !MicShortcutTriggered) {
                 settings.TouchpadToMouse = settings.TouchpadToMouse ? settings.TouchpadToMouse = false : settings.TouchpadToMouse = true;
-                lastMic3 = true;
+                MicShortcutTriggered = true;
             }
-            else if (settings.TouchpadToMouseShortcut && !controller.State.micBtn && controller.State.touchBtn && lastMic3) {
-                lastMic3 = false;
+
+            if (settings.R2ToMouseClick && controller.State.R2Btn) {
+                if (!wasR2Clicked) {
+                    MouseClick(MOUSEEVENTF_LEFTDOWN);
+                    wasR2Clicked = true;
+                }
+            }
+            else if (settings.R2ToMouseClick && !controller.State.R2Btn) {
+                if (wasR2Clicked) {
+                    MouseClick(MOUSEEVENTF_LEFTUP);
+                    wasR2Clicked = false;
+                }
             }
 
             if (settings.TouchpadToMouse && controller.State.trackPadTouch0.IsActive) {
@@ -396,7 +496,17 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 // Reset the touch state when the touchpad is no longer active
                 wasTouching = false;
             }
-            
+
+            if (settings.GyroToMouse) {
+                if(controller.State.L2 >= settings.L2Threshold)
+                {
+                    int cursorDeltaX = static_cast<int>(-controller.State.accelerometer.Y * settings.GyroToMouseSensitivity);
+                    int cursorDeltaY = static_cast<int>(-controller.State.accelerometer.X * settings.GyroToMouseSensitivity);
+
+                    MyUtils::MoveCursor(cursorDeltaX, cursorDeltaY);
+                }
+            }
+
             if(!settings.CurrentlyUsingUDP && (settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) && X360animationplayed)
             {
                 controller.SetLightbar(settings.ControllerInput.Red,settings.ControllerInput.Green,settings.ControllerInput.Blue);
@@ -686,19 +796,19 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             }
 
             if (settings.MicScreenshot) {
-                if (controller.State.micBtn && !lastMic && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp && !controller.State.touchBtn) {
+                if (controller.State.micBtn && !MicShortcutTriggered && !controller.State.DpadDown && !controller.State.DpadLeft && !controller.State.DpadRight && !controller.State.DpadUp && !controller.State.touchBtn && !controller.State.triangle && !controller.State.L1 && !controller.State.L2) {
                     controller.PlayHaptics("screenshot");
                     MyUtils::TakeScreenShot();
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                     filesystem::create_directories(MyUtils::GetImagesFolderPath() + "\\DualSenseY\\");
                     string filename = MyUtils::GetImagesFolderPath() + "\\DualSenseY\\" + MyUtils::currentDateTimeWMS() + ".bmp";
                     MyUtils::SaveBitmapFromClipboard(filename.c_str());
-                    lastMic = true;
+                    MicShortcutTriggered = true;
                 }
             }
 
             if (settings.MicFunc) {
-                if (!controller.State.micBtn && lastMic) {
+                if (controller.State.micBtn && !MicShortcutTriggered) {
                     if (!mic) {
                         controller.SetMicrophoneLED(true, false);
                         controller.SetMicrophoneVolume(0);
@@ -707,18 +817,10 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                     else{
                         controller.SetMicrophoneLED(false, false);
                         controller.SetMicrophoneVolume(80);
-
                         mic = false;
                     }
-                    lastMic = false;
+                    MicShortcutTriggered = true;
                 }
-                else if (controller.State.micBtn && !lastMic) {
-                    lastMic = true;
-                }
-            }
-
-            if (!controller.State.micBtn && lastMic) {
-                lastMic = false;
             }
 
             if (udpServer.isActive && settings.UseUDP == true)
@@ -840,14 +942,18 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
 
             if(controller.Connected)
             {
-                if (controller.Write() == false) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (!settings.StopWriting) {
+                    controller.Write();
                 }
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
             else {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
+
+        lastMic = controller.State.micBtn;
     }
 }
 
@@ -1305,7 +1411,8 @@ int main()
                             }
 
                             readThreads.emplace_back(readControllerState,
-                                                     std::ref(DualSense.back()));
+                                                     std::ref(DualSense.back()),
+                                                     std::ref(ControllerSettings.back()));
 
                             writeThreads.emplace_back(writeControllerState,
                                                       std::ref(DualSense.back()),
@@ -1327,7 +1434,9 @@ int main()
             {
                 DualSense[i].Reconnect();
                 DualSense[i].InitializeAudioEngine();
-                DualSense[i].LoadSound("screenshot", "sounds\\screenshot.wav");               
+                DualSense[i].LoadSound("screenshot", "sounds\\screenshot.wav");
+                DualSense[i].LoadSound("halted", "sounds\\halted.wav");
+                DualSense[i].LoadSound("resumed", "sounds\\resumed.wav");
                 DualSense[i].SetPlayerLED(i + 1);
 
                 if (DualSense[i].GetPath() == CurrentController && DualSense[i].Connected)
@@ -1366,6 +1475,15 @@ int main()
                                     }
                                 }
                             }                            
+
+                            if (s.StopWriting) {
+                                ImGui::TextColored(ImVec4(1, 0, 0, 1), "COMMUNICATION PAUSED");
+                                ImGui::SameLine();
+                                if (ImGui::SmallButton("Resume")) {
+                                    s.StopWriting = false;
+                                    DualSense[i].PlayHaptics("resumed");
+                                }
+                            }
 
                             if (!udpServer.isActive || !s.UseUDP)
                             {
@@ -1721,6 +1839,50 @@ int main()
                                 ImGui::Text(strings.LEDandATunavailableUDP.c_str());
                             }
                             
+                            if (ImGui::CollapsingHeader(strings.Motion.c_str())) {
+                                ImGui::BeginDisabled();
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Gyroscope + " X").c_str(), &DualSense[i].State.gyro.X, -9000, 9000);
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Gyroscope + " Y").c_str(), &DualSense[i].State.gyro.Y, -9000, 9000);
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Gyroscope + " Z").c_str(), &DualSense[i].State.gyro.Z, -9000, 9000);
+
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Accelerometer + " X").c_str(), &DualSense[i].State.accelerometer.X, -9000, 9000);
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Accelerometer + " Y").c_str(), &DualSense[i].State.accelerometer.Y, -9000, 9000);
+                                ImGui::SetNextItemWidth(400);
+                                ImGui::SliderInt(std::string(strings.Accelerometer + " Z").c_str(), &DualSense[i].State.accelerometer.Z, -9000, 9000);
+                                ImGui::EndDisabled();
+
+                                
+                                ImGui::Separator();
+                                ImGui::Checkbox(strings.GyroToMouse.c_str(), &s.GyroToMouse);
+                                ImGui::SameLine();
+                                Tooltip(strings.Tooltip_GyroToMouse.c_str());
+                                ImGui::SetNextItemWidth(250);                             
+                                ImGui::SliderFloat(std::string(strings.Sensitivity + "##gyrotomouse").c_str(), &s.GyroToMouseSensitivity, 0.001f, 0.030f);
+                                ImGui::Checkbox(strings.R2ToMouseClick.c_str(), &s.R2ToMouseClick);
+
+                                ImGui::Separator();
+                                if(s.emuStatus == None)
+                                    ImGui::Text(strings.ControllerEmulationRequired.c_str());
+                                ImGui::Checkbox(strings.GyroToRightAnalogStick.c_str(), &s.GyroToRightAnalogStick);
+                                Tooltip(strings.Tooltip_GyroToRightAnalogStick.c_str());
+                                ImGui::SetNextItemWidth(250);  
+                                ImGui::SliderFloat(std::string(strings.Sensitivity + "##gyrotorightanalogstick").c_str(), &s.GyroToRightAnalogStickSensitivity, 0.1f, 5.0f);
+                                ImGui::SetNextItemWidth(250);
+                                ImGui::SliderFloat(strings.GyroDeadzone.c_str(), &s.GyroToRightAnalogStickDeadzone, 0.001, 0.300);
+                                ImGui::SetNextItemWidth(250);
+                                ImGui::SliderInt(strings.MinimumStickValue.c_str(), &s.GyroToRightAnalogStickMinimumStickValue, 1, 127);
+
+                                ImGui::Separator();
+                                if (s.GyroToMouse || s.GyroToRightAnalogStick) {
+                                    ImGui::SetNextItemWidth(250);
+                                    ImGui::SliderInt(strings.L2Threshold.c_str(), &s.L2Threshold, 1, 255);
+                                }
+                            }
 
                             if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working && s.RunAudioToHapticsOnStart && !s.WasAudioToHapticsRan && !s.WasAudioToHapticsCheckboxChecked) {
                                     MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
@@ -1748,6 +1910,13 @@ int main()
 
                                 if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working)
                                 {
+                                    ImGui::Checkbox(strings.TouchpadToHaptics.c_str(), &s.TouchpadToHaptics);
+                                    DualSense[i].TouchpadToHaptics = s.TouchpadToHaptics;
+                                    ImGui::SameLine();
+                                    ImGui::SetNextItemWidth(100);
+                                    ImGui::SliderFloat(strings.Frequency.c_str(), &s.TouchpadToHapticsFrequency, 1.0f, 440.0f);
+                                    DualSense[i].TouchpadToHapticsFrequency = s.TouchpadToHapticsFrequency;
+
                                     if (ImGui::Button(strings.StartAudioToHaptics.c_str()))
                                     {
                                         MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
@@ -1845,6 +2014,9 @@ int main()
                                 ImGui::Checkbox(strings.X360Shortcut.c_str(), &s.X360Shortcut);
                                 ImGui::Checkbox(strings.DS4Shortcut.c_str(), &s.DS4Shortcut);
                                 ImGui::Checkbox(strings.StopEmuShortcut.c_str(), &s.StopEmuShortcut);
+                                ImGui::Checkbox(strings.StopWritingShortcut.c_str(), &s.StopWritingShortcut);
+                                ImGui::Checkbox(strings.GyroToMouseShortcut.c_str(), &s.GyroToMouseShortcut);
+                                ImGui::Checkbox(strings.GyroToRightAnalogStickShortcut.c_str(), &s.GyroToRightAnalogStickShortcut);
                             }
 
                             if (ImGui::CollapsingHeader(strings.EmulationHeader.c_str()))
@@ -1882,6 +2054,8 @@ int main()
 
                                     ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
                                     ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
+                                    ImGui::SliderInt(strings.L2Deadzone.c_str(), &s.L2Deadzone, 1, 255);
+                                    ImGui::SliderInt(strings.R2Deadzone.c_str(), &s.R2Deadzone, 1, 255);
                                     ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
                                     Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
                                     ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);

@@ -8,6 +8,21 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string R2ToMouseClick = "R2 to mouse click";
+    std::string L2Deadzone = "L2 deadzone";
+    std::string R2Deadzone = "R2 deadzone";
+    std::string MinimumStickValue = "Minimum stick value";
+    std::string GyroDeadzone = "Gyro deadzone";
+    std::string StopWriting = "Stop writing";
+    std::string ControllerEmulationRequired = "Controller emulation required!";
+    std::string L2Threshold = "Left trigger threshold";
+    std::string GyroToMouse = "Gyro to mouse";
+    std::string GyroToRightAnalogStick = "Gyro to right analog stick";
+    std::string Frequency = "Frequency";
+    std::string TouchpadToHaptics = "Touchpad to haptics";
+    std::string Motion = "Motion";
+    std::string Gyroscope = "Gyroscope";
+    std::string Accelerometer = "Accelerometer";
     std::string OverrideDS4Lightbar = "Override DS4 lightbar";
     std::string FullyRetractWhenNoData = "Fully retract the triggers when there is no incoming data";
     std::string TouchpadAsRightStick = "Use touchpad as right analog stick";
@@ -88,7 +103,10 @@ public:
     std::string SwapTriggersShortcut = "Up D-pad + Mic button = Swap triggers in \"Rumble To AT\" option";
     std::string X360Shortcut = "Left D-pad + Mic button = X360 Controller Emulation";
     std::string DS4Shortcut = "Right D-pad + Mic button = DS4 Emulation";
+    std::string StopWritingShortcut = "Triangle + Mic button = Stop writing";
     std::string StopEmuShortcut = "Down D-pad + Mic button = Stop emulation";
+    std::string GyroToMouseShortcut = "L1 + Mic button = Gyro to mouse";
+    std::string GyroToRightAnalogStickShortcut = "L2 + Mic button = Gyro to right analog stick";
     std::string EmulationHeader = "Controller emulation (DS4/X360)";
     std::string ConfigHeader = "Config";
     std::string SaveConfig = "Save current configuration";
@@ -102,6 +120,9 @@ public:
     std::string Scale = "Scale";
 
     // Tooltips
+    std::string Tooltip_GyroToRightAnalogStick = "When holding L2, the right analog stick will move according to your controller's motions";
+    std::string Tooltip_GyroToMouse = "When holding L2, the mouse will move according to your controller's motions";
+    std::string Tooltip_TouchpadToHaptics = "Makes the controller vibrate based on finger position";
     std::string Tooltip_Dualshock4V2 = "Emulates the second revision of DualShock 4, older games will not recognise it";
     std::string Tooltip_TriggersAsButtons = "Sets trigger resistance to very hard and L2/R2 to maximum on slightest trigger pull";
     std::string Tooltip_SpeakerVolume = "Sets speaker volume at hardware level, affects everything played on this controller";
@@ -131,6 +152,7 @@ public:
     std::string Tooltip_HideWindowOnStartup = "Hides window at startup";
     std::string Tooltip_RunWithWindows = "Runs application on startup";
     std::string Tooltip_TouchpadToMouse = "Use dualsense touchpad like a laptop touchpad";
+    std::string Tooltip_StopWriting = "This option will halt the communication between DualSenseY and your DualSense controller. Useful when you want to play a native DualSense game without closing this app.";
 
     json to_json() const;
     static Strings from_json(const json &j);
@@ -142,6 +164,23 @@ json Strings::to_json() const
     #define ADD_MEMBER(name) j[#name] = name;
     
     // GUI Strings
+    ADD_MEMBER(R2ToMouseClick)
+    ADD_MEMBER(L2Deadzone);
+    ADD_MEMBER(R2Deadzone);
+    ADD_MEMBER(MinimumStickValue);
+    ADD_MEMBER(GyroDeadzone);
+    ADD_MEMBER(StopWritingShortcut);
+    ADD_MEMBER(StopWriting);
+    ADD_MEMBER(ControllerEmulationRequired);
+    ADD_MEMBER(L2Threshold);
+    ADD_MEMBER(GyroToMouse);
+    ADD_MEMBER(GyroToRightAnalogStick);
+    ADD_MEMBER(Tooltip_GyroToMouse);
+    ADD_MEMBER(Frequency);
+    ADD_MEMBER(Gyroscope);
+    ADD_MEMBER(Accelerometer);
+    ADD_MEMBER(Motion);
+    ADD_MEMBER(TouchpadToHaptics);  
     ADD_MEMBER(OverrideDS4Lightbar);
     ADD_MEMBER(FullyRetractWhenNoData);
     ADD_MEMBER(TouchpadAsRightStick);
@@ -223,6 +262,8 @@ json Strings::to_json() const
     ADD_MEMBER(X360Shortcut);
     ADD_MEMBER(DS4Shortcut);
     ADD_MEMBER(StopEmuShortcut);
+    ADD_MEMBER(GyroToMouseShortcut);
+    ADD_MEMBER(GyroToRightAnalogStickShortcut);
     ADD_MEMBER(EmulationHeader);
     ADD_MEMBER(ConfigHeader);
     ADD_MEMBER(SaveConfig);
@@ -236,6 +277,9 @@ json Strings::to_json() const
     ADD_MEMBER(Scale);
 
     // Tooltips
+    ADD_MEMBER(Tooltip_StopWriting);
+    ADD_MEMBER(Tooltip_GyroToRightAnalogStick);
+    ADD_MEMBER(Tooltip_TouchpadToHaptics);
     ADD_MEMBER(Tooltip_Dualshock4V2);
     ADD_MEMBER(Tooltip_TriggersAsButtons);
     ADD_MEMBER(Tooltip_SpeakerVolume);
@@ -275,6 +319,23 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(R2ToMouseClick);
+    GET_MEMBER(L2Deadzone);
+    GET_MEMBER(R2Deadzone);
+    GET_MEMBER(MinimumStickValue);
+    GET_MEMBER(GyroDeadzone);
+    GET_MEMBER(StopWritingShortcut);
+    GET_MEMBER(StopWriting);
+    GET_MEMBER(ControllerEmulationRequired);
+    GET_MEMBER(L2Threshold);
+    GET_MEMBER(GyroToMouse);
+    GET_MEMBER(GyroToRightAnalogStick);
+    GET_MEMBER(Tooltip_GyroToMouse);
+    GET_MEMBER(Frequency);
+    GET_MEMBER(Gyroscope);
+    GET_MEMBER(Accelerometer);
+    GET_MEMBER(Motion);
+    GET_MEMBER(TouchpadToHaptics);    
     GET_MEMBER(OverrideDS4Lightbar);
     GET_MEMBER(FullyRetractWhenNoData);
     GET_MEMBER(TouchpadAsRightStick);
@@ -356,6 +417,8 @@ Strings Strings::from_json(const json &j)
     GET_MEMBER(SwapTriggersShortcut);
     GET_MEMBER(X360Shortcut);
     GET_MEMBER(DS4Shortcut);
+    GET_MEMBER(GyroToMouseShortcut);
+    GET_MEMBER(GyroToRightAnalogStickShortcut);
     GET_MEMBER(StopEmuShortcut);
     GET_MEMBER(EmulationHeader);
     GET_MEMBER(ConfigHeader);
@@ -369,6 +432,9 @@ Strings Strings::from_json(const json &j)
     GET_MEMBER(RunWithWindows);
 
     // Tooltips
+    GET_MEMBER(Tooltip_StopWriting);
+    GET_MEMBER(Tooltip_GyroToRightAnalogStick);
+    GET_MEMBER(Tooltip_TouchpadToHaptics);
     GET_MEMBER(Tooltip_Dualshock4V2);
     GET_MEMBER(Tooltip_TriggersAsButtons);
     GET_MEMBER(Tooltip_SpeakerVolume);

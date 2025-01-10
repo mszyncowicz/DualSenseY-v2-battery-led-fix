@@ -247,10 +247,13 @@ namespace MyUtils {
 
     void MoveCursor(int x, int y)
     {
-        POINT p;
-        if (GetCursorPos(&p)) {
-            SetCursorPos(p.x + x, p.y + y);
-        }
+        INPUT input = { 0 };
+        input.type = INPUT_MOUSE;
+        input.mi.dwFlags = MOUSEEVENTF_MOVE;
+        input.mi.dx = x;
+        input.mi.dy = y;
+
+        SendInput(1, &input, sizeof(INPUT));
     }
 
     float GetCurrentAudioPeak()

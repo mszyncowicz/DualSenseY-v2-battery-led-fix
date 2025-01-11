@@ -21,39 +21,63 @@
 
 **DualSenseY** is a powerful tool designed for controlling and customizing Sony DualSense (PS5) controllers on Windows. It features advanced capabilities for LED control, adaptive trigger configuration, haptics, microphone controls, and even screen capture functionality via the controller's microphone button.
 
-## Features
+# Features
 
-- **Multiplayer**
-   - Easily connect any amount of DualSense controllers, not found in other free apps
-   - Run Xbox 360/DualShock 4 controller emulation on any of them with ease and consistency
+## Multiplayer
+ - Easily connect any amount of DualSense controllers, not found in other free apps
+ - Run Xbox 360/DualShock 4 controller emulation on any of them with ease and consistency
+ 
+## Controller Functionality
+- **R2 to Mouse Click**: Map the R2 trigger to mouse click.
+- **L2 and R2 Deadzones**: Configure deadzones for triggers.
+- **Minimum Stick Value**: Set the minimum value for analog sticks.
+- **Gyro to Mouse**: Use the gyroscope to control the mouse.
+- **Gyro to Right Analog Stick**: Map gyroscope movements to the right analog stick.
+- **Touchpad to Mouse**: Use the touchpad as a laptop-style touchpad.
+- **Touchpad to Haptics**: Vibrate the controller based on finger position.
+- **Use Touchpad as Right Stick**: Map the touchpad to the right analog stick.
 
-- **LED Customization**:
-  - Set custom RGB values for the controller’s LED light bar.
-  - Enable **Disco Mode** for animated color transitions.
-  - Sync the LED color with audio levels using **Audio to LED**.
-  - Display **Battery Status** with color-coded LED indicators.
+## Adaptive Triggers and Haptics
+- **Haptics to Adaptive Triggers**: Translate haptic feedback into trigger effects.
+- **Rumble to Adaptive Triggers**: Convert rumble vibrations to trigger feedback.
+- **Rigid Trigger Mode**: Set rigid trigger effects.
+- **Maximum Intensity and Frequency**: Adjust trigger vibration sensitivity and frequency.
 
-- **Adaptive Trigger Control**:
-  - Customize the left and right triggers with various feedback modes, including **Rigid**, **Pulse**, and **Calibration**.
-  - Enable **Rumble to Adaptive Triggers** for synchronized trigger feedback.
-  
-- **Haptic Feedback**:
-  - Control left and right motor rumble levels for traditional haptic feedback.
-  - Enable **Audio to Haptics** for haptic feedback generated from system audio (USB-only).
-  
-- **Touchpad Visualization**:
-  - Display real-time touch inputs and coordinates on the controller’s touchpad.
+## LED and Lightbar Controls
+- **Battery Status Lightbar**: Display battery level with LED colors.
+- **Disco Mode**: Animated color transitions for the lightbar.
+- **Audio to LED**: Sync lightbar with audio levels.
+- **Quiet, Medium, and Loud Colors**: Customize lightbar colors based on audio volume.
 
-- **Microphone Button Functionality**:
-  - **Screenshot Capture**: Take screenshots with a single press of the microphone button.
-  - **Mic Function Emulation**: Toggle microphone LED and volume with button presses.
+## Emulation and Shortcuts
+- **Start/Stop X360 and DS4 Emulation**: Enable or disable emulation modes.
+- **Trigger as Buttons**: Map triggers as buttons with hard resistance.
+- **Mic Button Shortcuts**:
+  - Toggle touchpad modes.
+  - Start/Stop emulation modes.
+  - Swap triggers for adaptive feedback.
 
-- **Controller Emulation**:
-  - Emulate as an **Xbox 360** or **DualShock 4** controller using ViGEmBus.
-  - **Hide/Show Real Controller** with Hidhide integration, allowing you to manage visibility in games and other applications.
+## Audio and Speaker Integration
+- **Controller Speaker Volume**: Adjust the hardware-level volume of the controller speaker.
+- **Audio to Haptics**: Create haptic feedback from system audio.
+- **Run Audio to Haptics on Startup**: Automatically enable audio-based haptics.
 
-- **UDP Connectivity**:
-  - Use UDP to control settings remotely and synchronize with other software or devices.
+## Configuration and Settings
+- **Save/Load Configuration**: Manage configuration files.
+- **Set/Remove Default Configurations**: Auto-load settings for specific ports.
+- **Style Customization**:
+  - Save/Load styles.
+  - Set/Remove default styles.
+  - Reset styles to default.
+
+## Motion Controls
+- **Gyroscope and Accelerometer**: Enable and configure motion controls.
+- **Motion Sensitivity**: Adjust sensitivity for motion inputs.
+- **Gyro Deadzone**: Configure deadzones for gyroscopic inputs.
+
+## Miscellaneous
+- **Screenshot Functionality**: Save screenshots using the microphone button.
+- **Connection Type and Battery Info**: View connection type and battery level.
 
 ## Requirements (For programmers)
 

@@ -89,6 +89,8 @@ public:
     bool StopWritingShortcut = false;
     int L2Deadzone = 0;
     int R2Deadzone = 0;
+    int L2UDPDeadzone = 0;
+    int R2UDPDeadzone = 0;
     bool GyroToMouseShortcut = false;
     bool GyroToRightAnalogStickShortcut = false;
     bool R2ToMouseClick = false;

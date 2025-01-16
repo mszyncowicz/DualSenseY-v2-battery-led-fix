@@ -823,6 +823,16 @@ public:
                     thisSettings.ControllerInput.Blue = intParam3;
                     break;
                 }
+                case 4: // Trigger threshold
+                {
+                    if (intParam1 == 1) {
+                        thisSettings.L2UDPDeadzone = intParam2;
+                    }
+                    else if (intParam1 == 2) {
+                        thisSettings.R2UDPDeadzone = intParam2;
+                    }
+                    break;
+                }
                 case 20: // Haptic feedback
                 {
                     //cout << "Haptic Feedback instruction received: " << getParameterValueAsString(instr["parameters"][0]) << endl;

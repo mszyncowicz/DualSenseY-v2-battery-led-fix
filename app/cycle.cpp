@@ -5,13 +5,6 @@
 
 #include "cycle.hpp"
 
-bool connect = false;
-bool isConnected = false;
-bool testSpeaker = false;
-int AccelerometerX = 0;
-int AccelerometerY = 0;
-int AccelerometerZ = 0;
-
 void start_cycle()
 {
     glfwPollEvents();

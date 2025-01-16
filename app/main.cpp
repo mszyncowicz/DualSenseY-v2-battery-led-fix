@@ -1,4 +1,4 @@
-﻿const int VERSION = 32;
+﻿const int VERSION = 33;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -13,7 +13,6 @@
 #include "stb_image.h"
 #include <algorithm>
 #include <urlmon.h>
-#include "../out/build/x64-Debug/vcpkg_installed/x64-windows/include/GL/glcorearb.h"
 
 //#define _CRTDBG_MAP_ALLOC
 //#include <cstdlib>
@@ -229,7 +228,19 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 editedButtonState.R2 = 0;
                 editedButtonState.R2Btn = false;
             }
-           
+
+            if (settings.CurrentlyUsingUDP) {
+                if (settings.L2UDPDeadzone > 0 && (controller.State.L2 < settings.L2UDPDeadzone)) {
+                    editedButtonState.L2 = 0;
+                    editedButtonState.L2Btn = false;
+                }
+
+                if (settings.R2UDPDeadzone > 0 && (controller.State.R2 < settings.R2UDPDeadzone)) {
+                    editedButtonState.R2 = 0;
+                    editedButtonState.R2Btn = false;
+                }
+            }
+
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -831,6 +842,8 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                     firstTimeUDP = false;
                 }
                 settings.CurrentlyUsingUDP = true;
+                settings.L2UDPDeadzone = udpServer.thisSettings.L2UDPDeadzone;
+                settings.R2UDPDeadzone = udpServer.thisSettings.R2UDPDeadzone;
                 udpServer.Battery = controller.State.battery.Level;
                 controller.SetLightbar(
                     udpServer.thisSettings.ControllerInput.Red,
@@ -1249,6 +1262,8 @@ int main()
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int screenWidth = mode->width;
     int screenHeight = mode->height;
+    bool ShowStyleEditWindow = false;
+    float MainMenuBarHeight = 0;
 
     static bool show_popup = false;
     while (!glfwWindowShouldClose(window))
@@ -1295,8 +1310,38 @@ int main()
         }
 
         bool ShowNonControllerConfig = true;
+       
+        if (ShowStyleEditWindow) {
+
+            if (ImGui::Begin("Style editor", &ShowStyleEditWindow, ImGuiWindowFlags_NoCollapse)) {
+
+                if (!ImGui::IsWindowFocused()) {
+                    ShowStyleEditWindow = false;
+                }
+
+              
+                                    for (int i = 0; i < ImGuiCol_COUNT; ++i) {
+                                        ImVec4* color = &style.Colors[i];
+                                        const char* colorName = ImGui::GetStyleColorName(i);
+
+                                        ImGui::Text("%s:", colorName);
+                                        ImGui::SameLine();
+
+                                        ImGui::PushItemWidth(ImGui::GetWindowWidth() / 10.0f - 10);
+                                        ImGui::SliderFloat(std::string(std::string("R##") + colorName).c_str(), &color->x, 0.0f, 1.0f);
+                                        ImGui::SameLine();
+                                        ImGui::SliderFloat(std::string(std::string("G##") + colorName).c_str(), &color->y, 0.0f, 1.0f);
+                                        ImGui::SameLine();
+                                        ImGui::SliderFloat(std::string(std::string("B##") + colorName).c_str(), &color->z, 0.0f, 1.0f);
+                                        ImGui::SameLine();
+                                        ImGui::SliderFloat(std::string(std::string("A##") + colorName).c_str(), &color->w, 0.0f, 1.0f);
+                                        ImGui::PopItemWidth();
+                                    }
+            }
+        }
 
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+        ImGui::SetNextWindowPos(ImVec2(0, MainMenuBarHeight));
         if (ImGui::Begin("Main", nullptr, window_flags))
         {
             // Limit these functions for better CPU usage 
@@ -1307,7 +1352,7 @@ int main()
                 ControllerID = DualsenseUtils::EnumerateControllerIDs();
                 ControllerCount = DualsenseUtils::GetControllerCount();
             }
-            
+          
             if (ImGui::BeginCombo("##", CurrentController.c_str()))
             {
                 for (int n = 0; n < ControllerID.size(); n++)
@@ -1445,6 +1490,125 @@ int main()
                     {
                         if (s.ControllerInput.ID == CurrentController)
                         {
+                            if(ImGui::BeginMainMenuBar())
+                            {                              
+                                if (ImGui::BeginMenu(strings.ConfigHeader.c_str())) {
+                                    if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
+                                        const std::string& selectedLanguage = languages[selectedLanguageIndex];
+                                        appConfig.Language = selectedLanguage;
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+
+                                    if (ImGui::Button(strings.SaveConfig.c_str())) {
+                                        Config::WriteToFile(s);
+                                    }
+                                    Tooltip(strings.Tooltip_SaveConfig.c_str());
+
+                                    if (ImGui::Button(strings.LoadConfig.c_str())) {
+                                        std::string configPath = Config::GetConfigPath();
+                                        if (configPath != "") {
+                                            s = Config::ReadFromFile(configPath);
+                                            if (s.emuStatus == None) {
+                                                MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
+                                            }
+                                            else {
+                                                MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
+                                            }
+                                            s.ControllerInput.ID = DualSense[i].GetPath();
+                                        }
+                                    }
+                                    Tooltip(strings.Tooltip_LoadConfig.c_str());
+
+                                    if (ImGui::Button(strings.SetDefaultConfig.c_str())) {
+                                        std::string configPath = Config::GetConfigPath();
+                                        if (configPath != "") {
+                                            MyUtils::WriteDefaultConfigPath(configPath, DualSense[i].GetPath());
+                                        }
+                                    }
+                                    Tooltip(strings.Tooltip_SetDefaultConfig.c_str());
+
+                                    if (ImGui::Button(strings.RemoveDefaultConfig.c_str())) {
+                                        MyUtils::RemoveConfig(DualSense[i].GetPath());
+                                    }
+                                    Tooltip(strings.Tooltip_RemoveDefaultConfig.c_str());
+
+                                    if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
+                                        Config::WriteAppConfigToFile(appConfig);
+
+                                        if (!MyUtils::IsRunAsAdministrator()) {
+                                            MyUtils::ElevateNow();
+                                        }
+                                    }
+                                    Tooltip(strings.Tooltip_RunAsAdmin.c_str());
+
+                                    if (ImGui::Checkbox(strings.HideToTray.c_str(), &appConfig.HideToTray)) {
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+                                    Tooltip(strings.Tooltip_HideToTray.c_str());
+
+                                    if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+                                    Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
+
+                                    if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
+                                        if (appConfig.RunWithWindows) {
+                                            MyUtils::AddToStartup();
+                                        }
+                                        else {
+                                            MyUtils::RemoveFromStartup();
+                                        }
+
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+                                    Tooltip(strings.RunWithWindows.c_str());
+
+                                    if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+
+                                    ImGui::EndMenu();
+                                }
+
+                                if (ImGui::BeginMenu(strings.Style.c_str())) {
+
+                                    if (ImGui::Button(strings.SaveStyleToFile.c_str())) {
+                                        MyUtils::SaveImGuiColorsToFile(style);
+                                    }
+
+                                    if (ImGui::Button(strings.LoadStyleFromFile.c_str())) {
+                                        MyUtils::LoadImGuiColorsFromFile(style);
+                                    }
+
+                                    if (ImGui::Button(strings.SetDefaultStyleFile.c_str())) {
+                                        std::string stylePath = Config::GetStylePath();
+                                        if (stylePath != "") {
+                                            appConfig.DefaultStyleFilepath = stylePath;
+                                            Config::WriteAppConfigToFile(appConfig);
+                                        }
+                                    }
+
+                                    if (ImGui::Button(strings.RemoveDefaultStyle.c_str())) {
+                                        appConfig.DefaultStyleFilepath = "";
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+
+                                    if (ImGui::Button(strings.ResetStyle.c_str())) {
+                                        style = ImGuiStyle();
+                                    }
+
+                                    if (ImGui::Button("Show edit menu")) {
+                                        ShowStyleEditWindow = true;
+                                    }
+                                    ImGui::EndMenu();
+                                }
+                                MainMenuBarHeight = ImGui::GetFrameHeight();
+                                ImGui::EndMainMenuBar();
+                             
+                            }
+                            
+                           
+
                             DualSense[i].SetSoundVolume("screenshot", s.ScreenshotSoundLoudness);
                             DualsenseUtils::HapticFeedbackStatus HF_status = DualSense[i].GetHapticFeedbackStatus();
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
@@ -1477,9 +1641,9 @@ int main()
                             }                            
 
                             if (s.StopWriting) {
-                                ImGui::TextColored(ImVec4(1, 0, 0, 1), "COMMUNICATION PAUSED");
+                                ImGui::TextColored(ImVec4(1, 0, 0, 1), strings.CommunicationPaused.c_str());
                                 ImGui::SameLine();
-                                if (ImGui::SmallButton("Resume")) {
+                                if (ImGui::SmallButton(strings.Resume.c_str())) {
                                     s.StopWriting = false;
                                     DualSense[i].PlayHaptics("resumed");
                                 }
@@ -2064,82 +2228,6 @@ int main()
                             }
 
                             ShowNonControllerConfig = false;
-                            if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
-                                ImGui::SetNextItemWidth(120.0f);
-                                if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
-                                    const std::string& selectedLanguage = languages[selectedLanguageIndex];                                    
-                                    appConfig.Language = selectedLanguage;
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-
-                                if (ImGui::Button(strings.SaveConfig.c_str())) {
-                                    Config::WriteToFile(s);
-                                }
-                                Tooltip(strings.Tooltip_SaveConfig.c_str());
-
-                                if (ImGui::Button(strings.LoadConfig.c_str())) {
-                                    std::string configPath = Config::GetConfigPath();
-                                    if (configPath != "") {
-                                        s = Config::ReadFromFile(configPath);
-                                        if (s.emuStatus == None) {
-                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "show");
-                                        }
-                                        else {
-                                            MyUtils::RunAsyncHidHideRequest(DualSense[i].GetPath(), "hide");
-                                        }
-                                        s.ControllerInput.ID = DualSense[i].GetPath();
-                                    }                                   
-                                }
-                                Tooltip(strings.Tooltip_LoadConfig.c_str());
-
-                                if (ImGui::Button(strings.SetDefaultConfig.c_str())) {
-                                    std::string configPath = Config::GetConfigPath();
-                                    if (configPath != "") {
-                                        MyUtils::WriteDefaultConfigPath(configPath, DualSense[i].GetPath());
-                                    }                                   
-                                }
-                                Tooltip(strings.Tooltip_SetDefaultConfig.c_str());
-
-                                if (ImGui::Button(strings.RemoveDefaultConfig.c_str())) {
-                                   MyUtils::RemoveConfig(DualSense[i].GetPath());
-                                }
-                                Tooltip(strings.Tooltip_RemoveDefaultConfig.c_str());
-
-                                if (ImGui::Checkbox(strings.RunAsAdmin.c_str(), &appConfig.ElevateOnStartup)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-
-                                    if (!MyUtils::IsRunAsAdministrator()) {
-                                        MyUtils::ElevateNow();
-                                    }
-                                }
-                                Tooltip(strings.Tooltip_RunAsAdmin.c_str());
-
-                                if (ImGui::Checkbox(strings.HideToTray.c_str() , &appConfig.HideToTray)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.Tooltip_HideToTray.c_str());
-
-                                if (ImGui::Checkbox(strings.HideWindowOnStartup.c_str(), &appConfig.HideWindowOnStartup)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.Tooltip_HideWindowOnStartup.c_str());
-
-                                if (ImGui::Checkbox(strings.RunWithWindows.c_str(), &appConfig.RunWithWindows)) {
-                                    if (appConfig.RunWithWindows) {
-                                        MyUtils::AddToStartup();
-                                    }
-                                    else {
-                                        MyUtils::RemoveFromStartup();
-                                    }
-
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                                Tooltip(strings.RunWithWindows.c_str());
-
-                                if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
-                                    Config::WriteAppConfigToFile(appConfig);
-                                }
-                            }
                         }
                     }
                 }
@@ -2150,7 +2238,8 @@ int main()
 
             if(ShowNonControllerConfig)
             {
-                if (ImGui::CollapsingHeader(strings.ConfigHeader.c_str())) {
+                ImGui::BeginMainMenuBar();
+                if (ImGui::BeginMenu("Config")) {
                     ImGui::SetNextItemWidth(120.0f);
                     if (ImGui::Combo(strings.Language.c_str(), &selectedLanguageIndex, languageItems.data(), languageItems.size())) {
                         const std::string& selectedLanguage = languages[selectedLanguageIndex];
@@ -2192,55 +2281,44 @@ int main()
                     if (ImGui::Checkbox(strings.ShowConsole.c_str(), &appConfig.ShowConsole)) {
                         Config::WriteAppConfigToFile(appConfig);
                     }
+
+                    ImGui::EndMenu();
                 }
-            }
 
-            if (ImGui::CollapsingHeader(strings.Style.c_str())) {
-                    if (ImGui::Button(strings.SaveStyleToFile.c_str())) {
-                        MyUtils::SaveImGuiColorsToFile(style);
+               if (ImGui::BeginMenu(strings.Style.c_str())) {
+                   if (ImGui::Button(strings.SaveStyleToFile.c_str())) {
+                                        MyUtils::SaveImGuiColorsToFile(style);
+                                    }
+
+                                    if (ImGui::Button(strings.LoadStyleFromFile.c_str())) {
+                                        MyUtils::LoadImGuiColorsFromFile(style);
+                                    }
+
+                                    if (ImGui::Button(strings.SetDefaultStyleFile.c_str())) {
+                                        std::string stylePath = Config::GetStylePath();
+                                        if (stylePath != "") {
+                                            appConfig.DefaultStyleFilepath = stylePath;
+                                            Config::WriteAppConfigToFile(appConfig);
+                                        }
+                                    }
+
+                                    if (ImGui::Button(strings.RemoveDefaultStyle.c_str())) {
+                                        appConfig.DefaultStyleFilepath = "";
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+
+                                    if (ImGui::Button(strings.ResetStyle.c_str())) {
+                                        style = ImGuiStyle();
+                                    }
+
+                    if (ImGui::Button("Show edit menu")) {
+                        ShowStyleEditWindow = true;
                     }
-
-                    if (ImGui::Button(strings.LoadStyleFromFile.c_str())) {
-                        MyUtils::LoadImGuiColorsFromFile(style);
-                    }
-
-                    if (ImGui::Button(strings.SetDefaultStyleFile.c_str())) {
-                        std::string stylePath = Config::GetStylePath();
-                        if (stylePath != "") {
-                            appConfig.DefaultStyleFilepath = stylePath;
-                            Config::WriteAppConfigToFile(appConfig);
-                        }    
-                    }
-
-                    if (ImGui::Button(strings.RemoveDefaultStyle.c_str())) {
-                        appConfig.DefaultStyleFilepath = "";
-                        Config::WriteAppConfigToFile(appConfig);
-                    }
-
-                    if (ImGui::Button(strings.ResetStyle.c_str())) {
-                        style = ImGuiStyle();
-                    }
-
-                    ImGui::Separator();
-                    for (int i = 0; i < ImGuiCol_COUNT; ++i) {
-                        ImVec4* color = &style.Colors[i];
-                        const char* colorName = ImGui::GetStyleColorName(i);
-
-                        ImGui::Text("%s:", colorName);
-                        ImGui::SameLine();
-
-                        ImGui::PushItemWidth(ImGui::GetWindowWidth() / 10.0f - 10);
-                        ImGui::SliderFloat(std::string(std::string("R##") + colorName).c_str(), &color->x, 0.0f, 1.0f);
-                        ImGui::SameLine();
-                        ImGui::SliderFloat(std::string(std::string("G##") + colorName).c_str(), &color->y, 0.0f, 1.0f);
-                        ImGui::SameLine();
-                        ImGui::SliderFloat(std::string(std::string("B##") + colorName).c_str(), &color->z, 0.0f, 1.0f);
-                        ImGui::SameLine();
-                        ImGui::SliderFloat(std::string(std::string("A##") + colorName).c_str(), &color->w, 0.0f, 1.0f);
-                        ImGui::PopItemWidth();
-                    }
- 
-            }
+                    ImGui::EndMenu();
+               }
+               MainMenuBarHeight = ImGui::GetFrameHeight();
+                ImGui::EndMenuBar();
+            }          
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(16)); // 60 FPS

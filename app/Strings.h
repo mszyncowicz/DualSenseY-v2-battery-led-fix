@@ -8,6 +8,8 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string CommunicationPaused = "COMMUNICATION PAUSED";
+    std::string Resume = "Resume";
     std::string R2ToMouseClick = "R2 to mouse click";
     std::string L2Deadzone = "L2 deadzone";
     std::string R2Deadzone = "R2 deadzone";
@@ -164,6 +166,8 @@ json Strings::to_json() const
     #define ADD_MEMBER(name) j[#name] = name;
     
     // GUI Strings
+    ADD_MEMBER(Resume);
+    ADD_MEMBER(CommunicationPaused);
     ADD_MEMBER(R2ToMouseClick)
     ADD_MEMBER(L2Deadzone);
     ADD_MEMBER(R2Deadzone);
@@ -319,6 +323,8 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(Resume);
+    GET_MEMBER(CommunicationPaused);
     GET_MEMBER(R2ToMouseClick);
     GET_MEMBER(L2Deadzone);
     GET_MEMBER(R2Deadzone);

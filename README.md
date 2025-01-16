@@ -85,10 +85,12 @@
   - [Dear ImGui](https://github.com/ocornut/imgui) for the graphical interface.
   - [GLFW](https://www.glfw.org/) and **OpenGL** for rendering.
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
-  - [ViGEm](https://github.com/nefarius/ViGEmClient) for controller emulation.
+  - [ViGEmClient](https://github.com/nefarius/ViGEmClient) for controller emulation.
   - [libcpr](https://github.com/libcpr/cpr)
   - [traypp](https://github.com/Soundux/traypp)
   - [Crashlogs](https://github.com/TylerGlaiel/Crashlogs)
+  - [hidapi](https://github.com/libusb/hidapi)
+  - [nlohmann/json](https://github.com/nlohmann/json)
   - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage

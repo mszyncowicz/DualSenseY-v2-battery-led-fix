@@ -498,6 +498,7 @@ public:
     uint8_t _LeftMotor = 0;
     int SpeakerVolume = 100;
     int MicrophoneVolume = 80;
+    int HeadsetVolume = 0x7C;
     Feature::AudioOutput audioOutput = Feature::Speaker;
     Feature::MicrophoneLED micLED = Feature::MicrophoneLED::MLED_Off;
     Feature::MicrophoneStatus micStatus = Feature::MicrophoneStatus::MSTATUS_On;
@@ -521,6 +522,7 @@ public:
         j["_LeftMotor"] = _LeftMotor;
         j["SpeakerVolume"] = SpeakerVolume;
         j["MicrophoneVolume"] = MicrophoneVolume;
+        j["HeadsetVolume"] = HeadsetVolume;
         j["audioOutput"] = audioOutput;
         j["micLED"] = micLED;
         j["micStatus"] = micStatus;
@@ -540,28 +542,29 @@ public:
 
     static InputFeatures from_json(const nlohmann::json& j) {
         InputFeatures features;
-        j.at("VibrationType").get_to(features.VibrationType);
-        j.at("Features").get_to(features.Features);
-        j.at("_RightMotor").get_to(features._RightMotor);
-        j.at("_LeftMotor").get_to(features._LeftMotor);
-        j.at("SpeakerVolume").get_to(features.SpeakerVolume);
-        j.at("MicrophoneVolume").get_to(features.MicrophoneVolume);
-        j.at("audioOutput").get_to(features.audioOutput);
-        j.at("micLED").get_to(features.micLED);
-        j.at("micStatus").get_to(features.micStatus);
-        j.at("RightTriggerMode").get_to(features.RightTriggerMode);
-        j.at("LeftTriggerMode").get_to(features.LeftTriggerMode);
+        if (j.contains("VibrationType")) j.at("VibrationType").get_to(features.VibrationType);
+        if (j.contains("Features")) j.at("Features").get_to(features.Features);
+        if (j.contains("_RightMotor")) j.at("_RightMotor").get_to(features._RightMotor);
+        if (j.contains("_LeftMotor")) j.at("_LeftMotor").get_to(features._LeftMotor);
+        if (j.contains("SpeakerVolume")) j.at("SpeakerVolume").get_to(features.SpeakerVolume);
+        if (j.contains("MicrophoneVolume")) j.at("MicrophoneVolume").get_to(features.MicrophoneVolume);
+        if (j.contains("HeadsetVolume")) j.at("HeadsetVolume").get_to(features.HeadsetVolume);
+        if (j.contains("audioOutput")) j.at("audioOutput").get_to(features.audioOutput);
+        if (j.contains("micLED")) j.at("micLED").get_to(features.micLED);
+        if (j.contains("micStatus")) j.at("micStatus").get_to(features.micStatus);
+        if (j.contains("RightTriggerMode")) j.at("RightTriggerMode").get_to(features.RightTriggerMode);
+        if (j.contains("LeftTriggerMode")) j.at("LeftTriggerMode").get_to(features.LeftTriggerMode);
         for (int i = 0; i < 7; ++i) {
             features.RightTriggerForces[i] = j.at("RightTriggerForces")[i];
             features.LeftTriggerForces[i] = j.at("LeftTriggerForces")[i];
         }
-        j.at("_Brightness").get_to(features._Brightness);
-        j.at("playerLED").get_to(features.playerLED);
-        j.at("PlayerLED_Bitmask").get_to(features.PlayerLED_Bitmask);
-        j.at("Red").get_to(features.Red);
-        j.at("Green").get_to(features.Green);
-        j.at("Blue").get_to(features.Blue);
-        j.at("ID").get_to(features.ID);
+        if (j.contains("_Brightness")) j.at("_Brightness").get_to(features._Brightness);
+        if (j.contains("playerLED")) j.at("playerLED").get_to(features.playerLED);
+        if (j.contains("PlayerLED_Bitmask")) j.at("PlayerLED_Bitmask").get_to(features.PlayerLED_Bitmask);
+        if (j.contains("Red")) j.at("Red").get_to(features.Red);
+        if (j.contains("Green")) j.at("Green").get_to(features.Green);
+        if (j.contains("Blue")) j.at("Blue").get_to(features.Blue);
+        if (j.contains("ID")) j.at("ID").get_to(features.ID);
         return features;
     }
 
@@ -572,6 +575,7 @@ public:
            _LeftMotor == other._LeftMotor &&
            SpeakerVolume == other.SpeakerVolume &&
            MicrophoneVolume == other.MicrophoneVolume &&
+           HeadsetVolume == other.HeadsetVolume &&
            audioOutput == other.audioOutput &&
            micLED == other.micLED &&
            micStatus == other.micStatus &&
@@ -1172,7 +1176,7 @@ public:
                 outReport[2] = CurSettings.Features;
                 outReport[3] = CurSettings._RightMotor;
                 outReport[4] = CurSettings._LeftMotor;
-                outReport[5] = 0x7C; // Headset volume
+                outReport[5] = CurSettings.HeadsetVolume;
                 outReport[6] = (unsigned char)CurSettings.SpeakerVolume;
                 outReport[7] = CurSettings.MicrophoneVolume;
                 outReport[8] = CurSettings.audioOutput;
@@ -1266,7 +1270,7 @@ public:
                 outReport[3] = CurSettings.Features;              
                 outReport[4] = CurSettings._RightMotor;
                 outReport[5] = CurSettings._LeftMotor;
-                outReport[6] = 0x7C; // Headset volume
+                outReport[6] = CurSettings.HeadsetVolume;
                 outReport[7] = (unsigned char)CurSettings.SpeakerVolume;
                 outReport[8] = CurSettings.MicrophoneVolume;
                 outReport[9] = CurSettings.audioOutput;
@@ -2016,6 +2020,10 @@ public:
 
     void SetSpeakerVolume(int Volume) {
         CurSettings.SpeakerVolume = Volume;
+    }
+
+    void SetHeadsetVolume(int Volume) {
+        CurSettings.HeadsetVolume = Volume;
     }
 
     void SetRumble(uint8_t LeftMotor, uint8_t RightMotor)

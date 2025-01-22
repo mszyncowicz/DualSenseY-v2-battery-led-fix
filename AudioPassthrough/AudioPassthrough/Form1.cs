@@ -121,9 +121,9 @@ namespace AudioPassthrough {
 
             // AUDIO PASSTHROUGH STREAM
             setNewPlayback();
-            audioPassthroughStream = new WasapiOut(device, AudioClientShareMode.Shared, true, 10);
+            audioPassthroughStream = new WasapiOut(device, AudioClientShareMode.Shared, true, 1);
             audioPassthroughBuffer = new BufferedWaveProvider(WaveFormat.CreateCustomFormat(WaveFormatEncoding.IeeeFloat, wasapiLoopbackCapture.WaveFormat.SampleRate, wasapiLoopbackCapture.WaveFormat.Channels, wasapiLoopbackCapture.WaveFormat.AverageBytesPerSecond, wasapiLoopbackCapture.WaveFormat.BlockAlign, wasapiLoopbackCapture.WaveFormat.BitsPerSample));
-            audioPassthroughBuffer.BufferLength = 5000000; // 5MB buffer
+            audioPassthroughBuffer.BufferLength = 100000; // 100KB buffer (for example)
             audioPassthroughBuffer.ReadFully = true;
             audioPassthroughBuffer.DiscardOnBufferOverflow = true;
 

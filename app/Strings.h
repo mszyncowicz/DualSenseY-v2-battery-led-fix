@@ -8,6 +8,9 @@ class Strings
 {
 public:
     // GUI Strings
+    std::string HeadsetVolume = "Headset volume";
+    std::string MaxRightMotor = "Max right motor";
+    std::string MaxLeftMotor = "Max left motor";
     std::string CommunicationPaused = "COMMUNICATION PAUSED";
     std::string Resume = "Resume";
     std::string R2ToMouseClick = "R2 to mouse click";
@@ -122,6 +125,7 @@ public:
     std::string Scale = "Scale";
 
     // Tooltips
+    std::string Tooltip_MaxMotor = "Sets maximum vibration for emulated controller";
     std::string Tooltip_GyroToRightAnalogStick = "When holding L2, the right analog stick will move according to your controller's motions";
     std::string Tooltip_GyroToMouse = "When holding L2, the mouse will move according to your controller's motions";
     std::string Tooltip_TouchpadToHaptics = "Makes the controller vibrate based on finger position";
@@ -166,6 +170,9 @@ json Strings::to_json() const
     #define ADD_MEMBER(name) j[#name] = name;
     
     // GUI Strings
+    ADD_MEMBER(HeadsetVolume);    
+    ADD_MEMBER(MaxRightMotor);
+    ADD_MEMBER(MaxLeftMotor);
     ADD_MEMBER(Resume);
     ADD_MEMBER(CommunicationPaused);
     ADD_MEMBER(R2ToMouseClick)
@@ -281,6 +288,7 @@ json Strings::to_json() const
     ADD_MEMBER(Scale);
 
     // Tooltips
+    ADD_MEMBER(Tooltip_MaxMotor);
     ADD_MEMBER(Tooltip_StopWriting);
     ADD_MEMBER(Tooltip_GyroToRightAnalogStick);
     ADD_MEMBER(Tooltip_TouchpadToHaptics);
@@ -323,6 +331,9 @@ Strings Strings::from_json(const json &j)
     #define GET_MEMBER(name) if (j.contains(#name)) j.at(#name).get_to(strings.name);
 
     // GUI Strings
+    GET_MEMBER(HeadsetVolume);  
+    GET_MEMBER(MaxRightMotor);
+    GET_MEMBER(MaxLeftMotor);
     GET_MEMBER(Resume);
     GET_MEMBER(CommunicationPaused);
     GET_MEMBER(R2ToMouseClick);
@@ -438,6 +449,7 @@ Strings Strings::from_json(const json &j)
     GET_MEMBER(RunWithWindows);
 
     // Tooltips
+    GET_MEMBER(Tooltip_MaxMotor);
     GET_MEMBER(Tooltip_StopWriting);
     GET_MEMBER(Tooltip_GyroToRightAnalogStick);
     GET_MEMBER(Tooltip_TouchpadToHaptics);

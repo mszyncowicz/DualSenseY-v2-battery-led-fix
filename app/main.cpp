@@ -1,4 +1,4 @@
-﻿const int VERSION = 33;
+﻿const int VERSION = 34;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -251,14 +251,14 @@ void writeEmuController(Dualsense &controller, Settings &settings)
             if (settings.emuStatus == X360)
             {
                 v.UpdateX360(editedButtonState);
-                settings.lrumble = v.rotors.lrotor;
-                settings.rrumble = v.rotors.rrotor;
+                settings.lrumble = min(settings.MaxLeftMotor, v.rotors.lrotor);
+                settings.rrumble = min(settings.MaxRightMotor, v.rotors.rrotor);
             }
             else if (settings.emuStatus == DS4)
             {
                 v.UpdateDS4(editedButtonState);
-                settings.lrumble = v.rotors.lrotor;
-                settings.rrumble = v.rotors.rrotor;
+                settings.lrumble = min(settings.MaxLeftMotor, v.rotors.lrotor);
+                settings.rrumble = min(settings.MaxRightMotor, v.rotors.rrotor);
 
                 if (!settings.CurrentlyUsingUDP) {
                     if (v.Red > 0 || v.Green > 0 || v.Blue > 0) {
@@ -950,6 +950,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             }
 
             controller.SetSpeakerVolume(settings.ControllerInput.SpeakerVolume);
+            controller.SetHeadsetVolume(settings.ControllerInput.HeadsetVolume);
             controller.UseHeadsetNotSpeaker(settings.UseHeadset);
             controller.SetRumble(settings.lrumble, settings.rrumble);
 
@@ -2057,15 +2058,17 @@ int main()
                             {
                                 ImGui::Text(strings.StandardRumble.c_str());
                                 Tooltip(strings.Tooltip_HapticFeedback.c_str());
-                                ImGui::SliderInt(strings.LeftMotor.c_str(),
-                                                 &s.lrumble,
-                                                 0,
-                                                 255);
-                                ImGui::SliderInt(strings.RightMotor.c_str(),
-                                                 &s.rrumble,
-                                                 0,
-                                                 255);
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.LeftMotor.c_str(), &s.lrumble, 0, 255);
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.RightMotor.c_str(), &s.rrumble, 0, 255);
 
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.MaxLeftMotor.c_str(), &s.MaxLeftMotor, 0, 255);
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.MaxRightMotor.c_str(), &s.MaxRightMotor, 0, 255);
+                                ImGui::SameLine();
+                                Tooltip(strings.Tooltip_MaxMotor.c_str());
                                 ImGui::Separator();
 
                                 if (ImGui::Checkbox(strings.RunAudioToHapticsOnStart.c_str(), &s.RunAudioToHapticsOnStart)) {
@@ -2087,13 +2090,16 @@ int main()
                                     };
                                     Tooltip(strings.Tooltip_StartAudioToHaptics.c_str());
 
-                                    ImGui::SliderInt(strings.SpeakerVolume.c_str(), &s.ControllerInput.SpeakerVolume, 0, 255);
+                                    ImGui::SetNextItemWidth(300);
+                                    ImGui::SliderInt(strings.SpeakerVolume.c_str(), &s.ControllerInput.SpeakerVolume, 0, 0x7C, "%d");
                                     Tooltip(strings.Tooltip_SpeakerVolume.c_str());
+                                    ImGui::SetNextItemWidth(300);
+                                    ImGui::SliderInt(strings.HeadsetVolume.c_str(), &s.ControllerInput.HeadsetVolume, 0, 0x7C, "%d");
 
                                     ImGui::Checkbox(strings.UseHeadset.c_str(), &s.UseHeadset);
 
                                     ImGui::Separator();
-                                    ImGui::Text( MyUtils::WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
+                                    ImGui::Text(MyUtils::WStringToString(DualSense[i].GetAudioDeviceInstanceID()).c_str());
                                     ImGui::Text(DualSense[i].GetAudioDeviceName());
                                 }
                                 else

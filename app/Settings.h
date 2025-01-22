@@ -94,6 +94,8 @@ public:
     bool GyroToMouseShortcut = false;
     bool GyroToRightAnalogStickShortcut = false;
     bool R2ToMouseClick = false;
+    int MaxLeftMotor = 255;
+    int MaxRightMotor = 255;
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -108,6 +110,8 @@ public:
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
 
+        j["MaxLeftMotor"] = MaxLeftMotor;
+        j["MaxRightMotor"] = MaxRightMotor;
         j["R2ToMouseClick"] = R2ToMouseClick;
         j["GyroToRightAnalogStickShortcut"] = GyroToRightAnalogStickShortcut;
         j["GyroToMouseShortcut"] = GyroToMouseShortcut;
@@ -181,6 +185,8 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("MaxLeftMotor"))       j.at("MaxLeftMotor").get_to(settings.MaxLeftMotor);
+        if (j.contains("MaxRightMotor"))       j.at("MaxRightMotor").get_to(settings.MaxRightMotor);
         if (j.contains("R2ToMouseClick"))       j.at("R2ToMouseClick").get_to(settings.R2ToMouseClick);
         if (j.contains("GyroToRightAnalogStickShortcut"))       j.at("GyroToRightAnalogStickShortcut").get_to(settings.GyroToRightAnalogStickShortcut);
         if (j.contains("GyroToMouseShortcut"))       j.at("GyroToMouseShortcut").get_to(settings.GyroToMouseShortcut);

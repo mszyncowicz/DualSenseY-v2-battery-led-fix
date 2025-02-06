@@ -10,8 +10,9 @@
     ]
   },
   "ExpandedNodes": [
-    ""
+    "",
+    "\\app"
   ],
-  "SelectedNode": "\\C:\\Users\\igorp\\source\\repos\\WujekFoliarz\\DualSenseY-v2\\CMakeLists.txt\\DSX.exe (app\\DSX.exe)\\Settings.h",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

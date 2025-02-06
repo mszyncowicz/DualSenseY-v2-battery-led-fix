@@ -512,7 +512,7 @@ public:
     int Red = 0;
     int Green = 0;
     int Blue = 0;
-    string ID = ""; // Optional ID for arrays n' stuff
+    string ID = ""; // Optional ID
 
     nlohmann::json to_json() const {
         nlohmann::json j;

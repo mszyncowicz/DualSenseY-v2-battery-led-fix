@@ -1,4 +1,4 @@
-﻿const int VERSION = 34;
+﻿const int VERSION = 35;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -1211,8 +1211,10 @@ int main()
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
       else if (appConfig.Language == "ko")
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
+      else if (appConfig.Language == "ru")
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansRU-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesCyrillic());
       else {
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 15.0f, NULL, polishGlyphRange);
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, polishGlyphRange);
       }
 
     std::vector<const char*> languageItems;

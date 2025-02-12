@@ -2,7 +2,7 @@
 
 using json = nlohmann::json;
 
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko", "ru", "tr"};
+std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko", "ru", "tr", "vi"};
 
 class Strings
 {

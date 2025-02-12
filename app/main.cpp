@@ -1,4 +1,4 @@
-﻿const int VERSION = 35;
+﻿const int VERSION = 36;
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -147,12 +147,24 @@ void writeEmuController(Dualsense &controller, Settings &settings)
             }
 
             if (settings.TouchpadAsSelectStart) {
-                if (controller.State.touchBtn && controller.State.trackPadTouch0.X <= 1000) {
-                    editedButtonState.share = true;
-                }
+                if(controller.State.trackPadTouch0.IsActive && !controller.State.trackPadTouch1.IsActive)
+                {
+                    if (controller.State.touchBtn && controller.State.trackPadTouch0.X <= 1000) {
+                        editedButtonState.share = true;
+                    }
 
-                if (controller.State.touchBtn && controller.State.trackPadTouch0.X >= 1001) {
-                    editedButtonState.options = true;
+                    if (controller.State.touchBtn && controller.State.trackPadTouch0.X >= 1001) {
+                        editedButtonState.options = true;
+                    }
+                }
+                else if (controller.State.trackPadTouch1.IsActive && !controller.State.trackPadTouch0.IsActive) {
+                    if (controller.State.touchBtn && controller.State.trackPadTouch1.X <= 1000) {
+                        editedButtonState.share = true;
+                    }
+
+                    if (controller.State.touchBtn && controller.State.trackPadTouch1.X >= 1001) {
+                        editedButtonState.options = true;
+                    }
                 }
             }
 
@@ -1213,6 +1225,8 @@ int main()
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
       else if (appConfig.Language == "ru")
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansRU-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesCyrillic());
+      else if (appConfig.Language == "vi")
+          ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesVietnamese());       
       else {
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, polishGlyphRange);
       }

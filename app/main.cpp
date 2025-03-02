@@ -1,4 +1,9 @@
-﻿const int VERSION = 36;
+﻿const int VERSION = 37;
+
+extern "C" {
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 #include "MyUtils.h"
 #include "DualSense.h"
@@ -50,6 +55,275 @@ void Tooltip(const char* text) {
         ImGui::TextUnformatted(text);
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
+    }
+}
+
+// Required structure definitions
+struct TriggerSettings {
+    Trigger::TriggerMode Mode;  // Assuming Trigger::ModeType is your trigger mode enum
+    bool right = false;
+    uint8_t Forces[11];
+};
+
+void setTriggerSettings(TriggerSettings& trigger, const char* modeStr, 
+                       const int* feedbackArray, size_t feedbackSize) {
+    if (strcmp(modeStr, "Off") == 0) {
+        trigger.Mode = Trigger::Rigid_B;
+        for (int i = 0; i < 11; i++) {
+            trigger.Forces[i] = 0;
+        }
+    }
+    else if (strcmp(modeStr, "Feedback") == 0) {
+        uint8_t position = feedbackArray[0];
+        uint8_t strength = feedbackArray[1];
+
+        if (position > 9 || strength > 8) {
+            return;
+        }
+        if (strength > 0) {
+            uint8_t b = (strength - 1) & 7;
+            uint32_t num = 0;
+            uint16_t num2 = 0;
+
+            for (int i = position; i < 10; i++) {
+                num |= static_cast<uint32_t>(b) << (3 * i);
+                num2 |= static_cast<uint16_t>(1 << i);
+            }
+
+            trigger.Mode = Trigger::Feedback;
+            trigger.Forces[0] = static_cast<uint8_t>(num2 & 0xFF);
+            trigger.Forces[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+            trigger.Forces[2] = static_cast<uint8_t>(num & 0xFF);
+            trigger.Forces[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+            trigger.Forces[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+            trigger.Forces[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+            for (int i = 6; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+    }
+    else if (strcmp(modeStr, "Weapon") == 0) {
+        uint8_t startPosition = feedbackArray[0];
+        uint8_t endPosition = feedbackArray[1];
+        uint8_t strength = feedbackArray[2];
+
+        if (startPosition > 7 || startPosition < 2 || endPosition > 8 || 
+            endPosition <= startPosition || strength > 8) {
+            return;
+        }
+        if (strength > 0) {
+            uint16_t num = static_cast<uint16_t>(
+                1 << startPosition | 1 << endPosition);
+
+            trigger.Mode = Trigger::Weapon;
+            trigger.Forces[0] = static_cast<uint8_t>(num & 0xFF);
+            trigger.Forces[1] = static_cast<uint8_t>((num >> 8) & 0xFF);
+            trigger.Forces[2] = strength - 1;
+            for (int i = 3; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+    }
+    else if (strcmp(modeStr, "Vibration") == 0) {
+        uint8_t position = feedbackArray[0];
+        uint8_t amplitude = feedbackArray[1];
+        uint8_t frequency = feedbackArray[2];
+
+        if (position > 9 || amplitude > 8) {
+            return;
+        }
+        if (amplitude > 0 && frequency > 0) {
+            uint8_t b = (uint8_t)((amplitude - 1) & 0x07);
+            uint32_t amplitudeZones = 0;
+            uint16_t activeZones = 0;
+
+            for (int i = position; i < 10; i++) {
+                amplitudeZones |= static_cast<uint32_t>(b << (3 * i));
+                activeZones |= static_cast<uint16_t>(1 << i);
+            }
+
+            trigger.Mode = Trigger::Vibration;
+            trigger.Forces[0] = static_cast<uint8_t>((activeZones >> 0) & 0xFF);
+            trigger.Forces[1] = static_cast<uint8_t>((activeZones >> 8) & 0xFF);
+            trigger.Forces[2] = static_cast<uint8_t>((amplitudeZones >> 0) & 0xFFF);
+            trigger.Forces[3] = static_cast<uint8_t>((amplitudeZones >> 8) & 0xFF);
+            trigger.Forces[4] = static_cast<uint8_t>((amplitudeZones >> 16) & 0xFF);
+            trigger.Forces[5] = static_cast<uint8_t>((amplitudeZones >> 24) & 0xFF);
+            trigger.Forces[6] = 0;
+            trigger.Forces[7] = 0;
+            trigger.Forces[8] = frequency;
+            trigger.Forces[9] = 0;
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+    }
+    else if (strcmp(modeStr, "Slope Feedback") == 0) {
+        uint8_t startPosition = feedbackArray[0];
+        uint8_t endPosition = feedbackArray[1];
+        uint8_t startStrength = feedbackArray[2];
+        uint8_t endStrength = feedbackArray[3];
+
+        if (startPosition > 8 || startPosition < 0 || endPosition > 9 || 
+            endPosition <= startPosition || startStrength > 8 || 
+            startStrength < 1 || endStrength > 8 || endStrength < 1) {
+            return;
+        }
+
+        uint8_t array[10] = {0};
+        float slope = static_cast<float>(endStrength - startStrength) /
+                     static_cast<float>(endPosition - startPosition);
+        
+        for (int i = startPosition; i < 10; i++) {
+            if (i <= endPosition) {
+                float strengthFloat = static_cast<float>(startStrength) +
+                                   slope * static_cast<float>(i - startPosition);
+                array[i] = static_cast<uint8_t>(std::round(strengthFloat));
+            }
+            else {
+                array[i] = endStrength;
+            }
+        }
+
+        bool anyStrength = false;
+        for (int i = 0; i < 10; i++) {
+            if (array[i] > 0) anyStrength = true;
+        }
+
+        if (anyStrength) {
+            uint32_t num = 0;
+            uint16_t num2 = 0;
+            for (int i = 0; i < 10; i++) {
+                if (array[i] > 0) {
+                    uint8_t b = (array[i] - 1) & 7;
+                    num |= static_cast<uint32_t>(b) << (3 * i);
+                    num2 |= static_cast<uint16_t>(1 << i);
+                }
+            }
+
+            trigger.Mode = Trigger::Feedback;
+            trigger.Forces[0] = static_cast<uint8_t>(num2 & 0xFF);
+            trigger.Forces[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+            trigger.Forces[2] = static_cast<uint8_t>(num & 0xFF);
+            trigger.Forces[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+            trigger.Forces[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+            trigger.Forces[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+            for (int i = 6; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+    }
+    else if (strcmp(modeStr, "Multiple Position Feedback") == 0) {
+        uint8_t strength[10];
+        for (int i = 0; i < 10; i++) {
+            strength[i] = feedbackArray[i];
+        }
+
+        bool anyStrength = false;
+        for (int i = 0; i < 10; i++) {
+            if (strength[i] > 0) anyStrength = true;
+        }
+
+        if (anyStrength) {
+            uint32_t num = 0;
+            uint16_t num2 = 0;
+            for (int i = 0; i < 10; i++) {
+                if (strength[i] > 0) {
+                    uint8_t b = (strength[i] - 1) & 7;
+                    num |= static_cast<uint32_t>(b) << (3 * i);
+                    num2 |= static_cast<uint16_t>(1 << i);
+                }
+            }
+
+            trigger.Mode = Trigger::Feedback;
+            trigger.Forces[0] = static_cast<uint8_t>(num2 & 0xFF);
+            trigger.Forces[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+            trigger.Forces[2] = static_cast<uint8_t>(num & 0xFF);
+            trigger.Forces[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+            trigger.Forces[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+            trigger.Forces[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+            for (int i = 6; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
+    }
+    else if (strcmp(modeStr, "Multiple Position Vibration") == 0) {
+        uint8_t frequency = feedbackArray[0];
+        uint8_t amplitude[10];
+        for (int i = 0; i < 10; i++) {
+            amplitude[i] = feedbackArray[i + 1];
+        }
+
+        if (frequency > 0) {
+            bool anyAmplitude = false;
+            for (int i = 0; i < 10; i++) {
+                if (amplitude[i] > 0) anyAmplitude = true;
+            }
+
+            if (anyAmplitude) {
+                uint32_t num = 0;
+                uint16_t num2 = 0;
+                for (int i = 0; i < 10; i++) {
+                    if (amplitude[i] > 0) {
+                        uint8_t b = (amplitude[i] - 1) & 7;
+                        num |= static_cast<uint32_t>(b) << (3 * i);
+                        num2 |= static_cast<uint16_t>(1 << i);
+                    }
+                }
+
+                trigger.Mode = Trigger::Vibration;
+                trigger.Forces[0] = static_cast<uint8_t>(num2 & 0xFF);
+                trigger.Forces[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                trigger.Forces[2] = static_cast<uint8_t>(num & 0xFF);
+                trigger.Forces[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                trigger.Forces[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                trigger.Forces[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                trigger.Forces[6] = 0;
+                trigger.Forces[7] = 0;
+                trigger.Forces[8] = frequency;
+                trigger.Forces[9] = 0;
+                trigger.Forces[10] = 0;
+            }
+            else {
+                trigger.Mode = Trigger::Rigid_B;
+                for (int i = 0; i < 11; i++) {
+                    trigger.Forces[i] = 0;
+                }
+            }
+        }
+        else {
+            trigger.Mode = Trigger::Rigid_B;
+            for (int i = 0; i < 11; i++) {
+                trigger.Forces[i] = 0;
+            }
+        }
     }
 }
 
@@ -146,7 +420,17 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 }
             }
 
-            if (settings.TouchpadAsSelectStart) {
+            if (settings.TouchpadAsSelect && !settings.TouchpadAsStart) {
+                if (controller.State.touchBtn) {
+                    editedButtonState.share = true;
+                }
+            }
+            else if (settings.TouchpadAsStart && !settings.TouchpadAsSelect) {
+                if (controller.State.touchBtn) {
+                    editedButtonState.options = true;
+                }
+            }
+            else if (settings.TouchpadAsSelect && settings.TouchpadAsStart) {
                 if(controller.State.trackPadTouch0.IsActive && !controller.State.trackPadTouch1.IsActive)
                 {
                     if (controller.State.touchBtn && controller.State.trackPadTouch0.X <= 1000) {
@@ -535,33 +819,119 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                 controller.SetLightbar(settings.ControllerInput.Red,settings.ControllerInput.Green,settings.ControllerInput.Blue);
             }
 
-            if (!settings.RumbleToAT && !settings.HapticsToTriggers && !settings.CurrentlyUsingUDP) {
+            if (!settings.RumbleToAT && !settings.HapticsToTriggers && !settings.CurrentlyUsingUDP && settings.triggerFormat == "DSX") {
                controller.SetRightTrigger(
                     settings.ControllerInput.RightTriggerMode,
-                    settings.ControllerInput.RightTriggerForces[0],
-                    settings.ControllerInput.RightTriggerForces[1],
-                    settings.ControllerInput.RightTriggerForces[2],
-                    settings.ControllerInput.RightTriggerForces[3],
-                    settings.ControllerInput.RightTriggerForces[4],
-                    settings.ControllerInput.RightTriggerForces[5],
-                    settings.ControllerInput.RightTriggerForces[6],
-                    settings.ControllerInput.RightTriggerForces[7],
-                    settings.ControllerInput.RightTriggerForces[8],
-                    settings.ControllerInput.RightTriggerForces[9],
-                    settings.ControllerInput.RightTriggerForces[10]);
+                    settings.R2DSXForces[0],
+                    settings.R2DSXForces[1],
+                    settings.R2DSXForces[2],
+                    settings.R2DSXForces[3],
+                    settings.R2DSXForces[4],
+                    settings.R2DSXForces[5],
+                    settings.R2DSXForces[6],
+                    settings.R2DSXForces[7],
+                    settings.R2DSXForces[8],
+                    settings.R2DSXForces[9],
+                    settings.R2DSXForces[10]);
 
                 controller.SetLeftTrigger(settings.ControllerInput.LeftTriggerMode,
-                    settings.ControllerInput.LeftTriggerForces[0],
-                    settings.ControllerInput.LeftTriggerForces[1],
-                    settings.ControllerInput.LeftTriggerForces[2],
-                    settings.ControllerInput.LeftTriggerForces[3],
-                    settings.ControllerInput.LeftTriggerForces[4],
-                    settings.ControllerInput.LeftTriggerForces[5],
-                    settings.ControllerInput.LeftTriggerForces[6],
-                    settings.ControllerInput.LeftTriggerForces[7],
-                    settings.ControllerInput.LeftTriggerForces[8],
-                    settings.ControllerInput.LeftTriggerForces[9],
-                    settings.ControllerInput.LeftTriggerForces[10]);
+                    settings.L2DSXForces[0],
+                    settings.L2DSXForces[1],
+                    settings.L2DSXForces[2],
+                    settings.L2DSXForces[3],
+                    settings.L2DSXForces[4],
+                    settings.L2DSXForces[5],
+                    settings.L2DSXForces[6],
+                    settings.L2DSXForces[7],
+                    settings.L2DSXForces[8],
+                    settings.L2DSXForces[9],
+                    settings.L2DSXForces[10]);
+            }
+            else if (!settings.RumbleToAT && !settings.HapticsToTriggers && !settings.CurrentlyUsingUDP && settings.triggerFormat == "Sony") {
+#pragma region Apply Sony Trigger
+                TriggerSettings l2;
+                
+                if (settings.lmodestrSony == "Off") {
+                    l2.Mode = Trigger::Rigid_B;
+                    for (int i = 0; i < 11; i++) {
+                       l2.Forces[i] = 0;
+                    }
+                }
+                else if (settings.lmodestrSony == "Feedback") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2Feedback, sizeof(settings.L2Feedback));
+                }
+                else if (settings.lmodestrSony == "Weapon") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2WeaponFeedback, sizeof(settings.L2WeaponFeedback));
+                }
+                else if (settings.lmodestrSony == "Vibration") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2VibrationFeedback, sizeof(settings.L2VibrationFeedback));
+                }
+                else if (settings.lmodestrSony == "Slope Feedback") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2SlopeFeedback, sizeof(settings.L2SlopeFeedback));
+                }
+                else if (settings.lmodestrSony == "Multiple Position Feedback") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2MultiplePositionFeedback, sizeof(settings.L2MultiplePositionFeedback));
+                }
+                else if (settings.lmodestrSony == "Multiple Position Vibration") {
+                    setTriggerSettings(l2, settings.lmodestrSony.c_str(), settings.L2MultipleVibrationFeedback , sizeof(settings.L2MultipleVibrationFeedback));
+                }
+
+                TriggerSettings r2;
+                r2.right = true;
+                if (settings.rmodestrSony == "Off") {
+                    r2.Mode = Trigger::Rigid_B;
+                    for (int i = 0; i < 11; i++) {
+                       r2.Forces[i] = 0;
+                    }
+                }
+                else if (settings.rmodestrSony == "Feedback") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2Feedback, sizeof(settings.R2Feedback));
+                }
+                else if (settings.rmodestrSony == "Weapon") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2WeaponFeedback, sizeof(settings.R2WeaponFeedback));
+                }
+                else if (settings.rmodestrSony == "Vibration") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2VibrationFeedback, sizeof(settings.R2VibrationFeedback));
+                }
+                else if (settings.rmodestrSony == "Slope Feedback") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2SlopeFeedback, sizeof(settings.R2SlopeFeedback));
+                }
+                else if (settings.rmodestrSony == "Multiple Position Feedback") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2MultiplePositionFeedback, sizeof(settings.R2MultiplePositionFeedback));
+                }
+                else if (settings.rmodestrSony == "Multiple Position Vibration") {
+                    setTriggerSettings(r2, settings.rmodestrSony.c_str(), settings.R2MultipleVibrationFeedback , sizeof(settings.R2MultipleVibrationFeedback));
+                }
+
+                skipSonyTrigger:
+                controller.SetRightTrigger(
+                    r2.Mode,
+                    r2.Forces[0],
+                    r2.Forces[1],
+                    r2.Forces[2],
+                    r2.Forces[3],
+                    r2.Forces[4],
+                    r2.Forces[5],
+                    r2.Forces[6],
+                    r2.Forces[7],
+                    r2.Forces[8],
+                    r2.Forces[9],
+                    r2.Forces[10]);
+
+                controller.SetLeftTrigger(
+                    l2.Mode,
+                    l2.Forces[0],
+                    l2.Forces[1],
+                    l2.Forces[2],
+                    l2.Forces[3],
+                    l2.Forces[4],
+                    l2.Forces[5],
+                    l2.Forces[6],
+                    l2.Forces[7],
+                    l2.Forces[8],
+                    l2.Forces[9],
+                    l2.Forces[10]);
+#pragma endregion
             }
 
             if (settings.RumbleToAT && !settings.CurrentlyUsingUDP) {
@@ -1041,29 +1411,37 @@ int main()
 
     bool UpdateAvailable = false;
     try {
-        std::cout << "Downloading version string" << std::endl;
+        std::cout << "Attempting to download version string" << std::endl;
         cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version"));
+        std::cout << "Download completed, status code: " << response.status_code << std::endl;
 
-        if(response.status_code == 200)
-        {
-            if(response.text != "")
-            {
-                int version = stoi(response.text);
-                if (version > VERSION) {
-                    cout << "Update available!" << endl;
-                    UpdateAvailable = true;
+        if (response.status_code == 200) {
+            if (response.text != "") {
+                try {
+                    int version = stoi(response.text);
+                    if (version > VERSION) {
+                        cout << "Update available!" << endl;
+                        UpdateAvailable = true;
+                    } else {
+                        cout << "Application is up-to-date! Remote version: " << version << endl;
+                    }
+                } catch (const std::invalid_argument& e) {
+                    cout << "Invalid version string: " << e.what() << endl;
+                } catch (const std::out_of_range& e) {
+                    cout << "Version number out of range: " << e.what() << endl;
                 }
-                else {
-                    cout << "Application is up-to-date! Remote version: " << version << endl;
-                }
+            } else {
+                cout << "Version string is empty" << endl;
             }
-        }
-        else {
-            std::cout << "Version could not be downloaded " << response.status_code << std::endl;
+        } else {
+            std::cout << "Version could not be downloaded, status code: " << response.status_code << std::endl;
         }
     }
-    catch (const std::exception &e) {
-        cout << "Version check failed" << endl;
+    catch (const std::exception& e) {
+        cout << "Standard exception: " << e.what() << endl;
+    }
+    catch (...) {
+        cout << "Unknown exception occurred during download" << endl;
     }
  
     if (appConfig.ElevateOnStartup) {
@@ -1265,6 +1643,8 @@ int main()
     HWND hwnd = glfwGetWin32Window(window);
     BOOL useDarkMode = TRUE;
 
+    glfwSwapInterval(0);
+
     if (useDarkMode) {
         if (FAILED(DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode)))) {
             fprintf(stderr, "Failed to set dark mode for window.\n");
@@ -1357,7 +1737,7 @@ int main()
             }
         }
 
-        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight)));
+        ImGui::SetNextWindowSize(ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight-MainMenuBarHeight)));
         ImGui::SetNextWindowPos(ImVec2(0, MainMenuBarHeight));
         if (ImGui::Begin("Main", nullptr, window_flags))
         {
@@ -1812,207 +2192,486 @@ int main()
 
                                 if(!s.RumbleToAT && !s.HapticsToTriggers)
                                 {
-                                    if (ImGui::BeginCombo(strings.LeftTriggerMode.c_str(),
-                                        s.lmodestr.c_str())) {
-                                        if (ImGui::Selectable("Off", false)) {
-                                            s.lmodestr = "Off";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Off;
+                                    ImGui::SetNextItemWidth(150);
+                                    if (ImGui::BeginCombo(strings.TriggerFormat.c_str(), s.triggerFormat.c_str())) {
+                                        if (ImGui::Selectable("Sony", false)) {
+                                            s.triggerFormat = "Sony";
                                         }
-                                        if (ImGui::Selectable("Rigid", false)) {
-                                            s.lmodestr = "Rigid";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Rigid;
-                                        }
-                                        if (ImGui::Selectable("Pulse", false)) {
-                                            s.lmodestr = "Pulse";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Pulse;
-                                        }
-                                        if (ImGui::Selectable("Rigid_A", false)) {
-                                            s.lmodestr = "Rigid_A";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Rigid_A;
-                                        }
-                                        if (ImGui::Selectable("Rigid_B", false)) {
-                                            s.lmodestr = "Rigid_B";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Rigid_B;
-                                        }
-                                        if (ImGui::Selectable("Rigid_AB", false)) {
-                                            s.lmodestr = "Rigid_AB";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Rigid_AB;
-                                        }
-                                        if (ImGui::Selectable("Pulse_A", false)) {
-                                            s.lmodestr = "Pulse_A";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Pulse_A;
-                                        }
-                                        if (ImGui::Selectable("Pulse_B", false)) {
-                                            s.lmodestr = "Pulse_B";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Pulse_B;
-                                        }
-                                        if (ImGui::Selectable("Pulse_AB", false)) {
-                                            s.lmodestr = "Pulse_AB";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Pulse_AB;
-                                        }
-                                        if (ImGui::Selectable("Calibration", false)) {
-                                            s.lmodestr = "Calibration";
-                                            s.ControllerInput.LeftTriggerMode =
-                                                Trigger::Calibration;
+                                        if (ImGui::Selectable("DSX", false)) {
+                                            s.triggerFormat = "DSX";
                                         }
 
                                         ImGui::EndCombo();
                                     }
-                                    ImGui::SliderInt("LT 1",
-                                        &s.ControllerInput.LeftTriggerForces[0],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 2",
-                                        &s.ControllerInput.LeftTriggerForces[1],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 3",
-                                        &s.ControllerInput.LeftTriggerForces[2],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 4",
-                                        &s.ControllerInput.LeftTriggerForces[3],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 5",
-                                        &s.ControllerInput.LeftTriggerForces[4],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 6",
-                                        &s.ControllerInput.LeftTriggerForces[5],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 7",
-                                        &s.ControllerInput.LeftTriggerForces[6],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 8",
-                                        &s.ControllerInput.LeftTriggerForces[7],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 9",
-                                        &s.ControllerInput.LeftTriggerForces[8],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 10",
-                                        &s.ControllerInput.LeftTriggerForces[9],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("LT 11",
-                                        &s.ControllerInput.LeftTriggerForces[10],
-                                        0,
-                                        255);
 
-                                    ImGui::Spacing();
+                                    ImGui::SetNextItemWidth(150);
+                                    if (ImGui::BeginCombo(strings.SelectedTrigger.c_str(), s.curTrigger)) {
+                                        if (ImGui::Selectable("L2", false)) {
+                                            s.curTrigger = "L2";
+                                        }
+                                        if (ImGui::Selectable("R2", false)) {
+                                            s.curTrigger = "R2";
+                                        }
 
-                                    if (ImGui::BeginCombo(strings.RightTriggerMode.c_str(),
-                                        s.rmodestr.c_str())) {
-                                        if (ImGui::Selectable("Off", false)) {
-                                            s.rmodestr = "Off";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Off;
-                                        }
-                                        if (ImGui::Selectable("Rigid", false)) {
-                                            s.rmodestr = "Rigid";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Rigid;
-                                        }
-                                        if (ImGui::Selectable("Pulse", false)) {
-                                            s.rmodestr = "Pulse";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Pulse;
-                                        }
-                                        if (ImGui::Selectable("Rigid_A", false)) {
-                                            s.rmodestr = "Rigid_A";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Rigid_A;
-                                        }
-                                        if (ImGui::Selectable("Rigid_B", false)) {
-                                            s.rmodestr = "Rigid_B";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Rigid_B;
-                                        }
-                                        if (ImGui::Selectable("Rigid_AB", false)) {
-                                            s.rmodestr = "Rigid_AB";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Rigid_AB;
-                                        }
-                                        if (ImGui::Selectable("Pulse_A", false)) {
-                                            s.rmodestr = "Pulse_A";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Pulse_A;
-                                        }
-                                        if (ImGui::Selectable("Pulse_B", false)) {
-                                            s.rmodestr = "Pulse_B";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Pulse_B;
-                                        }
-                                        if (ImGui::Selectable("Pulse_AB", false)) {
-                                            s.rmodestr = "Pulse_AB";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Pulse_AB;
-                                        }
-                                        if (ImGui::Selectable("Calibration", false)) {
-                                            s.rmodestr = "Calibration";
-                                            s.ControllerInput.RightTriggerMode =
-                                                Trigger::Calibration;
-                                        }
                                         ImGui::EndCombo();
                                     }
-                                    ImGui::SliderInt("RT 1",
-                                        &s.ControllerInput.RightTriggerForces[0],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 2",
-                                        &s.ControllerInput.RightTriggerForces[1],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 3",
-                                        &s.ControllerInput.RightTriggerForces[2],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 4",
-                                        &s.ControllerInput.RightTriggerForces[3],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 5",
-                                        &s.ControllerInput.RightTriggerForces[4],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 6",
-                                        &s.ControllerInput.RightTriggerForces[5],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 7",
-                                        &s.ControllerInput.RightTriggerForces[6],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 8",
-                                        &s.ControllerInput.RightTriggerForces[7],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 9",
-                                        &s.ControllerInput.RightTriggerForces[8],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 10",
-                                        &s.ControllerInput.RightTriggerForces[9],
-                                        0,
-                                        255);
-                                    ImGui::SliderInt("RT 11",
-                                        &s.ControllerInput.RightTriggerForces[10],
-                                        0,
-                                        255);
+
+                                    ImGui::SetNextItemWidth(300);
+
+                                    if(s.triggerFormat == "DSX")
+                                    {
+                                        if (s.curTrigger == "L2") {
+                                            if (ImGui::BeginCombo(strings.LeftTriggerMode.c_str(),
+                                                s.lmodestr.c_str())) {
+                                                if (ImGui::Selectable("Off", false)) {
+                                                    s.lmodestr = "Off";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Off;
+                                                }
+                                                if (ImGui::Selectable("Rigid", false)) {
+                                                    s.lmodestr = "Rigid";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Rigid;
+                                                }
+                                                if (ImGui::Selectable("Pulse", false)) {
+                                                    s.lmodestr = "Pulse";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Pulse;
+                                                }
+                                                if (ImGui::Selectable("Rigid_A", false)) {
+                                                    s.lmodestr = "Rigid_A";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Rigid_A;
+                                                }
+                                                if (ImGui::Selectable("Rigid_B", false)) {
+                                                    s.lmodestr = "Rigid_B";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Rigid_B;
+                                                }
+                                                if (ImGui::Selectable("Rigid_AB", false)) {
+                                                    s.lmodestr = "Rigid_AB";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Rigid_AB;
+                                                }
+                                                if (ImGui::Selectable("Pulse_A", false)) {
+                                                    s.lmodestr = "Pulse_A";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Pulse_A;
+                                                }
+                                                if (ImGui::Selectable("Pulse_B", false)) {
+                                                    s.lmodestr = "Pulse_B";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Pulse_B;
+                                                }
+                                                if (ImGui::Selectable("Pulse_AB", false)) {
+                                                    s.lmodestr = "Pulse_AB";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Pulse_AB;
+                                                }
+                                                if (ImGui::Selectable("Calibration", false)) {
+                                                    s.lmodestr = "Calibration";
+                                                    s.ControllerInput.LeftTriggerMode =
+                                                        Trigger::Calibration;
+                                                }
+
+                                                ImGui::EndCombo();
+                                            }
+
+                                            ImGui::SliderInt("LT 1",
+                                                &s.L2DSXForces[0],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 2",
+                                                &s.L2DSXForces[1],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 3",
+                                                &s.L2DSXForces[2],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 4",
+                                                &s.L2DSXForces[3],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 5",
+                                                &s.L2DSXForces[4],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 6",
+                                                &s.L2DSXForces[5],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 7",
+                                                &s.L2DSXForces[6],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 8",
+                                                &s.L2DSXForces[7],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 9",
+                                                &s.L2DSXForces[8],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 10",
+                                                &s.L2DSXForces[9],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("LT 11",
+                                                &s.L2DSXForces[10],
+                                                0,
+                                                255);
+                                        }
+                                        else {
+                                            if (ImGui::BeginCombo(strings.RightTriggerMode.c_str(),
+                                                s.rmodestr.c_str())) {
+                                                if (ImGui::Selectable("Off", false)) {
+                                                    s.rmodestr = "Off";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Off;
+                                                }
+                                                if (ImGui::Selectable("Rigid", false)) {
+                                                    s.rmodestr = "Rigid";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Rigid;
+                                                }
+                                                if (ImGui::Selectable("Pulse", false)) {
+                                                    s.rmodestr = "Pulse";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Pulse;
+                                                }
+                                                if (ImGui::Selectable("Rigid_A", false)) {
+                                                    s.rmodestr = "Rigid_A";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Rigid_A;
+                                                }
+                                                if (ImGui::Selectable("Rigid_B", false)) {
+                                                    s.rmodestr = "Rigid_B";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Rigid_B;
+                                                }
+                                                if (ImGui::Selectable("Rigid_AB", false)) {
+                                                    s.rmodestr = "Rigid_AB";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Rigid_AB;
+                                                }
+                                                if (ImGui::Selectable("Pulse_A", false)) {
+                                                    s.rmodestr = "Pulse_A";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Pulse_A;
+                                                }
+                                                if (ImGui::Selectable("Pulse_B", false)) {
+                                                    s.rmodestr = "Pulse_B";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Pulse_B;
+                                                }
+                                                if (ImGui::Selectable("Pulse_AB", false)) {
+                                                    s.rmodestr = "Pulse_AB";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Pulse_AB;
+                                                }
+                                                if (ImGui::Selectable("Calibration", false)) {
+                                                    s.rmodestr = "Calibration";
+                                                    s.ControllerInput.RightTriggerMode =
+                                                        Trigger::Calibration;
+                                                }
+                                                ImGui::EndCombo();
+                                            }
+
+                                            ImGui::SliderInt("RT 1",
+                                                &s.R2DSXForces[0],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 2",
+                                                &s.R2DSXForces[1],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 3",
+                                                &s.R2DSXForces[2],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 4",
+                                                &s.R2DSXForces[3],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 5",
+                                                &s.R2DSXForces[4],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 6",
+                                                &s.R2DSXForces[5],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 7",
+                                                &s.R2DSXForces[6],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 8",
+                                                &s.R2DSXForces[7],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 9",
+                                                &s.R2DSXForces[8],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 10",
+                                                &s.R2DSXForces[9],
+                                                0,
+                                                255);
+                                            ImGui::SliderInt("RT 11",
+                                                &s.R2DSXForces[10],
+                                                0,
+                                                255);
+
+                                        }
+                                    }
+                                    else if (s.triggerFormat == "Sony") {
+                                        if (s.curTrigger == "L2") {
+                                            if (ImGui::BeginCombo(strings.LeftTriggerMode.c_str(),
+                                                s.lmodestrSony.c_str())) {
+                                                if (ImGui::Selectable("Off", false)) {
+                                                    s.lmodestrSony = "Off";
+                                                }
+                                                if (ImGui::Selectable("Feedback", false)) {
+                                                    s.lmodestrSony = "Feedback";
+                                                }
+                                                if (ImGui::Selectable("Weapon", false)) {
+                                                    s.lmodestrSony = "Weapon";
+                                                }
+                                                if (ImGui::Selectable("Vibration", false)) {
+                                                    s.lmodestrSony = "Vibration";
+                                                }
+                                                if (ImGui::Selectable("Slope Feedback", false)) {
+                                                    s.lmodestrSony = "Slope Feedback";
+                                                }
+                                                if (ImGui::Selectable("Multiple Position Feedback", false)) {
+                                                    s.lmodestrSony = "Multiple Position Feedback";
+                                                }
+                                                if (ImGui::Selectable("Multiple Position Vibration", false)) {
+                                                    s.lmodestrSony = "Multiple Position Vibration";
+                                                }
+
+                                                ImGui::EndCombo();
+                                            }
+
+                                            if (s.lmodestrSony == "Feedback") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Position.c_str(), &s.L2Feedback[0], 0, 9);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Strength.c_str(), &s.L2Feedback[1], 0, 8);
+                                            }
+                                            else if (s.lmodestrSony == "Weapon") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartPosition.c_str(), &s.L2WeaponFeedback[0], 2, 7);
+
+                                                if (s.L2WeaponFeedback[1] < s.L2WeaponFeedback[0])
+                                                    s.L2WeaponFeedback[1] = s.L2WeaponFeedback[0];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndPosition.c_str(), &s.L2WeaponFeedback[1], s.L2WeaponFeedback[0], 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Strength.c_str(), &s.L2WeaponFeedback[2], 0, 8);
+                                            }
+                                            else if (s.lmodestrSony == "Vibration") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Position.c_str(), &s.L2VibrationFeedback[0], 0, 9);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Amplitude.c_str(), &s.L2VibrationFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Frequency.c_str(), &s.L2VibrationFeedback[2], 0, 255);
+                                            }
+                                            else if (s.lmodestrSony == "Slope Feedback") {
+                                                if (s.L2SlopeFeedback[1] < s.L2SlopeFeedback[0])
+                                                    s.L2SlopeFeedback[0] = s.L2SlopeFeedback[1];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartPosition.c_str(), &s.L2SlopeFeedback[0], 0, s.L2SlopeFeedback[1]);
+
+                                                if (s.L2SlopeFeedback[1] < s.L2SlopeFeedback[0])
+                                                    s.L2SlopeFeedback[1] = s.L2SlopeFeedback[0];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndPosition.c_str(), &s.L2SlopeFeedback[1], s.L2SlopeFeedback[0], 9);
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartStrength.c_str(), &s.L2SlopeFeedback[2], 1, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndStrength.c_str(), &s.L2SlopeFeedback[3], 1, 8);
+                                            }
+                                            else if (s.lmodestrSony == "Multiple Position Feedback") {
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(1)).c_str(), &s.L2MultiplePositionFeedback[0], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.L2MultiplePositionFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.L2MultiplePositionFeedback[2], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.L2MultiplePositionFeedback[3], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.L2MultiplePositionFeedback[4], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.L2MultiplePositionFeedback[5], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.L2MultiplePositionFeedback[6], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.L2MultiplePositionFeedback[7], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.L2MultiplePositionFeedback[8], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.L2MultiplePositionFeedback[9], 0, 8);
+                                            }
+                                            else if (s.lmodestrSony == "Multiple Position Vibration") {
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt("Frequency", &s.L2MultipleVibrationFeedback[0], 0, 255);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(1)).c_str(), &s.L2MultipleVibrationFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.L2MultipleVibrationFeedback[2], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.L2MultipleVibrationFeedback[3], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.L2MultipleVibrationFeedback[4], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.L2MultipleVibrationFeedback[5], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.L2MultipleVibrationFeedback[6], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.L2MultipleVibrationFeedback[7], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.L2MultipleVibrationFeedback[8], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.L2MultipleVibrationFeedback[9], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.L2MultipleVibrationFeedback[10], 0, 8);
+                                            }
+                                        }
+                                        else if (s.curTrigger == "R2") {
+                                            if (ImGui::BeginCombo(strings.RightTriggerMode.c_str(),
+                                                s.rmodestrSony.c_str())) {
+                                                if (ImGui::Selectable("Off", false)) {
+                                                    s.rmodestrSony = "Off";
+                                                }
+                                                if (ImGui::Selectable("Feedback", false)) {
+                                                    s.rmodestrSony = "Feedback";
+                                                }
+                                                if (ImGui::Selectable("Weapon", false)) {
+                                                    s.rmodestrSony = "Weapon";
+                                                }
+                                                if (ImGui::Selectable("Vibration", false)) {
+                                                    s.rmodestrSony = "Vibration";
+                                                }
+                                                if (ImGui::Selectable("Slope Feedback", false)) {
+                                                    s.rmodestrSony = "Slope Feedback";
+                                                }
+                                                if (ImGui::Selectable("Multiple Position Feedback", false)) {
+                                                    s.rmodestrSony = "Multiple Position Feedback";
+                                                }
+                                                if (ImGui::Selectable("Multiple Position Vibration", false)) {
+                                                    s.rmodestrSony = "Multiple Position Vibration";
+                                                }
+
+                                                ImGui::EndCombo();
+                                            }
+
+                                            if (s.rmodestrSony == "Feedback") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Position.c_str(), &s.R2Feedback[0], 0, 9);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Strength.c_str(), &s.R2Feedback[1], 0, 8);
+                                            }
+                                            else if (s.rmodestrSony == "Weapon") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartPosition.c_str(), &s.R2WeaponFeedback[0], 2, 7);
+
+                                                if (s.R2WeaponFeedback[1] < s.R2WeaponFeedback[0])
+                                                    s.R2WeaponFeedback[1] = s.R2WeaponFeedback[0];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndPosition.c_str(), &s.R2WeaponFeedback[1], s.R2WeaponFeedback[0], 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Strength.c_str(), &s.R2WeaponFeedback[2], 0, 8);
+                                            }
+                                            else if (s.rmodestrSony == "Vibration") {
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Position.c_str(), &s.R2VibrationFeedback[0], 0, 9);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Amplitude.c_str(), &s.R2VibrationFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.Frequency.c_str(), &s.R2VibrationFeedback[2], 0, 255);
+                                            }
+                                            else if (s.rmodestrSony == "Slope Feedback") {
+                                                if (s.R2SlopeFeedback[1] < s.R2SlopeFeedback[0])
+                                                    s.R2SlopeFeedback[0] = s.R2SlopeFeedback[1];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartPosition.c_str(), &s.R2SlopeFeedback[0], 0, s.R2SlopeFeedback[1]);
+
+                                                if (s.R2SlopeFeedback[1] < s.R2SlopeFeedback[0])
+                                                    s.R2SlopeFeedback[1] = s.R2SlopeFeedback[0];
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndPosition.c_str(), &s.R2SlopeFeedback[1], s.R2SlopeFeedback[0], 9);
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.StartStrength.c_str(), &s.R2SlopeFeedback[2], 1, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(strings.EndStrength.c_str(), &s.R2SlopeFeedback[3], 1, 8);
+                                            }
+                                            else if (s.rmodestrSony == "Multiple Position Feedback") {
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(1)).c_str(), &s.R2MultiplePositionFeedback[0], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.R2MultiplePositionFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.R2MultiplePositionFeedback[2], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.R2MultiplePositionFeedback[3], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.R2MultiplePositionFeedback[4], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.R2MultiplePositionFeedback[5], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.R2MultiplePositionFeedback[6], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.R2MultiplePositionFeedback[7], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.R2MultiplePositionFeedback[8], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.R2MultiplePositionFeedback[9], 0, 8);
+                                            }
+                                            else if (s.rmodestrSony == "Multiple Position Vibration") {
+
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt("Frequency", &s.R2MultipleVibrationFeedback[0], 0, 255);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(1)).c_str(), &s.R2MultipleVibrationFeedback[1], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.R2MultipleVibrationFeedback[2], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.R2MultipleVibrationFeedback[3], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.R2MultipleVibrationFeedback[4], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.R2MultipleVibrationFeedback[5], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.R2MultipleVibrationFeedback[6], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.R2MultipleVibrationFeedback[7], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.R2MultipleVibrationFeedback[8], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.R2MultipleVibrationFeedback[9], 0, 8);
+                                                ImGui::SetNextItemWidth(300);
+                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.R2MultipleVibrationFeedback[10], 0, 8);
+                                            }
+                                        }
+                                    }
+
                                     ImGui::Separator();
+                                    ImGui::Spacing();
                                 }
                             }
                             }
@@ -2175,6 +2834,7 @@ int main()
 
                                     ImGui::Checkbox(strings.TouchpadToMouse.c_str(), &s.TouchpadToMouse);
                                     Tooltip(strings.Tooltip_TouchpadToMouse.c_str());
+                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderFloat(strings.Sensitivity.c_str(), &s.swipeThreshold, 0.01f, 3.0f);
                             }
 
@@ -2238,13 +2898,18 @@ int main()
 
                                     ImGui::Separator();
 
+                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
+                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
+                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.L2Deadzone.c_str(), &s.L2Deadzone, 1, 255);
+                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.R2Deadzone.c_str(), &s.R2Deadzone, 1, 255);
                                     ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
                                     Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
-                                    ImGui::Checkbox(strings.TouchpadAsSelectStart.c_str(), &s.TouchpadAsSelectStart);
+                                    ImGui::Checkbox(strings.TouchpadAsSelect.c_str(), &s.TouchpadAsSelect);
+                                    ImGui::Checkbox(strings.TouchpadAsStart.c_str(), &s.TouchpadAsStart);
                                     ImGui::Checkbox(strings.TouchpadAsRightStick.c_str(), &s.TouchpadToRXRY);
                                     ImGui::Checkbox(strings.OverrideDS4Lightbar.c_str(), &s.OverrideDS4Lightbar);
                             }

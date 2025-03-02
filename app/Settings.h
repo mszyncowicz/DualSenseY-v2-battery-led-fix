@@ -20,16 +20,33 @@ struct AudioPlay {
     bool Loop = false;
 };
 
+
 class Settings
 {
 public:
     DualsenseUtils::InputFeatures ControllerInput;
+    int L2Feedback[2]{0};
+    int R2Feedback[2]{0};
+    int L2WeaponFeedback[3]{0};
+    int R2WeaponFeedback[3]{0};
+    int L2VibrationFeedback[3]{0};
+    int R2VibrationFeedback[3]{0};
+    int L2SlopeFeedback[4]{0};
+    int R2SlopeFeedback[4]{0};
+    int L2MultiplePositionFeedback[10]{0};
+    int R2MultiplePositionFeedback[10]{0};
+    int L2MultipleVibrationFeedback[11]{0};
+    int R2MultipleVibrationFeedback[11]{0};
+    int L2DSXForces[11]{0};
+    int R2DSXForces[11]{0};
     bool AudioToLED = false;
     bool DiscoMode = false;
     int lrumble = 0;
     int rrumble = 0;
-    string lmodestr = "Off";
-    string rmodestr = "Off";
+    std::string lmodestr = "Off";
+    std::string rmodestr = "Off";
+    std::string lmodestrSony = "Off";
+    std::string rmodestrSony = "Off";
     bool UseUDP = false;
     bool CurrentlyUsingUDP = false;
     bool MicScreenshot = false;
@@ -51,6 +68,8 @@ public:
     int MaxRightTriggerRigid = 255;
     bool DualShock4V2 = false;
     bool TouchpadAsSelectStart = false;
+    bool TouchpadAsSelect = false;
+    bool TouchpadAsStart = false;
     bool SwapTriggersShortcut = false;
     bool UseHeadset = false;
     float swipeThreshold = 0.50f;
@@ -96,6 +115,8 @@ public:
     bool R2ToMouseClick = false;
     int MaxLeftMotor = 255;
     int MaxRightMotor = 255;
+    const char* curTrigger = "L2";
+    std::string triggerFormat = "Sony"; // OR DSX
 
     // UDP HAPTICS STUFF, DONT SAVE
     std::string CurrentHapticFile = "";
@@ -110,7 +131,22 @@ public:
         nlohmann::json j;
         j["ControllerInput"] = ControllerInput.to_json();
 
+        j["R2Feedback"] = R2Feedback;
+        j["R2WeaponFeedback"] = R2WeaponFeedback;
+        j["R2VibrationFeedback"] = R2VibrationFeedback;
+        j["R2SlopeFeedback"] = R2SlopeFeedback;
+        j["R2MultiplePositionFeedback"] = R2MultiplePositionFeedback;
+        j["R2MultipleVibrationFeedback"] = R2MultipleVibrationFeedback;
+        j["R2DSXForces"] = L2DSXForces;
+        j["L2Feedback"] = L2Feedback;
+        j["L2WeaponFeedback"] = L2WeaponFeedback;
+        j["L2VibrationFeedback"] = L2VibrationFeedback;
+        j["L2SlopeFeedback"] = L2SlopeFeedback;
+        j["L2MultiplePositionFeedback"] = L2MultiplePositionFeedback;
+        j["L2MultipleVibrationFeedback"] = L2MultipleVibrationFeedback;
+        j["L2DSXForces"] = L2DSXForces;
         j["MaxLeftMotor"] = MaxLeftMotor;
+        j["triggerFormat"] = triggerFormat;
         j["MaxRightMotor"] = MaxRightMotor;
         j["R2ToMouseClick"] = R2ToMouseClick;
         j["GyroToRightAnalogStickShortcut"] = GyroToRightAnalogStickShortcut;
@@ -142,6 +178,8 @@ public:
         j["MEDIUM_COLOR"] = MEDIUM_COLOR;
         j["LOUD_COLOR"] = LOUD_COLOR;
         j["TouchpadAsSelectStart"] = TouchpadAsSelectStart;
+        j["TouchpadAsSelect"] = TouchpadAsSelect;
+        j["TouchpadAsStart"] = TouchpadAsStart;
         j["UseHeadset"] = UseHeadset;
         j["TouchpadToMouseShortcut"] = TouchpadToMouseShortcut;
         j["DualShock4V2"] = DualShock4V2;
@@ -154,6 +192,8 @@ public:
         j["rrumble"] = rrumble;
         j["lmodestr"] = lmodestr;
         j["rmodestr"] = rmodestr;
+        j["lmodestrSony"] = lmodestrSony;
+        j["rmodestrSony"] = rmodestrSony;
         j["UseUDP"] = UseUDP;
         j["MicScreenshot"] = MicScreenshot;
         j["MicFunc"] = MicFunc;
@@ -185,6 +225,23 @@ public:
         // Parse ControllerInput first
         if (j.contains("ControllerInput")) settings.ControllerInput = DualsenseUtils::InputFeatures::from_json(j.at("ControllerInput"));
 
+        if (j.contains("R2Feedback"))       j.at("R2Feedback").get_to(settings.R2Feedback);
+        if (j.contains("R2WeaponFeedback"))       j.at("R2WeaponFeedback").get_to(settings.R2WeaponFeedback);
+        if (j.contains("R2VibrationFeedback"))       j.at("R2VibrationFeedback").get_to(settings.R2VibrationFeedback);
+        if (j.contains("R2SlopeFeedback"))       j.at("R2SlopeFeedback").get_to(settings.R2SlopeFeedback);
+        if (j.contains("R2MultiplePositionFeedback"))       j.at("R2MultiplePositionFeedback").get_to(settings.R2MultiplePositionFeedback);
+        if (j.contains("R2MultipleVibrationFeedback"))       j.at("R2MultipleVibrationFeedback").get_to(settings.R2MultipleVibrationFeedback);
+        if (j.contains("R2DSXForces"))       j.at("R2DSXForces").get_to(settings.R2DSXForces);
+
+        if (j.contains("L2Feedback"))       j.at("L2Feedback").get_to(settings.L2Feedback);
+        if (j.contains("L2WeaponFeedback"))       j.at("L2WeaponFeedback").get_to(settings.L2WeaponFeedback);
+        if (j.contains("L2VibrationFeedback"))       j.at("L2VibrationFeedback").get_to(settings.L2VibrationFeedback);
+        if (j.contains("L2SlopeFeedback"))       j.at("L2SlopeFeedback").get_to(settings.L2SlopeFeedback);
+        if (j.contains("L2MultiplePositionFeedback"))       j.at("L2MultiplePositionFeedback").get_to(settings.L2MultiplePositionFeedback);
+        if (j.contains("L2MultipleVibrationFeedback"))       j.at("L2MultipleVibrationFeedback").get_to(settings.L2MultipleVibrationFeedback);
+        if (j.contains("L2DSXForces"))       j.at("L2DSXForces").get_to(settings.L2DSXForces);
+
+        if (j.contains("triggerFormat"))       j.at("triggerFormat").get_to(settings.triggerFormat);
         if (j.contains("MaxLeftMotor"))       j.at("MaxLeftMotor").get_to(settings.MaxLeftMotor);
         if (j.contains("MaxRightMotor"))       j.at("MaxRightMotor").get_to(settings.MaxRightMotor);
         if (j.contains("R2ToMouseClick"))       j.at("R2ToMouseClick").get_to(settings.R2ToMouseClick);
@@ -220,6 +277,8 @@ public:
         if (j.contains("TouchpadToMouseShortcut"))       j.at("TouchpadToMouseShortcut").get_to(settings.TouchpadToMouseShortcut);
         if (j.contains("UseHeadset"))       j.at("UseHeadset").get_to(settings.UseHeadset);
         if (j.contains("TouchpadAsSelectStart"))       j.at("TouchpadAsSelectStart").get_to(settings.TouchpadAsSelectStart);
+        if (j.contains("TouchpadAsSelect"))       j.at("TouchpadAsSelect").get_to(settings.TouchpadAsSelect);
+        if (j.contains("TouchpadAsStart"))       j.at("TouchpadAsStart").get_to(settings.TouchpadAsStart);
         if (j.contains("DualShock4V2"))       j.at("DualShock4V2").get_to(settings.DualShock4V2);
         if (j.contains("LeftAnalogDeadzone"))       j.at("LeftAnalogDeadzone").get_to(settings.LeftAnalogDeadzone);
         if (j.contains("RightAnalogDeadzone"))        j.at("RightAnalogDeadzone").get_to(settings.RightAnalogDeadzone);
@@ -230,6 +289,8 @@ public:
         if (j.contains("rrumble"))          j.at("rrumble").get_to(settings.rrumble);
         if (j.contains("lmodestr"))         j.at("lmodestr").get_to(settings.lmodestr);
         if (j.contains("rmodestr"))         j.at("rmodestr").get_to(settings.rmodestr);
+        if (j.contains("lmodestrSony"))         j.at("lmodestrSony").get_to(settings.lmodestrSony);
+        if (j.contains("rmodestrSony"))         j.at("rmodestrSony").get_to(settings.rmodestrSony);
         if (j.contains("UseUDP"))           j.at("UseUDP").get_to(settings.UseUDP);
         if (j.contains("MicScreenshot"))    j.at("MicScreenshot").get_to(settings.MicScreenshot);
         if (j.contains("MicFunc"))          j.at("MicFunc").get_to(settings.MicFunc);

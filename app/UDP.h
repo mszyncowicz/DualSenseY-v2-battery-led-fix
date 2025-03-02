@@ -14,12 +14,68 @@
 #include <direct.h>
 #pragma comment(lib, "Ws2_32.lib")
 
+enum ConnectionType {
+    USB,
+    BLUETOOTH,
+    DONGLE
+};
+
+enum DeviceType {
+    DUALSENSE,
+    DUALSENSE_EDGE,
+    DUALSHOCK_V1,
+    DUALSHOCK_V2,
+    DUALSHOCK_DONGLE,
+    PS_VR2_LeftController,
+    PS_VR2_RightController,
+    ACCESS_CONTROLLER
+};
+
+struct Device {
+    int Index;
+    std::string MacAddress;
+    DeviceType DeviceType;
+    ConnectionType ConnectionType;
+    int BatteryLevel;
+    bool IsSupportAT;
+    bool IsSupportLightBar;
+    bool IsSupportPlayerLED;
+    bool IsSupportMicLED;
+
+    nlohmann::json to_json() const {
+        nlohmann::json j;
+        j["Index"] = Index;
+        j["MacAddress"] = MacAddress;
+        j["DeviceType"] = DeviceType; // Convert enum to string
+        j["ConnectionType"] = ConnectionType; // Convert enum to string
+        j["BatteryLevel"] = BatteryLevel;
+        j["IsSupportAT"] = IsSupportAT;
+        j["IsSupportLightBar"] = IsSupportLightBar;
+        j["IsSupportPlayerLED"] = IsSupportPlayerLED;
+        j["IsSupportMicLED"] = IsSupportMicLED;
+        return j;
+    }
+};
+
 struct UDPResponse
 {
     std::string Status;
     std::string TimeReceived;
     bool isControllerConnected;
     int BatteryLevel;
+    std::vector<Device> Devices;
+
+    nlohmann::json to_json() const {
+        nlohmann::json j;
+        j["Status"] = Status;
+        j["TimeReceived"] = TimeReceived;
+        j["isControllerConnected"] = isControllerConnected;
+        j["BatteryLevel"] = BatteryLevel;
+        for (const auto& device : Devices) {
+            j["Devices"].push_back(device.to_json());
+        }
+        return j;
+    }
 };
 
 class UDP
@@ -29,30 +85,25 @@ public:
     int Battery;
     Settings thisSettings;    
     std::chrono::high_resolution_clock::time_point LastTime = std::chrono::high_resolution_clock::now();
-    struct UDPResponse
-    {
-        std::string Status;
-        std::string TimeReceived;
-        bool isControllerConnected;
-        int BatteryLevel;
 
-        std::string toJSON() const
-        {
-            std::ostringstream oss;
-            oss << "{ \"Status\": \"" << Status << "\", "
-                << "\"TimeReceived\": \"" << TimeReceived << "\", "
-                << "\"isControllerConnected\": "
-                << (isControllerConnected ? "true" : "false") << ", "
-                << "\"BatteryLevel\": " << BatteryLevel << " }";
-            return oss.str();
+    UDP(int port = 6969) : serverOn(false), Battery(100), unavailable(false) {
+        // Create directory with error checking
+        std::error_code ec;
+        if (!filesystem::create_directories("C:/Temp/DualSenseX", ec) && ec) {
+            std::cerr << "Directory creation failed: " << ec.message() << std::endl;
         }
-    };
 
-    UDP() : serverOn(false), Battery(100), unavailable(false)
-    {
-        filesystem::create_directories("C:/Temp/DualSenseX");
-        std::ofstream portFile("C:\\Temp\\DualSenseX\\DualSenseX_PortNumber.txt", std::ios::trunc);     
-        if (portFile) portFile << "6969";
+        std::ofstream portFile("C:/Temp/DualSenseX/DualSenseX_PortNumber.txt", std::ios::trunc);
+        if (!portFile.is_open()) {
+            std::cerr << "Failed to open port file" << std::endl;
+        }
+        else {
+            portFile << port;
+        }
+        
+        if (!portFile.good()) {
+            std::cerr << "Failed to write to port file" << std::endl;
+        }
 
         Connect();
     }
@@ -80,9 +131,8 @@ public:
             return;
         }
 
-        std::ifstream portFile("C:/Temp/DualSenseX/DualSenseX_PortNumber.txt", std::ios_base::in);
+
         int portNumber = 6969;
-        portFile >> portNumber;
 
         sockaddr_in serverAddr{};
         serverAddr.sin_family = AF_INET;
@@ -197,14 +247,29 @@ public:
             
             newPacket = true;
 
-            UDPResponse response{"DSX Received UDP Instructions",
-                                 MyUtils::currentDateTime(),
-                                 true,
-                                 Battery};
+            Device dev{
+                1,                          // Index
+                "FU:CK:YO:UU:LO:OL",       // MacAddress
+                DeviceType::DUALSENSE,     // DeviceType
+                ConnectionType::USB,  // ConnectionType
+                Battery,                         // BatteryLevel
+                true,                       // IsSupportAT
+                true,                      // IsSupportLightBar
+                true,                       // IsSupportPlayerLED
+                true                       // IsSupportMicLED
+            };
 
-            std::string responseStr = response.toJSON();
-            //cout << responseStr << endl;
+            UDPResponse response{
+                "DSX Received UDP Instructions",
+                MyUtils::currentDateTime(),     // TimeReceived
+                true,                       // isControllerConnected
+                Battery,                         // BatteryLevel
+                {dev}                       // Devices (vector with one device)
+            };
 
+            nlohmann::json j = response.to_json();
+            std::string responseStr = j.dump(4);
+            std::cout << responseStr << std::endl;
             sendto(clientSocket,
                    responseStr.c_str(),
                    responseStr.size(),
@@ -236,6 +301,8 @@ public:
                 int intParam9 = getParameterValue(instr["parameters"][9]);
                 int intParam10 = getParameterValue(instr["parameters"][10]);
                 int intParam11 = getParameterValue(instr["parameters"][11]);
+                int intParam12 = getParameterValue(instr["parameters"][12]);
+                int intParam13 = getParameterValue(instr["parameters"][13]);
                 //int intParam12 = !instr["parameters"][12].is_null() ? static_cast<int>(instr["parameters"][12]) : 0;
 
                 switch (type)
@@ -249,8 +316,7 @@ public:
                         uint8_t firstFoot = 0;
                         uint8_t secondFoot = 0;
                         uint8_t frequency = 0;
-                        switch (intParam2)
-                        {
+                        switch (intParam2) {
                         case 0: //Normal
                         {
                             mode = Trigger::Rigid_B;
@@ -449,52 +515,52 @@ public:
                             case 0:
                                 mode = Trigger::Off;
                                 break;
-                                case 1:
+                            case 1:
                                 mode = Trigger::Rigid;
                                 break;
-                                case 2:
+                            case 2:
                                 mode = Trigger::Rigid_A;
                                 break;
-                                case 3:
+                            case 3:
                                 mode = Trigger::Rigid_B;
                                 break;
-                                case 4:
+                            case 4:
                                 mode = Trigger::Rigid_AB;
                                 break;
-                                case 5:
+                            case 5:
                                 mode = Trigger::Pulse;
                                 break;
-                                case 6:
+                            case 6:
                                 mode = Trigger::Pulse_A;
                                 break;
-                                case 7:
+                            case 7:
                                 mode = Trigger::Pulse_B;
                                 break;
-                                case 8:
+                            case 8:
                                 mode = Trigger::Pulse_AB;
                                 break;
-                                case 9:
+                            case 9:
                                 mode = Trigger::Pulse_B;
                                 break;
-                                case 10:
+                            case 10:
                                 mode = Trigger::Pulse_B2;
                                 break;
-                                case 11:
+                            case 11:
                                 mode = Trigger::Pulse_B;
                                 break;
-                                case 12:
+                            case 12:
                                 mode = Trigger::Pulse_B2;
                                 break;
-                                case 13:
+                            case 13:
                                 mode = Trigger::Pulse_AB;
                                 break;
-                                case 14:
+                            case 14:
                                 mode = Trigger::Pulse_AB;
                                 break;
-                                case 15:
+                            case 15:
                                 mode = Trigger::Pulse_AB;
                                 break;
-                                case 16:
+                            case 16:
                                 mode = Trigger::Pulse_AB;
                                 break;
                             default:
@@ -526,20 +592,17 @@ public:
                             uint8_t start = intParam3;
                             uint8_t force = intParam4;
 
-                            if (start > 9 || force > 8)
-                            {
+                            if (start > 9 || force > 8) {
                                 break;
                             }
 
-                            if (force > 0)
-                            {
+                            if (force > 0) {
                                 uint8_t b = static_cast<uint8_t>((force - 1) & 7);
                                 uint32_t num = 0;
                                 uint16_t num2 = 0;
 
                                 for (int i = static_cast<int>(start); i < 10;
-                                     ++i)
-                                {
+                                    ++i) {
                                     num |=
                                         (static_cast<uint32_t>(b) << (3 * i));
                                     num2 |= (1 << i);
@@ -568,15 +631,13 @@ public:
                             snapForce = intParam6;
 
                             if (start > 8 || end > 8 || start >= end ||
-                                force > 8 || snapForce > 8)
-                            {
+                                force > 8 || snapForce > 8) {
                                 break;
                             }
 
-                            if (end > 0 && force > 0 && snapForce > 0)
-                            {
+                            if (end > 0 && force > 0 && snapForce > 0) {
                                 uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
-                                uint32_t num2 = static_cast<uint32_t>(((force - 1) & 7) |(((snapForce - 1) & 7) << 3));
+                                uint32_t num2 = static_cast<uint32_t>(((force - 1) & 7) | (((snapForce - 1) & 7) << 3));
 
                                 triggers[0] = static_cast<uint8_t>(num & 0xFF);
                                 triggers[1] =
@@ -649,13 +710,11 @@ public:
                             force = intParam5;
 
                             if (start > 7 || start < 2 || end > 8 ||
-                                end <= start || force > 8)
-                            {
+                                end <= start || force > 8) {
                                 break;
                             }
 
-                            if (force > 0)
-                            {
+                            if (force > 0) {
                                 uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
 
                                 triggers[0] = static_cast<uint8_t>(num & 0xFF);
@@ -676,16 +735,13 @@ public:
                             uint8_t strength = intParam4;
                             uint8_t frequency = intParam5;
 
-                            if (start > 9)
-			                {
+                            if (start > 9) {
                                 break;
-			                }
-			                if (strength > 8)
-			                {
+                            }
+                            if (strength > 8) {
                                 break;
-			                }
-			                if (strength > 0 && frequency > 0)
-			                {
+                            }
+                            if (strength > 0 && frequency > 0) {
                                 uint8_t b = (strength - 1) & 7;
                                 uint32_t num = 0;
                                 uint16_t num2 = 0;
@@ -695,23 +751,23 @@ public:
                                     num2 |= static_cast<uint16_t>(1 << i);
                                 }
 
-				                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
-				                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
-				                triggers[2] = static_cast<uint8_t>(num & 0xFF);
-				                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
-				                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
-				                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
-				                triggers[6] = 0;
-				                triggers[7] = 0;
-				                triggers[8] = frequency;
-				                triggers[9] = 0;
-			                }
+                                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = frequency;
+                                triggers[9] = 0;
+                            }
 
                             break;
                         }
                         case 18: //Machine
                         {
-                            mode = Trigger::Pulse_AB;                       
+                            mode = Trigger::Pulse_AB;
                             start = intParam3;
                             end = intParam4;
                             uint8_t strengthA = intParam5;
@@ -719,28 +775,22 @@ public:
                             frequency = intParam7;
                             uint8_t period = intParam8;
 
-                            if (start > 8)
-			                {
-				                break;
-			                }
-			                if (end > 9)
-			                {
-				                break;
-			                }
-			                if (end <= start)
-			                {
-				                break;
-			                }
-			                if (strengthA > 7)
-			                {
-				                break;
-			                }
-			                if (strengthB > 7)
-			                {
-				                break;
-			                }
-			                if (frequency > 0)
-			                {
+                            if (start > 8) {
+                                break;
+                            }
+                            if (end > 9) {
+                                break;
+                            }
+                            if (end <= start) {
+                                break;
+                            }
+                            if (strengthA > 7) {
+                                break;
+                            }
+                            if (strengthB > 7) {
+                                break;
+                            }
+                            if (frequency > 0) {
                                 uint16_t num = static_cast<uint16_t>((1 << start) | (1 << end));
                                 uint32_t num2 = static_cast<uint32_t>((strengthA & 7) | ((strengthB & 7) << 3));
 
@@ -755,9 +805,352 @@ public:
                                 triggers[8] = 0;
                                 triggers[9] = 0;
                                 triggers[10] = 0;
-			                }
+                            }
                             break;
-                           
+
+                        }
+                        case 19: // VIBRATE_TRIGGER_10Hz
+                        {
+                            // Idk what this is, im just gonna put this as placeholder
+                            mode = Trigger::Pulse_B;
+                            triggers[0] = 10;
+                            triggers[1] = 255;
+                            triggers[2] = 40;
+                            triggers[3] = 0;
+                            triggers[4] = 0;
+                            triggers[5] = 0;
+                            triggers[6] = 0;
+                            triggers[7] = 0;
+                            triggers[8] = 0;
+                            triggers[9] = 0;
+                            triggers[10] = 0;
+                            break;
+                        }
+                        case 20: // OFF
+                        {
+                            mode = Trigger::Rigid_B;
+                            for (int i = 0; i < 11; i++) {
+                                triggers[i] = 0;
+                            }
+                            break;
+                        }
+                        case 21: // FEEDBACK
+                        {
+                            uint8_t position = intParam3;  // Maps to position
+                            uint8_t strength = intParam4;  // Maps to strength
+
+                            if (position > 9) {
+                                break;
+                            }
+                            if (strength > 8) {
+                                break;
+                            }
+                            if (strength > 0) {
+                                uint8_t b = (strength - 1) & 7;
+                                uint32_t num = 0;
+                                uint16_t num2 = 0;
+
+                                for (int i = position; i < 10; i++) {
+                                    num |= static_cast<uint32_t>(b) << (3 * i);
+                                    num2 |= static_cast<uint16_t>(1 << i);
+                                }
+
+                                mode = Trigger::Rigid_A;
+                                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }
+                            }
+
+                            break;
+                        }
+                        case 22: // WEAPON
+                        {
+                            uint8_t startPosition = intParam3;  // Maps to startPosition
+                            uint8_t endPosition = intParam4;    // Maps to endPosition
+                            uint8_t strength = intParam5;       // Maps to strength
+
+                            if (startPosition > 7 || startPosition < 2) {
+                                break;
+                            }
+                            if (endPosition > 8) {
+                                break;
+                            }
+                            if (endPosition <= startPosition) {
+                                break;
+                            }
+                            if (strength > 8) {
+                                break;
+                            }
+                            if (strength > 0) {
+                                uint16_t num = static_cast<uint16_t>(1 << startPosition | 1 << endPosition);
+
+                                mode = Trigger::Rigid_AB;
+                                triggers[0] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[2] = strength - 1;
+                                triggers[3] = 0;
+                                triggers[4] = 0;
+                                triggers[5] = 0;
+                                triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }
+                            }
+                            break;
+                        }
+                        case 23: // VIBRATION
+                        {
+                            mode = Trigger::Vibration;
+                            uint8_t position = intParam3;  // Maps to position
+                            uint8_t amplitude = intParam4; // Maps to amplitude
+                            uint8_t frequency = intParam5; // Maps to frequency
+
+                            if (position > 9) {
+                                break;
+                            }
+                            if (amplitude > 8) {
+                                break;
+                            }
+                            if (amplitude > 0 && frequency > 0) {
+                                uint8_t b = (amplitude - 1) & 7;
+                                uint32_t num = 0;
+                                uint16_t num2 = 0;
+
+                                for (int i = position; i < 10; i++) {
+                                    num |= static_cast<uint32_t>(b) << (3 * i);
+                                    num2 |= static_cast<uint16_t>(1 << i);
+                                }
+
+                                if(intParam2 == 2)
+                                {
+                                    triggers[1] = static_cast<uint8_t>(num2 & 0xFF);
+                                    triggers[2] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                    triggers[3] = static_cast<uint8_t>(num & 0xFF);
+                                    triggers[4] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                    triggers[5] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                    triggers[6] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                    triggers[7] = 0;
+                                    triggers[8] = 0;
+                                    triggers[9] = frequency;
+                                    triggers[10] = 0;
+                                }
+                                else {
+                                    triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+                                    triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                    triggers[2] = static_cast<uint8_t>(num & 0xFF);
+                                    triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                    triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                    triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                    triggers[6] = 0;
+                                    triggers[7] = 0;
+                                    triggers[8] = frequency;
+                                    triggers[9] = 0;
+                                    triggers[10] = 0;
+                                }
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }
+                            }
+
+                            break;
+                        }
+                        case 24: // SLOPE_FEEDBACK
+                        {
+                            uint8_t startPosition = intParam3;
+                            uint8_t endPosition = intParam4;
+                            uint8_t startStrength = intParam5;
+                            uint8_t endStrength = intParam6;
+
+                            if (startPosition > 8 || startPosition < 0) {
+                                break;
+                            }
+                            if (endPosition > 9) {
+                                break;
+                            }
+                            if (endPosition <= startPosition) {
+                                break;
+                            }
+                            if (startStrength > 8 || startStrength < 1) {
+                                break;
+                            }
+                            if (endStrength > 8 || endStrength < 1) {
+                                break;
+                            }
+
+                            uint8_t array[10] = {0};
+                            float slope = static_cast<float>(endStrength - startStrength) / static_cast<float>(endPosition - startPosition);
+                            for (int i = startPosition; i < 10; i++) {
+                                if (i <= endPosition) {
+                                    float strengthFloat = static_cast<float>(startStrength) + slope * static_cast<float>(i - startPosition);
+                                    array[i] = static_cast<uint8_t>(std::round(strengthFloat));
+                                } else {
+                                    array[i] = endStrength;
+                                }
+                            }
+
+                            bool anyStrength = false;
+                            for (int i = 0; i < 10; i++) {
+                                if (array[i] > 0) {
+                                    anyStrength = true;
+                                }
+                            }
+
+                            if (anyStrength) {
+                                uint32_t num = 0;
+                                uint16_t num2 = 0;
+                                for (int i = 0; i < 10; i++) {
+                                    if (array[i] > 0) {
+                                        uint8_t b = (array[i] - 1) & 7;
+                                        num |= static_cast<uint32_t>(b) << (3 * i);
+                                        num2 |= static_cast<uint16_t>(1 << i);
+                                    }
+                                }
+
+                                // Set the triggers array
+                                mode = Trigger::Rigid_A;
+                                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);        
+                                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num & 0xFF);         
+                                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);  
+                                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF); 
+                                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF); 
+                                triggers[6] = 0;
+                                triggers[7] = 0; 
+                                triggers[8] = 0;  
+                                triggers[9] = 0; 
+                                triggers[10] = 0; 
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }
+                            }
+                            break;
+                        }
+                        case 25: // MULTIPLE_POSITION_FEEDBACK
+                        {
+                            uint8_t strength[10] = {
+                                static_cast<uint8_t>(intParam3), static_cast<uint8_t>(intParam4),
+                                static_cast<uint8_t>(intParam5), static_cast<uint8_t>(intParam6),
+                                static_cast<uint8_t>(intParam7), static_cast<uint8_t>(intParam8),
+                                static_cast<uint8_t>(intParam9), static_cast<uint8_t>(intParam10),
+                                static_cast<uint8_t>(intParam11), static_cast<uint8_t>(intParam12)
+                            };
+
+                            bool anyStrength = false;
+                            for (int i = 0; i < 10; i++) {
+                                if (strength[i] > 0) {
+                                    anyStrength = true;
+                                }
+                            }
+
+                            if (anyStrength) {
+                                uint32_t num = 0;
+                                uint16_t num2 = 0;
+                                for (int i = 0; i < 10; i++) {
+                                    if (strength[i] > 0) {
+                                        uint8_t b = (strength[i] - 1) & 7;
+                                        num |= static_cast<uint32_t>(b) << (3 * i);
+                                        num2 |= static_cast<uint16_t>(1 << i);
+                                    }
+                                }
+
+                                mode = Trigger::Rigid_A;
+                                triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+                                triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                triggers[2] = static_cast<uint8_t>(num & 0xFF);
+                                triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                triggers[6] = 0;
+                                triggers[7] = 0;
+                                triggers[8] = 0;
+                                triggers[9] = 0;
+                                triggers[10] = 0;
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }
+                            }
+                            break;
+                        }
+                        case 26: // MULTIPLE_POSITION_VIBRATION
+                        {
+                            uint8_t frequency = static_cast<uint8_t>(intParam3);
+                            uint8_t amplitude[10] = {
+                                static_cast<uint8_t>(intParam4), static_cast<uint8_t>(intParam5),
+                                static_cast<uint8_t>(intParam6), static_cast<uint8_t>(intParam7),
+                                static_cast<uint8_t>(intParam8), static_cast<uint8_t>(intParam9),
+                                static_cast<uint8_t>(intParam10), static_cast<uint8_t>(intParam11),
+                                static_cast<uint8_t>(intParam12), static_cast<uint8_t>(intParam13)
+                            };
+
+                            if (frequency > 0) {
+                                bool anyAmplitude = false;
+                                for (int i = 0; i < 10; i++) {
+                                    if (amplitude[i] > 0) {
+                                        anyAmplitude = true;
+                                    }
+                                }
+
+                                if (anyAmplitude) {
+                                    uint32_t num = 0;
+                                    uint16_t num2 = 0;
+                                    for (int i = 0; i < 10; i++) {
+                                        if (amplitude[i] > 0) {
+                                            uint8_t b = (amplitude[i] - 1) & 7;
+                                            num |= static_cast<uint32_t>(b) << (3 * i);
+                                            num2 |= static_cast<uint16_t>(1 << i);
+                                        }
+                                    }
+
+                                    mode = Trigger::Pulse_B2;
+                                    triggers[0] = static_cast<uint8_t>(num2 & 0xFF);
+                                    triggers[1] = static_cast<uint8_t>((num2 >> 8) & 0xFF);
+                                    triggers[2] = static_cast<uint8_t>(num & 0xFF);
+                                    triggers[3] = static_cast<uint8_t>((num >> 8) & 0xFF);
+                                    triggers[4] = static_cast<uint8_t>((num >> 16) & 0xFF);
+                                    triggers[5] = static_cast<uint8_t>((num >> 24) & 0xFF);
+                                    triggers[6] = 0;
+                                    triggers[7] = 0;
+                                    triggers[8] = frequency;
+                                    triggers[9] = 0;
+                                    triggers[10] = 0;
+                                } else {
+                                    mode = Trigger::Rigid_B;
+                                    for (int i = 0; i < 11; i++) {
+                                        triggers[i] = 0;
+                                    }
+                                }
+                            } else {
+                                mode = Trigger::Rigid_B;
+                                for (int i = 0; i < 11; i++) {
+                                    triggers[i] = 0;
+                                }                            
+                            }
+                            break;
                         }
                         }
 

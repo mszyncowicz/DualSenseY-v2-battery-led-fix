@@ -1,13 +1,14 @@
-using NAudio.CoreAudioApi;
+﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace AudioPassthrough {
-
-    public partial class Form1 : Form {
+namespace AudioPassthrough
+{
+    public partial class Form1 : Form
+    {
         private MMDevice device = null;
         private MMDevice mmdeviceplayback;
         private WasapiOut hapticStream;
@@ -25,57 +26,70 @@ namespace AudioPassthrough {
         private string arg = string.Empty;
         private MMDevice currentPlaybackDevice;
 
-        public Form1(string[] args) {
+        public Form1(string[] args)
+        {
             InitializeComponent();
 
-            if (args.Length == 0) {
+            if (args.Length == 0)
+            {
                 MessageBox.Show("No arguments!");
                 Environment.Exit(0);
             }
             arg = args[0];
 
             Process[] processes = Process.GetProcessesByName("AudioPassthrough");
-            foreach(Process process in processes) {
+            foreach (Process process in processes)
+            {
                 string windowTitle = WindowHelper.GetWindowTitle(process.Id);
-                if (windowTitle.Contains(arg)) {
+                if (windowTitle.Contains(arg))
+                {
                     Environment.Exit(0); // Close the app if audio to haptics is already running for this controller
                 }
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e) {
+        private void Form1_Load(object sender, EventArgs e)
+        {
             this.Focus();
             new Thread(LookForNewDevice).Start();
             StartAudioToHaptics(arg.ToLower());
         }
 
-        private void LookForNewDevice() {
+        private void LookForNewDevice()
+        {
             MMDeviceEnumerator enumerator = new MMDeviceEnumerator();
             currentPlaybackDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
             Thread.Sleep(5000);
             bool disconnected = false;
 
-            while (true) {
+            while (true)
+            {
                 MMDevice newDevice = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
 
                 device = null;
 
-                foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                    try {
-                        if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
+                foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+                {
+                    try
+                    {
+                        if (mmdevice.FriendlyName.ToLower() == arg.ToLower())
+                        {
                             device = mmdevice;
                             break;
                         }
                     }
-                    catch {
+                    catch
+                    {
                         continue;
                     }
                 }
 
-                if (device == null) {
+                if (device == null)
+                {
                     disconnected = true;
                 }
-                else if (device != null && disconnected) {
+                else if (device != null && disconnected)
+                {
                     StartAudioToHaptics(arg.ToLower(), true);
                     disconnected = false;
                 }
@@ -84,35 +98,43 @@ namespace AudioPassthrough {
                     currentPlaybackDevice = newDevice;
                     StartAudioToHaptics(arg.ToLower());
                 }
+
                 Thread.Sleep(3000);
             }
         }
 
-        private void StartAudioToHaptics(string instanceID = "", bool reconnectattempt = false) {
+        private void StartAudioToHaptics(string instanceID = "", bool reconnectattempt = false)
+        {
             device = null;
-            foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active)) {
-                try {
-                    //MessageBox.Show(mmdevice.FriendlyName.ToLower() + " | " + arg.ToLower());
-                    if (mmdevice.FriendlyName.ToLower() == arg.ToLower()) {
+            foreach (MMDevice mmdevice in mmdeviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+            {
+                try
+                {
+                    if (mmdevice.FriendlyName.ToLower() == arg.ToLower())
+                    {
                         device = mmdevice;
                         audioID = instanceID;
                         break;
                     }
                 }
-                catch {
+                catch
+                {
                     continue;
                 }
             }
 
             if (reconnectattempt == false) // Return if both failed
             {
-                if (device == null || device.State == DeviceState.NotPresent || device.State == DeviceState.Unplugged || device.State == DeviceState.Disabled) {
+                if (device == null || device.State == DeviceState.NotPresent || device.State == DeviceState.Unplugged || device.State == DeviceState.Disabled)
+                {
                     MessageBox.Show("Couldn't find DualSense Wireless Controller Speaker!");
                     Environment.Exit(0);
                 }
             }
-            else {
-                if (device == null || device.State == DeviceState.NotPresent || device.State == DeviceState.Unplugged || device.State == DeviceState.Disabled) {
+            else
+            {
+                if (device == null || device.State == DeviceState.NotPresent || device.State == DeviceState.Unplugged || device.State == DeviceState.Disabled)
+                {
                     return;
                 }
             }
@@ -122,14 +144,14 @@ namespace AudioPassthrough {
             // AUDIO PASSTHROUGH STREAM
             setNewPlayback();
             audioPassthroughStream = new WasapiOut(device, AudioClientShareMode.Shared, true, 1);
-            audioPassthroughBuffer = new BufferedWaveProvider(WaveFormat.CreateCustomFormat(WaveFormatEncoding.IeeeFloat, wasapiLoopbackCapture.WaveFormat.SampleRate, wasapiLoopbackCapture.WaveFormat.Channels, wasapiLoopbackCapture.WaveFormat.AverageBytesPerSecond, wasapiLoopbackCapture.WaveFormat.BlockAlign, wasapiLoopbackCapture.WaveFormat.BitsPerSample));
-            audioPassthroughBuffer.BufferLength = 100000; // 100KB buffer (for example)
-            audioPassthroughBuffer.ReadFully = true;
-            audioPassthroughBuffer.DiscardOnBufferOverflow = true;
+            audioPassthroughBuffer = new BufferedWaveProvider(wasapiLoopbackCapture.WaveFormat)
+            {
+                BufferLength = 100000,
+                ReadFully = true,
+                DiscardOnBufferOverflow = true
+            };
 
-            MultiplexingWaveProvider multiplexingWaveProviderAP = new MultiplexingWaveProvider(new BufferedWaveProvider[] {
-                    audioPassthroughBuffer,}, 4);
-
+            MultiplexingWaveProvider multiplexingWaveProviderAP = new MultiplexingWaveProvider(new BufferedWaveProvider[] { audioPassthroughBuffer }, 4);
             multiplexingWaveProviderAP.ConnectInputToOutput(0, 0);
             multiplexingWaveProviderAP.ConnectInputToOutput(1, 1);
             multiplexingWaveProviderAP.ConnectInputToOutput(0, 2);
@@ -137,18 +159,23 @@ namespace AudioPassthrough {
             audioPassthroughStream.Init(multiplexingWaveProviderAP);
             audioPassthroughStream.Play();
 
-            trackBar1.Invoke((MethodInvoker)delegate {
-                if (trackBar1.Value != 0) {
+            trackBar1.Invoke((MethodInvoker)delegate
+            {
+                if (trackBar1.Value != 0)
+                {
                     setVolume((float)(Convert.ToDouble(trackBar1.Value) / 100), 1, 1);
                 }
-                else {
+                else
+                {
                     setVolume(0, 1, 1);
                 }
             });
         }
 
-        private void setNewPlayback() {
-            if (wasapiLoopbackCapture != null) {
+        private void setNewPlayback()
+        {
+            if (wasapiLoopbackCapture != null)
+            {
                 wasapiLoopbackCapture.StopRecording();
                 wasapiLoopbackCapture.Dispose();
             }
@@ -159,88 +186,99 @@ namespace AudioPassthrough {
             wasapiLoopbackCapture.StartRecording();
         }
 
-        private void WasapiLoopbackCapture_DataAvailable(object? sender, WaveInEventArgs e) {
-            if (SystemAudioPlayback) {
-                // Define your gain factor (adjust as needed)
-                float gainFactor = trackBar2.Value; // Example to double the volume
-
-                // Process the audio buffer
-                int sampleCount = e.BytesRecorded / sizeof(float); // Number of samples
-                for (int i = 0; i < sampleCount; i++) {
-                    float sample = BitConverter.ToSingle(e.Buffer, i * sizeof(float));
-
-                    sample *= gainFactor;
-
-                    if (sample > 1.0f) sample = 1.0f;
-                    if (sample < -1.0f) sample = -1.0f;
-
-                    byte[] modifiedSample = BitConverter.GetBytes(sample);
-                    Buffer.BlockCopy(modifiedSample, 0, e.Buffer, i * sizeof(float), sizeof(float));
+        private void WasapiLoopbackCapture_DataAvailable(object? sender, WaveInEventArgs e)
+        {
+            if (SystemAudioPlayback)
+            {
+                float gainFactor = trackBar2.Value;
+                if (gainFactor != 1.0f) // Only process if gain adjustment is needed
+                {
+                    Span<byte> buffer = e.Buffer.AsSpan(0, e.BytesRecorded);
+                    Span<float> samples = MemoryMarshal.Cast<byte, float>(buffer);
+                    for (int i = 0; i < samples.Length; i++)
+                    {
+                        samples[i] = Math.Clamp(samples[i] * gainFactor, -1.0f, 1.0f);
+                    }
                 }
-
                 audioPassthroughBuffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
             }
         }
 
-        private void setVolume(float speaker, float left, float right) {
+        private void setVolume(float speaker, float left, float right)
+        {
             speakerPlaybackVolume = speaker;
             leftActuatorVolume = left;
             rightActuatorVolume = right;
 
-            try {
-                if (audioPassthroughStream != null) {
+            try
+            {
+                if (audioPassthroughStream != null)
+                {
                     audioPassthroughStream.AudioStreamVolume.SetChannelVolume(0, speakerPlaybackVolume);
                     audioPassthroughStream.AudioStreamVolume.SetChannelVolume(1, speakerPlaybackVolume);
                     audioPassthroughStream.AudioStreamVolume.SetChannelVolume(2, leftActuatorVolume);
                     audioPassthroughStream.AudioStreamVolume.SetChannelVolume(3, rightActuatorVolume);
                 }
             }
-            catch (ArgumentOutOfRangeException) {
+            catch (ArgumentOutOfRangeException)
+            {
                 throw new ArgumentOutOfRangeException("Volume must be between 0.0 and 1.0.");
             }
         }
 
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e) {
-            if (hapticStream != null) {
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (hapticStream != null)
+            {
                 hapticStream.Dispose();
             }
 
-            if (audioPassthroughStream != null) {
+            if (audioPassthroughStream != null)
+            {
                 audioPassthroughStream.Dispose();
                 audioPassthroughBuffer.ClearBuffer();
             }
 
-            if (wasapiLoopbackCapture != null) {
+            if (wasapiLoopbackCapture != null)
+            {
                 wasapiLoopbackCapture.Dispose();
             }
 
             Environment.Exit(0);
         }
 
-        private void trackBar1_Scroll(object sender, EventArgs e) {
-            if (trackBar1.Value == 0) {
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+            if (trackBar1.Value == 0)
+            {
                 setVolume(0, 1, 1);
             }
-            else {
+            else
+            {
                 setVolume((float)(Convert.ToDouble(trackBar1.Value) / 100), 1, 1);
             }
         }
 
-        private void button1_Click(object sender, EventArgs e) {
+        private void button1_Click(object sender, EventArgs e)
+        {
             this.WindowState = FormWindowState.Minimized;
         }
 
-        private void Form1_FormClosed(object sender, FormClosedEventArgs e) {
-            if (hapticStream != null) {
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (hapticStream != null)
+            {
                 hapticStream.Dispose();
             }
 
-            if (audioPassthroughStream != null) {
+            if (audioPassthroughStream != null)
+            {
                 audioPassthroughStream.Dispose();
                 audioPassthroughBuffer.ClearBuffer();
             }
 
-            if (wasapiLoopbackCapture != null) {
+            if (wasapiLoopbackCapture != null)
+            {
                 wasapiLoopbackCapture.Dispose();
             }
 
@@ -250,19 +288,15 @@ namespace AudioPassthrough {
 
     internal class WindowHelper
     {
-        // FindWindowEx to find the window by process ID
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindowEx(IntPtr parentHandle, IntPtr childAfter, string className, string windowTitle);
 
-        // Get the window title
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern int GetWindowText(IntPtr hwnd, StringBuilder lpString, int nMaxCount);
 
-        // Enumerate through windows
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 
-        // Delegate for EnumWindowsProc callback
         public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
 
         public static string GetWindowTitle(int processId)
@@ -270,7 +304,6 @@ namespace AudioPassthrough {
             StringBuilder windowTitle = new StringBuilder(255);
             EnumWindows((hwnd, lParam) =>
             {
-                // Compare the process ID of the window with the one we're looking for
                 int pid;
                 GetWindowThreadProcessId(hwnd, out pid);
                 if (pid == processId)

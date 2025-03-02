@@ -475,7 +475,11 @@ enum TriggerMode : uint8_t
     Pulse_B = 0x2 | 0x04,
     Pulse_B2 = 38,
     Pulse_AB = 39,
-    Calibration = 0xFC
+    Calibration = 0xFC,
+    // Official
+    Feedback  = 0x21,
+    Weapon    = 0x25, 
+    Vibration = 0x26
 };
 }
 
@@ -1182,17 +1186,19 @@ public:
                 outReport[8] = CurSettings.audioOutput;
                 outReport[9] = CurSettings.micLED;
                 outReport[10] = CurSettings.micStatus;
+
                 outReport[11] = CurSettings.RightTriggerMode;
                 outReport[12] = CurSettings.RightTriggerForces[0];
                 outReport[13] = CurSettings.RightTriggerForces[1];
                 outReport[14] = CurSettings.RightTriggerForces[2];
                 outReport[15] = CurSettings.RightTriggerForces[3];
                 outReport[16] = CurSettings.RightTriggerForces[4];
-                outReport[17] = CurSettings.RightTriggerForces[6];
-                outReport[18] = CurSettings.RightTriggerForces[7];
-                outReport[19] = CurSettings.RightTriggerForces[8];
-                outReport[20] = CurSettings.RightTriggerForces[9];
-                outReport[21] = CurSettings.RightTriggerForces[10];
+                outReport[17] = CurSettings.RightTriggerForces[5];
+                outReport[18] = CurSettings.RightTriggerForces[6];
+                outReport[19] = CurSettings.RightTriggerForces[7];
+                outReport[20] = CurSettings.RightTriggerForces[8];
+                outReport[21] = CurSettings.RightTriggerForces[9];
+
                 outReport[22] = CurSettings.LeftTriggerMode;
                 outReport[23] = CurSettings.LeftTriggerForces[0];
                 outReport[24] = CurSettings.LeftTriggerForces[1];
@@ -1204,14 +1210,21 @@ public:
                 outReport[30] = CurSettings.LeftTriggerForces[7];
                 outReport[31] = CurSettings.LeftTriggerForces[8];
                 outReport[32] = CurSettings.LeftTriggerForces[9];
-                outReport[33] = CurSettings.LeftTriggerForces[10];
+
+                outReport[33] = 0;
                 outReport[34] = 0;
                 outReport[35] = 0;
-                outReport[36] = 0x04;
-                outReport[37] = 0;
+                outReport[36] = 0;
+
+                uint8_t triggerReduction = 0x0;
+                uint8_t rumbleReduction = 0x0;
+
+                outReport[37] = (rumbleReduction << 4) | (triggerReduction & 0x0F);
+
                 outReport[38] = 0;
-                outReport[39] = CurSettings._Brightness;
-                outReport[41] = CurSettings._Brightness;
+                outReport[39] = 0;
+                outReport[40] = 0;
+                outReport[41] = 0;
                 outReport[42] = CurSettings.micLED;
                 outReport[43] = CurSettings._Brightness;
                 outReport[44] = CurSettings.PlayerLED_Bitmask;
@@ -1276,17 +1289,19 @@ public:
                 outReport[9] = CurSettings.audioOutput;
                 outReport[10] = CurSettings.micLED;
                 outReport[11] = CurSettings.micStatus;
+
                 outReport[12] = CurSettings.RightTriggerMode;
                 outReport[13] = CurSettings.RightTriggerForces[0];
                 outReport[14] = CurSettings.RightTriggerForces[1];
                 outReport[15] = CurSettings.RightTriggerForces[2];
                 outReport[16] = CurSettings.RightTriggerForces[3];
                 outReport[17] = CurSettings.RightTriggerForces[4];
-                outReport[18] = CurSettings.RightTriggerForces[6];
-                outReport[19] = CurSettings.RightTriggerForces[7];
-                outReport[20] = CurSettings.RightTriggerForces[8];
-                outReport[21] = CurSettings.RightTriggerForces[9];
-                outReport[22] = CurSettings.RightTriggerForces[10];
+                outReport[18] = CurSettings.RightTriggerForces[5];
+                outReport[19] = CurSettings.RightTriggerForces[6];
+                outReport[20] = CurSettings.RightTriggerForces[7];
+                outReport[21] = CurSettings.RightTriggerForces[8];
+                outReport[22] = CurSettings.RightTriggerForces[9];
+
                 outReport[23] = CurSettings.LeftTriggerMode;
                 outReport[24] = CurSettings.LeftTriggerForces[0];
                 outReport[25] = CurSettings.LeftTriggerForces[1];
@@ -1298,7 +1313,8 @@ public:
                 outReport[31] = CurSettings.LeftTriggerForces[7];
                 outReport[32] = CurSettings.LeftTriggerForces[8];
                 outReport[33] = CurSettings.LeftTriggerForces[9];
-                outReport[34] = CurSettings.LeftTriggerForces[10];
+
+                outReport[34] = 0;
                 outReport[35] = 0;
                 outReport[36] = 0;
                 outReport[37] = 0;
@@ -1801,6 +1817,7 @@ public:
             if (!handle)
             {
                 hid_close(handle);
+                
                 Connected = false;
                 return DualsenseUtils::Reconnect_Result::Fail;
             }

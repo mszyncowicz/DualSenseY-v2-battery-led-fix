@@ -11,8 +11,9 @@
   },
   "ExpandedNodes": [
     "",
-    "\\app"
+    "\\app",
+    "\\AudioPassthrough"
   ],
-  "SelectedNode": "\\app\\DualSense.h",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

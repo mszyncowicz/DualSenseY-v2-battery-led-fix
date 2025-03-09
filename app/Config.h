@@ -15,6 +15,7 @@ namespace Config {
         bool ShowConsole = false;
         std::string Language = "en";
         std::string DefaultStyleFilepath = "";
+        bool SkipVersionCheck = false;
 
         nlohmann::json to_json() const {
             nlohmann::json j;
@@ -26,6 +27,7 @@ namespace Config {
             j["RunWithWindows"] = RunWithWindows;
             j["ShowConsole"] = ShowConsole;
             j["Language"] = Language;
+            j["SkipVersionCheck"] = SkipVersionCheck;
 
             return j;
         }
@@ -33,6 +35,7 @@ namespace Config {
         static AppConfig from_json(const nlohmann::json& j) {
             AppConfig appconfig;
 
+            if (j.contains("SkipVersionCheck"))       j.at("SkipVersionCheck").get_to(appconfig.SkipVersionCheck);
             if (j.contains("ElevateOnStartup"))       j.at("ElevateOnStartup").get_to(appconfig.ElevateOnStartup);
             if (j.contains("HideToTray"))       j.at("HideToTray").get_to(appconfig.HideToTray);
             //if (j.contains("ShowWindow"))       j.at("ShowWindow").get_to(appconfig.ShowWindow);

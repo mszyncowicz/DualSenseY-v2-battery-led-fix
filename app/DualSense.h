@@ -1245,20 +1245,14 @@ public:
             }
             else if (connectionType == Feature::BT)
             {
-                if (FirstTimeWrite) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                }
-
                 uint8_t outReport[MAX_BT_WRITE_LENGTH];
                 outReport[0] = 0x31;
                 outReport[1] = 2;
                 outReport[2] = CurSettings.VibrationType;
                 if (bt_initialized == false)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // doesn't always work without sleep
-                    outReport[3] = Feature::FeatureType::BT_Init;
-                    bt_initialized = true;
-
+                {                 
+                        outReport[3] = Feature::FeatureType::BT_Init;
+                        bt_initialized = true;
                         const UINT32 crcChecksum = compute(outReport, 74);
 
                         outReport[0x4A] = (unsigned char)((crcChecksum & 0x000000FF) >> 0UL);

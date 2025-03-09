@@ -1,4 +1,4 @@
-﻿const int VERSION = 37;
+﻿const int VERSION = 38;
 
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -1393,15 +1393,8 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig) {
 
 int main()
 {
-    glaiel::crashlogs::set_crashlog_folder("crashlogs\\");
-    glaiel::crashlogs::begin_monitoring();
-    std::cout << "Begun monitoring" << std::endl;  
     timeBeginPeriod(1);
     
-    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG);
-    //_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    //_CrtSetBreakAlloc(10605);
-
     Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
     
     if(appConfig.ShowConsole == false)
@@ -1410,40 +1403,53 @@ int main()
     }
 
     bool UpdateAvailable = false;
-    try {
-        std::cout << "Attempting to download version string" << std::endl;
-        cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/refs/heads/master/version"));
-        std::cout << "Download completed, status code: " << response.status_code << std::endl;
+    if(!appConfig.SkipVersionCheck)
+    {
+        try {
+            std::cout << "Attempting to download version string" << std::endl;
+            appConfig.SkipVersionCheck = true;
+            Config::WriteAppConfigToFile(appConfig);
+            cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/master/version"), cpr::Verbose(true));
+            std::cout << "Download completed, status code: " << response.status_code << std::endl;
 
-        if (response.status_code == 200) {
-            if (response.text != "") {
-                try {
-                    int version = stoi(response.text);
-                    if (version > VERSION) {
-                        cout << "Update available!" << endl;
-                        UpdateAvailable = true;
-                    } else {
-                        cout << "Application is up-to-date! Remote version: " << version << endl;
+            if (response.status_code == 200) {
+                if (response.text != "") {
+                    appConfig.SkipVersionCheck = false;
+                    Config::WriteAppConfigToFile(appConfig);
+
+                    try {
+                        int version = stoi(response.text);
+                        if (version > VERSION) {
+                            cout << "Update available!" << endl;
+                            UpdateAvailable = true;
+                        }
+                        else {
+                            cout << "Application is up-to-date! Remote version: " << version << endl;
+                        }
                     }
-                } catch (const std::invalid_argument& e) {
-                    cout << "Invalid version string: " << e.what() << endl;
-                } catch (const std::out_of_range& e) {
-                    cout << "Version number out of range: " << e.what() << endl;
+                    catch (const std::invalid_argument& e) {
+                        cout << "Invalid version string: " << e.what() << endl;
+                    }
+                    catch (const std::out_of_range& e) {
+                        cout << "Version number out of range: " << e.what() << endl;
+                    }
                 }
-            } else {
-                cout << "Version string is empty" << endl;
+                else {
+                    cout << "Version string is empty" << endl;
+                }
             }
-        } else {
-            std::cout << "Version could not be downloaded, status code: " << response.status_code << std::endl;
+            else {
+                std::cout << "Version could not be downloaded, status code: " << response.status_code << std::endl;
+            }
+        }
+        catch (const std::exception& e) {
+            cout << "Standard exception: " << e.what() << endl;
+        }
+        catch (...) {
+            cout << "Unknown exception occurred during download" << endl;
         }
     }
-    catch (const std::exception& e) {
-        cout << "Standard exception: " << e.what() << endl;
-    }
-    catch (...) {
-        cout << "Unknown exception occurred during download" << endl;
-    }
- 
+
     if (appConfig.ElevateOnStartup) {
         MyUtils::ElevateNow();
     }

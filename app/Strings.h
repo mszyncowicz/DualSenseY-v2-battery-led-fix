@@ -7,6 +7,8 @@ std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", 
 // Define all regular string members with their default values
 #define STRING_MEMBERS \
     X(Position, "Position") \
+    X(DisconnectAllBTDevicesOnExit, "Disconnect all bluetooth devices on application exit") \
+    X(DisconnectBT, "Disconnect controller") \
     X(Strength, "Strength") \
     X(StartPosition, "Start position") \
     X(EndPosition, "End position") \

@@ -45,15 +45,15 @@
 #include <timeapi.h>
 #include <iostream>
 #include <commdlg.h>
-#include <fstream> 
+#include <fstream>
 
-
-
+#pragma comment(lib, "bthprops.lib")
 #pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
     int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax);
     void StartAudioToHaptics(const std::string& Name);
+    void DisableBluetoothDevice(const std::string& Address);
     void StartHidHideRequest(std::string ID, std::string arg);
     void RunAsyncHidHideRequest(std::string ID, std::string arg);
     float CalculateScaleFactor(int screenWidth, int screenHeight);

@@ -14,6 +14,6 @@
     "\\app",
     "\\AudioPassthrough"
   ],
-  "SelectedNode": "\\app\\UDP.h",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

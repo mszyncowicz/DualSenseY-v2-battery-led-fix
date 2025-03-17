@@ -83,7 +83,9 @@ class UDP
 public:
     bool isActive = false;
     int Battery;
-    Settings thisSettings;    
+    Settings thisSettings;
+    std::string MacAddress;
+
     std::chrono::high_resolution_clock::time_point LastTime = std::chrono::high_resolution_clock::now();
 
     UDP(int port = 6969) : serverOn(false), Battery(100), unavailable(false) {
@@ -249,7 +251,7 @@ public:
 
             Device dev{
                 1,                          // Index
-                "FU:CK:YO:UU:LO:OL",       // MacAddress
+                MacAddress,       // MacAddress
                 DeviceType::DUALSENSE,     // DeviceType
                 ConnectionType::USB,  // ConnectionType
                 Battery,                         // BatteryLevel

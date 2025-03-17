@@ -1362,6 +1362,37 @@ public:
         return false;
     }
 
+    std::string GetMACAddress(bool colons = true) {
+
+        if(handle)
+        {
+            std::stringstream ss;
+            unsigned char buffer[64] = { 0 };
+            buffer[0] = 0x09;
+
+            int res = hid_get_feature_report(handle, buffer, sizeof(buffer));
+            if (res < 0) {
+                return colons ? "00:00:00:00:00:00" : "000000000000";
+            }
+            else {
+                for (int i = 6; i >= 1; i--) {
+                    ss << std::hex << (int)buffer[i];
+                    if (i > 1 && colons) ss << ":";
+                }
+            }
+
+            std::string s = ss.str();
+
+            for (int i = 0; i < s.length(); i++)
+                s[i] = toupper(s[i]);
+
+            return s;
+        }
+        else {
+            return colons ? "00:00:00:00:00:00" : "000000000000";
+        }
+    }
+
     std::string GetPath()
     {
         return path;

@@ -16,9 +16,11 @@ namespace Config {
         std::string Language = "en";
         std::string DefaultStyleFilepath = "";
         bool SkipVersionCheck = false;
+        bool DisconnectAllBTControllersOnExit = false;
 
         nlohmann::json to_json() const {
             nlohmann::json j;
+            j["DisconnectAllBTControllersOnExit"] = DisconnectAllBTControllersOnExit;
             j["DefaultStyleFilepath"] = DefaultStyleFilepath;
             j["ElevateOnStartup"] = ElevateOnStartup;
             j["HideToTray"] = HideToTray;
@@ -35,6 +37,7 @@ namespace Config {
         static AppConfig from_json(const nlohmann::json& j) {
             AppConfig appconfig;
 
+            if (j.contains("DisconnectAllBTControllersOnExit"))       j.at("DisconnectAllBTControllersOnExit").get_to(appconfig.DisconnectAllBTControllersOnExit);
             if (j.contains("SkipVersionCheck"))       j.at("SkipVersionCheck").get_to(appconfig.SkipVersionCheck);
             if (j.contains("ElevateOnStartup"))       j.at("ElevateOnStartup").get_to(appconfig.ElevateOnStartup);
             if (j.contains("HideToTray"))       j.at("HideToTray").get_to(appconfig.HideToTray);

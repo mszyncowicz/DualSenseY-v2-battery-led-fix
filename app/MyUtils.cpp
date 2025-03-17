@@ -45,6 +45,33 @@ namespace MyUtils {
         }
     }
 
+    void DisableBluetoothDevice(const std::string& Address) {
+        STARTUPINFO si;
+        PROCESS_INFORMATION pi;
+
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+
+        std::string command = "utilities\\BTControl.exe " + Address;
+        std::cout << command << std::endl;
+
+         if (CreateProcess(NULL,
+                          (LPSTR)command.c_str(),
+                          NULL,              
+                          NULL,             
+                          FALSE,            
+                          0,                  
+                          NULL,               
+                          NULL,               
+                          &si,                
+                          &pi)                
+         ) {
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+         }
+    }
+
     BOOL IsRunAsAdministrator()
     {
         BOOL fIsRunAsAdmin = FALSE;

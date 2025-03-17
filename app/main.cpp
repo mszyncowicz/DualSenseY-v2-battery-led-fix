@@ -1,4 +1,4 @@
-﻿const int VERSION = 38;
+﻿const int VERSION = 39;
 
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -1223,6 +1223,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
                     preUDP = settings.ControllerInput;
                     firstTimeUDP = false;
                 }
+                udpServer.MacAddress = controller.GetMACAddress();
                 settings.CurrentlyUsingUDP = true;
                 settings.L2UDPDeadzone = udpServer.thisSettings.L2UDPDeadzone;
                 settings.R2UDPDeadzone = udpServer.thisSettings.R2UDPDeadzone;
@@ -1970,6 +1971,10 @@ int main()
                                         Config::WriteAppConfigToFile(appConfig);
                                     }
 
+                                    if (ImGui::Checkbox(strings.DisconnectAllBTDevicesOnExit.c_str(), &appConfig.DisconnectAllBTControllersOnExit)) {
+                                        Config::WriteAppConfigToFile(appConfig);
+                                    }
+
                                     ImGui::EndMenu();
                                 }
 
@@ -2016,6 +2021,12 @@ int main()
                             DualsenseUtils::HapticFeedbackStatus HF_status = DualSense[i].GetHapticFeedbackStatus();
                             const char* bt_or_usb = DualSense[i].GetConnectionType() == Feature::USB ? "USB" : "BT";
                             ImGui::Text("%s %d | %s: %s | %s: %d%%", strings.ControllerNumberText.c_str(),i+1, strings.USBorBTconnectionType.c_str(), bt_or_usb, strings.BatteryLevel.c_str(), DualSense[i].State.battery.Level);
+
+                            if (HF_status == DualsenseUtils::HapticFeedbackStatus::BluetoothNotUSB) {
+                                if (ImGui::Button(strings.DisconnectBT.c_str())) {
+                                    MyUtils::DisableBluetoothDevice(DualSense[i].GetMACAddress(false));
+                                }
+                            }
 
                             if (UpdateAvailable) {
                                 ImGui::SameLine();
@@ -2731,8 +2742,8 @@ int main()
                             }
 
                             if (HF_status == DualsenseUtils::HapticFeedbackStatus::Working && s.RunAudioToHapticsOnStart && !s.WasAudioToHapticsRan && !s.WasAudioToHapticsCheckboxChecked) {
-                                    MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
-                                    s.WasAudioToHapticsRan = true;
+                                 MyUtils::StartAudioToHaptics(DualSense[i].GetAudioDeviceName());
+                                 s.WasAudioToHapticsRan = true;
                             }
 
                             if (ImGui::CollapsingHeader(strings.HapticFeedback.c_str()))
@@ -3050,10 +3061,14 @@ int main()
         }
     }
 
-    if(WasElevated)
-    {
-        for (Dualsense& ds : DualSense) {
+    for (Dualsense& ds : DualSense) {
+        if(WasElevated)
             MyUtils::StartHidHideRequest(ds.GetPath(), "show");
+
+        if (appConfig.DisconnectAllBTControllersOnExit) {
+            if (ds.GetConnectionType() == Feature::ConnectionType::BT) {
+                MyUtils::DisableBluetoothDevice(ds.GetMACAddress(false));
+            }
         }
     }
 

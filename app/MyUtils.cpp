@@ -10,18 +10,6 @@ IMMDevice *device = nullptr;
 IAudioMeterInformation *meterInfo = nullptr;
 
 namespace MyUtils {
-    int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax)
-    {
-        if (oldMin == oldMax)
-        {
-            throw std::invalid_argument("Old minimum and maximum cannot be equal.");
-        }
-        float ratio = static_cast<float>(newMax - newMin) /
-                      static_cast<float>(oldMax - oldMin);
-        float scaledValue = (value - oldMin) * ratio + newMin;
-        return std::clamp(static_cast<int>(scaledValue), newMin, newMax);
-    }
-
     void StartAudioToHaptics(const std::string& Name) {
         STARTUPINFOW si;
         PROCESS_INFORMATION pi;
@@ -456,26 +444,6 @@ namespace MyUtils {
         return std::string(buffer); // Return as std::string
     }
     return ""; // Return an empty string if failed
-    }
-
-    std::string GetExecutableFolderPath() {
-        char buffer[MAX_PATH];
-        HMODULE hModule = GetModuleHandle(NULL); // Get handle of current module
-        if (hModule != NULL) {
-            // Get the full path of the executable
-            GetModuleFileName(hModule, buffer, sizeof(buffer));
-
-            // Convert to std::string for easier manipulation
-            std::string exePath(buffer);
-
-            // Find the last occurrence of the path separator
-            std::string::size_type pos = exePath.find_last_of("\\/");
-            if (pos != std::string::npos) {
-                // Return the substring up to the last separator
-                return exePath.substr(0, pos);
-            }
-        }
-        return ""; // Return an empty string if failed
     }
 
     void AddToStartup() {

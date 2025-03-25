@@ -1,3 +1,4 @@
+#pragma once
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -51,7 +52,6 @@
 #pragma comment(lib, "dwmapi.lib")
 
 namespace MyUtils {
-    int ConvertRange(int value, int oldMin, int oldMax, int newMin, int newMax);
     void StartAudioToHaptics(const std::string& Name);
     void DisableBluetoothDevice(const std::string& Address);
     void StartHidHideRequest(std::string ID, std::string arg);
@@ -69,8 +69,7 @@ namespace MyUtils {
     void LoadImGuiColorsFromFilepath(ImGuiStyle& style, std::string filename);
     bool LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height);
     bool LoadTextureFromFile(const char* file_name, GLuint* out_texture, int* out_width, int* out_height);
-    std::string GetExecutablePath();
-    std::string GetExecutableFolderPath();
+    std::string GetExecutablePath();   
     void AddToStartup();
     void RemoveFromStartup();
     std::string GetImagesFolderPath();

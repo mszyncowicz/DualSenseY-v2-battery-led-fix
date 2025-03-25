@@ -1,15 +1,15 @@
-﻿const int VERSION = 39;
+﻿const int VERSION = 40;
 
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 }
 
+#define MINIAUDIO_IMPLEMENTATION
 #include "MyUtils.h"
 #include "DualSense.h"
 #include "ControllerEmulation.h"
 #include "cycle.hpp"
-#include "miniaudio.h"
 #include "Config.h"
 #include "UDP.h"
 #include "Settings.h"
@@ -453,8 +453,8 @@ void writeEmuController(Dualsense &controller, Settings &settings)
             }
 
             if (settings.TouchpadToRXRY && controller.State.trackPadTouch0.IsActive) {
-                editedButtonState.RX = MyUtils::ConvertRange(controller.State.trackPadTouch0.X, 0, 1919, 0, 255);
-                editedButtonState.RY = MyUtils::ConvertRange(controller.State.trackPadTouch0.Y, 0, 1079, 0, 255);
+                editedButtonState.RX = ConvertRange(controller.State.trackPadTouch0.X, 0, 1919, 0, 255);
+                editedButtonState.RY = ConvertRange(controller.State.trackPadTouch0.Y, 0, 1079, 0, 255);
             }
 
             if (settings.GyroToRightAnalogStick && (controller.State.L2 >= settings.L2Threshold)) {
@@ -537,6 +537,19 @@ void writeEmuController(Dualsense &controller, Settings &settings)
                 }
             }
 
+            if (settings.LeftStickToMouse || settings.RightStickToMouse) {
+                int AnalogX = settings.LeftStickToMouse ? controller.State.LX : 0;
+                AnalogX = settings.RightStickToMouse ? controller.State.RX : AnalogX;
+
+                int AnalogY = settings.LeftStickToMouse ? controller.State.LY : 0;
+                AnalogY = settings.RightStickToMouse ? controller.State.RY : AnalogY;
+
+                float x = (AnalogX - 128) * settings.LeftStickToMouseSensitivity;
+                float y = (AnalogY - 128) * (settings.LeftStickToMouseSensitivity + 0.001f);
+
+                MyUtils::MoveCursor(x, y);
+            }
+
             if (settings.emuStatus != None && !v.isWorking())
             {
                 MessageBox(0, "ViGEm connection failed! Are you sure you installed ViGEmBus driver?" ,"Error", 0);
@@ -617,6 +630,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
     int x360emuanimation = 0;
     bool lastMic = false;
     bool MicShortcutTriggered = false;
+    bool DisconnectShortcutTriggered = false;
     bool mic = false;
     float touchpadLastX = 0;
     float touchpadLastY = 0;
@@ -633,6 +647,7 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
     DualsenseUtils::InputFeatures lastFeatures;
     bool firstTimeUDP = true;
     DualsenseUtils::InputFeatures preUDP;
+    auto lastTimeFailedToWrite = std::chrono::high_resolution_clock::now();
 
     while (!stop_thread)
     {
@@ -676,6 +691,16 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             }
             else if (settings.emuStatus == None && !X360animationplayed) {
                 X360animationplayed = true;
+            }
+           
+            if ((controller.State.micBtn && controller.State.touchBtn && settings.DisconnectControllerShortcut))
+            {
+                auto now = std::chrono::high_resolution_clock::now();
+                if((now - lastTimeFailedToWrite) > std::chrono::seconds(5))
+                {
+                    MyUtils::DisableBluetoothDevice(controller.GetMACAddress(false));
+                    lastTimeFailedToWrite = now;
+                }
             }
 
             if (controller.State.micBtn && controller.State.DpadUp && settings.SwapTriggersShortcut && !MicShortcutTriggered)
@@ -1340,12 +1365,13 @@ void writeControllerState(Dualsense &controller, Settings &settings, UDP &udpSer
             if(controller.Connected)
             {
                 if (!settings.StopWriting) {
-                    controller.Write();
+                    controller.Write();                   
                 }
 
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
             else {
+                lastTimeFailedToWrite = std::chrono::high_resolution_clock::now();
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             }
         }
@@ -1410,7 +1436,7 @@ int main()
             std::cout << "Attempting to download version string" << std::endl;
             appConfig.SkipVersionCheck = true;
             Config::WriteAppConfigToFile(appConfig);
-            cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/master/version"), cpr::Verbose(true));
+            cpr::Response response = cpr::Get(cpr::Url("https://raw.githubusercontent.com/WujekFoliarz/DualSenseY-v2/master/version"), cpr::Verbose(false));
             std::cout << "Download completed, status code: " << response.status_code << std::endl;
 
             if (response.status_code == 200) {
@@ -1468,8 +1494,8 @@ int main()
     // Write default english to file
     Strings enStrings;
     nlohmann::json enJson = enStrings.to_json();
-    filesystem::create_directories(MyUtils::GetExecutableFolderPath() + "\\localizations\\");
-    std::ofstream EnglishFILE(MyUtils::GetExecutableFolderPath() + "\\localizations\\en.json");  
+    filesystem::create_directories(Config::GetExecutableFolderPath() + "\\localizations\\");
+    std::ofstream EnglishFILE(Config::GetExecutableFolderPath() + "\\localizations\\en.json");  
     EnglishFILE << enJson.dump(4);
     EnglishFILE.close();
     enJson.clear();
@@ -1557,6 +1583,8 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+    glfwSwapInterval(1); // VSYNC
+
     int imageWidth, imageHeight, channels;
     stbi_uc* backgroundTexture = stbi_load("textures\\background.png", &imageWidth, &imageHeight, &channels, 4); // Load as RGBA
     bool BackgroundTextureLoaded = false;
@@ -1603,17 +1631,17 @@ int main()
                 0x0180, 0x024F, // Latin Extended-B (if you need even more coverage)
                 0 };
       if (appConfig.Language == "ja")    
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansJP-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
       else if (appConfig.Language == "zh")
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
       else if (appConfig.Language == "ko")
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
       else if (appConfig.Language == "ru")
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\NotoSansRU-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesCyrillic());
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansRU-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesCyrillic());
       else if (appConfig.Language == "vi")
-          ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesVietnamese());       
+          ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesVietnamese());       
       else {
-        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(MyUtils::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, polishGlyphRange);
+        ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, polishGlyphRange);
       }
 
     std::vector<const char*> languageItems;
@@ -2541,27 +2569,27 @@ int main()
                                             else if (s.lmodestrSony == "Multiple Position Vibration") {
 
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt("Frequency", &s.L2MultipleVibrationFeedback[0], 0, 255);
+                                                ImGui::SliderInt(strings.Frequency.c_str(), &s.L2MultipleVibrationFeedback[0], 0, 255);
                                                 ImGui::SetNextItemWidth(300);
                                                 ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(1)).c_str(), &s.L2MultipleVibrationFeedback[1], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.L2MultipleVibrationFeedback[2], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(2)).c_str(), &s.L2MultipleVibrationFeedback[2], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.L2MultipleVibrationFeedback[3], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(3)).c_str(), &s.L2MultipleVibrationFeedback[3], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.L2MultipleVibrationFeedback[4], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(4)).c_str(), &s.L2MultipleVibrationFeedback[4], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.L2MultipleVibrationFeedback[5], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(5)).c_str(), &s.L2MultipleVibrationFeedback[5], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.L2MultipleVibrationFeedback[6], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(6)).c_str(), &s.L2MultipleVibrationFeedback[6], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.L2MultipleVibrationFeedback[7], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(7)).c_str(), &s.L2MultipleVibrationFeedback[7], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.L2MultipleVibrationFeedback[8], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(8)).c_str(), &s.L2MultipleVibrationFeedback[8], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.L2MultipleVibrationFeedback[9], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(9)).c_str(), &s.L2MultipleVibrationFeedback[9], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.L2MultipleVibrationFeedback[10], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(10)).c_str(), &s.L2MultipleVibrationFeedback[10], 0, 8);
                                             }
                                         }
                                         else if (s.curTrigger == "R2") {
@@ -2662,27 +2690,27 @@ int main()
                                             else if (s.rmodestrSony == "Multiple Position Vibration") {
 
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt("Frequency", &s.R2MultipleVibrationFeedback[0], 0, 255);
+                                                ImGui::SliderInt(strings.Frequency.c_str(), &s.R2MultipleVibrationFeedback[0], 0, 255);
                                                 ImGui::SetNextItemWidth(300);
                                                 ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(1)).c_str(), &s.R2MultipleVibrationFeedback[1], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(2)).c_str(), &s.R2MultipleVibrationFeedback[2], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(2)).c_str(), &s.R2MultipleVibrationFeedback[2], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(3)).c_str(), &s.R2MultipleVibrationFeedback[3], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(3)).c_str(), &s.R2MultipleVibrationFeedback[3], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(4)).c_str(), &s.R2MultipleVibrationFeedback[4], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(4)).c_str(), &s.R2MultipleVibrationFeedback[4], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(5)).c_str(), &s.R2MultipleVibrationFeedback[5], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(5)).c_str(), &s.R2MultipleVibrationFeedback[5], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(6)).c_str(), &s.R2MultipleVibrationFeedback[6], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(6)).c_str(), &s.R2MultipleVibrationFeedback[6], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(7)).c_str(), &s.R2MultipleVibrationFeedback[7], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(7)).c_str(), &s.R2MultipleVibrationFeedback[7], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(8)).c_str(), &s.R2MultipleVibrationFeedback[8], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(8)).c_str(), &s.R2MultipleVibrationFeedback[8], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(9)).c_str(), &s.R2MultipleVibrationFeedback[9], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(9)).c_str(), &s.R2MultipleVibrationFeedback[9], 0, 8);
                                                 ImGui::SetNextItemWidth(300);
-                                                ImGui::SliderInt(std::string(strings.Strength + " " + std::to_string(10)).c_str(), &s.R2MultipleVibrationFeedback[10], 0, 8);
+                                                ImGui::SliderInt(std::string(strings.Amplitude + " " + std::to_string(10)).c_str(), &s.R2MultipleVibrationFeedback[10], 0, 8);
                                             }
                                         }
                                     }
@@ -2748,12 +2776,15 @@ int main()
 
                             if (ImGui::CollapsingHeader(strings.HapticFeedback.c_str()))
                             {
-                                ImGui::Text(strings.StandardRumble.c_str());
-                                Tooltip(strings.Tooltip_HapticFeedback.c_str());
-                                ImGui::SetNextItemWidth(300);
-                                ImGui::SliderInt(strings.LeftMotor.c_str(), &s.lrumble, 0, 255);
-                                ImGui::SetNextItemWidth(300);
-                                ImGui::SliderInt(strings.RightMotor.c_str(), &s.rrumble, 0, 255);
+                                if (s.emuStatus == None)
+                                {
+                                    ImGui::Text(strings.StandardRumble.c_str());
+                                    Tooltip(strings.Tooltip_HapticFeedback.c_str());
+                                    ImGui::SetNextItemWidth(300);
+                                    ImGui::SliderInt(strings.LeftMotor.c_str(), &s.lrumble, 0, 255);
+                                    ImGui::SetNextItemWidth(300);
+                                    ImGui::SliderInt(strings.RightMotor.c_str(), &s.rrumble, 0, 255);
+                                }
 
                                 ImGui::SetNextItemWidth(300);
                                 ImGui::SliderInt(strings.MaxLeftMotor.c_str(), &s.MaxLeftMotor, 0, 255);
@@ -2807,6 +2838,64 @@ int main()
                                     }
                                 }
                               
+                            }
+
+                            if (ImGui::CollapsingHeader(strings.AnalogSticks.c_str())) {
+
+                                ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+                                float radius = 200.0f;
+                                ImVec2 center = ImVec2(radius + cursor_pos.x, radius + cursor_pos.y);
+                                ImU32 color = IM_COL32(255, 255, 255, 255); 
+                                ImU32 colorRed = IM_COL32(255, 0, 0, 255);
+                                ImU32 colorGreen = IM_COL32(0, 255, 0, 255);
+
+                                ImGui::GetWindowDrawList()->AddCircle(center, radius, DualSense[i].State.L3 ? colorRed : color);
+                                ImGui::GetWindowDrawList()->AddCircle(center, ConvertRange(s.LeftAnalogDeadzone, 0, 127, 0, radius), colorGreen);
+
+                                ImVec2 leftStickPos = ImVec2(center.x + ConvertRange(DualSense[i].State.LX - 128, -128, 128, -radius, radius),
+                                                             center.y + ConvertRange(DualSense[i].State.LY - 128, -128, 128, -radius, radius));
+                                ImGui::GetWindowDrawList()->AddCircleFilled(leftStickPos, 10.0f, colorRed);
+
+                                char left_text[32];
+                                sprintf(left_text, "X: %d | Y: %d", DualSense[i].State.LX, DualSense[i].State.LY);
+                                ImVec2 left_text_size = ImGui::CalcTextSize(left_text);
+                                ImVec2 left_text_pos = ImVec2(center.x - left_text_size.x / 2, center.y + radius);
+                                ImGui::GetWindowDrawList()->AddText(left_text_pos, color, left_text);
+
+                                ImGui::Dummy(ImVec2(radius * 2, radius * 2));
+                                ImGui::SameLine();
+
+                                cursor_pos = ImGui::GetCursorScreenPos();
+                                ImVec2 right_center = ImVec2(radius + cursor_pos.x, radius + cursor_pos.y);
+
+                                ImGui::GetWindowDrawList()->AddCircle(right_center, radius, DualSense[i].State.R3 ? colorRed : color);
+                                ImGui::GetWindowDrawList()->AddCircle(right_center, ConvertRange(s.RightAnalogDeadzone, 0, 127, 0, radius), colorGreen);
+
+                                ImVec2 rightStickPos = ImVec2(right_center.x + ConvertRange(DualSense[i].State.RX - 128, -128, 128, -radius, radius),
+                                                              right_center.y + ConvertRange(DualSense[i].State.RY - 128, -128, 128, -radius, radius));
+                                ImGui::GetWindowDrawList()->AddCircleFilled(rightStickPos, 10.0f, colorRed);
+
+                                char right_text[32];
+                                sprintf(right_text, "X: %d | Y: %d", DualSense[i].State.RX, DualSense[i].State.RY);
+                                ImVec2 right_text_size = ImGui::CalcTextSize(right_text);
+                                ImVec2 right_text_pos = ImVec2(right_center.x - right_text_size.x / 2, right_center.y + radius);
+                                ImGui::GetWindowDrawList()->AddText(right_text_pos, color, right_text);
+
+                                ImGui::Dummy(ImVec2(radius * 2, (radius * 2) + 40));
+                                ImGui::Separator();
+
+                                ImGui::Text(strings.GeneralSettings.c_str());
+                                if (!s.RightStickToMouse) ImGui::Checkbox(std::string(strings.LeftStickToMouse + "##L3toMouse").c_str(), &s.LeftStickToMouse);
+                                if (!s.LeftStickToMouse) ImGui::Checkbox(std::string(strings.RightStickToMouse + "##R3toMouse").c_str(), &s.RightStickToMouse);
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderFloat(std::string(strings.Sensitivity + "##AnalogStickToMouse").c_str(), &s.LeftStickToMouseSensitivity, 0.01f, 0.20f);
+
+                                ImGui::Text(strings.EmulatedControllerSettings.c_str());
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
+                                ImGui::SetNextItemWidth(300);
+                                ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
+                                ImGui::Checkbox(strings.TouchpadAsRightStick.c_str(), &s.TouchpadToRXRY);
                             }
 
                             if (ImGui::CollapsingHeader(strings._Touchpad.c_str()))
@@ -2880,6 +2969,7 @@ int main()
                                 ImGui::Checkbox(strings.StopWritingShortcut.c_str(), &s.StopWritingShortcut);
                                 ImGui::Checkbox(strings.GyroToMouseShortcut.c_str(), &s.GyroToMouseShortcut);
                                 ImGui::Checkbox(strings.GyroToRightAnalogStickShortcut.c_str(), &s.GyroToRightAnalogStickShortcut);
+                                ImGui::Checkbox(strings.DisconnectControllerShortcut.c_str(), &s.DisconnectControllerShortcut);
                             }
 
                             if (ImGui::CollapsingHeader(strings.EmulationHeader.c_str()))
@@ -2916,18 +3006,13 @@ int main()
                                     ImGui::Separator();
 
                                     ImGui::SetNextItemWidth(300);
-                                    ImGui::SliderInt(strings.LeftAnalogStickDeadZone.c_str(), &s.LeftAnalogDeadzone, 0, 127);
-                                    ImGui::SetNextItemWidth(300);
-                                    ImGui::SliderInt(strings.RightAnalogStickDeadZone.c_str(), &s.RightAnalogDeadzone, 0, 127);
-                                    ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.L2Deadzone.c_str(), &s.L2Deadzone, 1, 255);
                                     ImGui::SetNextItemWidth(300);
                                     ImGui::SliderInt(strings.R2Deadzone.c_str(), &s.R2Deadzone, 1, 255);
                                     ImGui::Checkbox(strings.TriggersAsButtons.c_str(), &s.TriggersAsButtons);
                                     Tooltip(strings.Tooltip_TriggersAsButtons.c_str());
                                     ImGui::Checkbox(strings.TouchpadAsSelect.c_str(), &s.TouchpadAsSelect);
-                                    ImGui::Checkbox(strings.TouchpadAsStart.c_str(), &s.TouchpadAsStart);
-                                    ImGui::Checkbox(strings.TouchpadAsRightStick.c_str(), &s.TouchpadToRXRY);
+                                    ImGui::Checkbox(strings.TouchpadAsStart.c_str(), &s.TouchpadAsStart);                              
                                     ImGui::Checkbox(strings.OverrideDS4Lightbar.c_str(), &s.OverrideDS4Lightbar);
                             }
 
@@ -3025,12 +3110,12 @@ int main()
             }          
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(16)); // 60 FPS
+        if (IsMinimized) std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        else std::this_thread::sleep_for(std::chrono::milliseconds(6));
 
         ImGui::End();
         ImGui::Render();
-
-        end_cycle(window);       
+        end_cycle(window);      
     }
 
     stop_thread = true; // Signal all threads to stop

@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.28)
 set(CMAKE_CXX_STANDARD 20)
 set(EXE_SOURCES "main.cpp" "cycle.cpp" "DualSense.h")
 set(EXE_HEADERS "cycle.hpp" "DualSense.h")
-add_executable("DSX" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h" "icon.ico" "Strings.h")
+add_executable("DSX" ${EXE_SOURCES} ${EXE_HEADERS} "DualSense.h" "miniaudio.h"    "ControllerEmulation.h" "IMMNotificationClient.h" "UDP.h" "Settings.h"  "Config.h" "MyUtils.h" "MyUtils.cpp" "icon.rc" "stb_image.h" "icon.ico" "Strings.h" "Strings.cpp"  "Settings.cpp" "DualSense.cpp" "ControllerEmulation.cpp" "Config.cpp" "UDP.cpp")
 set_property(TARGET "DSX" PROPERTY VS_DPI_AWARE "PerMonitor")
+set_target_properties("DSX" PROPERTIES UNITY_BUILD ON)
 
 include(FetchContent)
 FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git

@@ -1,10 +1,14 @@
+#ifndef STRINGS_H
+#define STRINGS_H
+
+#include <string>
+#include <vector>
+#include "nlohmann/json.hpp"
 #include "MyUtils.h"
 
 using json = nlohmann::json;
 
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko", "ru", "tr", "vi"};
-
-// Define all regular string members with their default values
+// Define all regular string members (declarations only)
 #define STRING_MEMBERS \
     X(Position, "Position") \
     X(DisconnectAllBTDevicesOnExit, "Disconnect all bluetooth devices on application exit") \
@@ -135,6 +139,12 @@ std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", 
     X(HideWindowOnStartup, "Hide window on startup") \
     X(RunWithWindows, "Run with Windows") \
     X(Scale, "Scale") \
+    X(AnalogSticks, "Analog Sticks") \
+    X(EmulatedControllerSettings, "Emulated controller settings") \
+    X(GeneralSettings, "General settings") \
+    X(LeftStickToMouse, "Left stick to mouse") \
+    X(RightStickToMouse, "Right stick to mouse") \
+    X(DisconnectControllerShortcut, "Touchpad + Mic button = Disconnect Bluetooth controller") \
     X(Tooltip_MaxMotor, "Sets maximum vibration for emulated controller") \
     X(Tooltip_GyroToRightAnalogStick, "When holding L2, the right analog stick will move according to your controller's motions") \
     X(Tooltip_GyroToMouse, "When holding L2, the mouse will move according to your controller's motions") \
@@ -172,51 +182,20 @@ std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", 
 
 class Strings {
 public:
-    #define X(name, default) std::string name = default;
+    Strings();
+
+    #define X(name, default) std::string name;
     STRING_MEMBERS
     #undef X
 
-    std::string _Touchpad = "Touchpad";
+    std::string _Touchpad;
 
-    json to_json() const {
-        json j;
-
-        #define X(name, default) j[#name] = name;
-        STRING_MEMBERS
-        #undef X
-
-        j["Touchpad"] = _Touchpad;
-        return j;
-    }
-
-    static Strings from_json(const json& j) {
-        Strings s;
-        #define X(name, default) if (j.contains(#name)) j.at(#name).get_to(s.name);
-        STRING_MEMBERS
-        #undef X
-
-        if (j.contains("Touchpad")) j.at("Touchpad").get_to(s._Touchpad);
-        return s;
-    }
+    json to_json() const;
+    static Strings from_json(const json& j);
 };
 
-static Strings ReadStringsFromFile(const std::string& language) {
-    Strings strings;
-    std::string fileLocation = MyUtils::GetExecutableFolderPath() + "\\localizations\\" + language + ".json";
-    
-    std::ifstream file(fileLocation);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << fileLocation << std::endl;
-        return strings; 
-    }
+Strings ReadStringsFromFile(const std::string& language);
 
-    try {
-        json j;
-        file >> j;
-        strings = Strings::from_json(j);
-    } catch (const std::exception& e) {
-        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
-    }
-    file.close();
-    return strings;
-}
+extern std::vector<std::string> languages;
+
+#endif // STRINGS_H

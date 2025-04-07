@@ -1,4 +1,4 @@
-﻿const int VERSION = 40;
+﻿const int VERSION = 41;
 
 extern "C" {
     __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -1636,7 +1636,7 @@ int main()
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansSC-Bold.otf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
       else if (appConfig.Language == "ko")
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansKR-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
-      else if (appConfig.Language == "ru")
+      else if (appConfig.Language == "ru" || appConfig.Language == "uk")
         ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\NotoSansRU-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesCyrillic());
       else if (appConfig.Language == "vi")
           ImFont* font_title = io.Fonts->AddFontFromFileTTF(std::string(Config::GetExecutableFolderPath() + "\\fonts\\Roboto-Bold.ttf").c_str(), 18.0f, NULL, io.Fonts->GetGlyphRangesVietnamese());       
@@ -1745,7 +1745,7 @@ int main()
        
         if (ShowStyleEditWindow) {
 
-            if (ImGui::Begin("Style editor", &ShowStyleEditWindow, ImGuiWindowFlags_NoCollapse)) {
+            if (ImGui::Begin(strings.StyleEditor.c_str(), &ShowStyleEditWindow, ImGuiWindowFlags_NoCollapse)) {
 
                 if (!ImGui::IsWindowFocused()) {
                     ShowStyleEditWindow = false;
@@ -2033,7 +2033,7 @@ int main()
                                         style = ImGuiStyle();
                                     }
 
-                                    if (ImGui::Button("Show edit menu")) {
+                                    if (ImGui::Button(strings.ShowEditMenu.c_str())) {
                                         ShowStyleEditWindow = true;
                                     }
                                     ImGui::EndMenu();

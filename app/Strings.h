@@ -145,6 +145,8 @@ using json = nlohmann::json;
     X(LeftStickToMouse, "Left stick to mouse") \
     X(RightStickToMouse, "Right stick to mouse") \
     X(DisconnectControllerShortcut, "Touchpad + Mic button = Disconnect Bluetooth controller") \
+    X(ShowEditMenu, "Show edit menu") \
+    X(StyleEditor, "Style editor") \
     X(Tooltip_MaxMotor, "Sets maximum vibration for emulated controller") \
     X(Tooltip_GyroToRightAnalogStick, "When holding L2, the right analog stick will move according to your controller's motions") \
     X(Tooltip_GyroToMouse, "When holding L2, the mouse will move according to your controller's motions") \
@@ -152,7 +154,7 @@ using json = nlohmann::json;
     X(Tooltip_Dualshock4V2, "Emulates the second revision of DualShock 4, older games will not recognise it") \
     X(Tooltip_TriggersAsButtons, "Sets trigger resistance to very hard and L2/R2 to maximum on slightest trigger pull") \
     X(Tooltip_SpeakerVolume, "Sets speaker volume at hardware level, affects everything played on this controller") \
-    X(Tooltip_HapticsToTriggers, "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller (Ex. Zenless Zone Zero) or Audio To Haptics feature") \
+    X(Tooltip_HapticsToTriggers, "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller or Audio To Haptics feature") \
     X(Tooltip_RumbleToAT_RigidMode, "Sets rigid trigger effect") \
     X(Tooltip_RumbleToAT, "Translates rumble vibrations to adaptive triggers, really good in games that don't support them natively") \
     X(Tooltip_SwapTriggersRumbleToAT, "Sets left motor to right trigger and right motor to left trigger") \

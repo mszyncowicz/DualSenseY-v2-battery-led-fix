@@ -46,6 +46,12 @@ namespace AudioPassthrough
                     Environment.Exit(0); // Close the app if audio to haptics is already running for this controller
                 }
             }
+
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
+            MessageBox.Show(e.ExceptionObject.ToString(), "CRASH");
         }
 
         private void Form1_Load(object sender, EventArgs e)

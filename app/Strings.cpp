@@ -5,7 +5,7 @@
 #include <exception>
 
 // Define the languages vector
-std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko", "ru", "tr", "vi"};
+std::vector<std::string> languages = {"en", "pl", "it", "es", "pt", "fr", "ja", "zh", "ko", "ru", "tr", "vi", "uk"};
 
 // Constructor implementation with default values
 Strings::Strings() {

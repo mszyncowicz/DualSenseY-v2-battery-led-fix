@@ -15,6 +15,6 @@
     "\\AudioPassthrough",
     "\\AudioPassthrough\\AudioPassthrough"
   ],
-  "SelectedNode": "\\AudioPassthrough\\AudioPassthrough\\AudioPassthrough.csproj",
+  "SelectedNode": "\\app\\main.cpp",
   "PreviewInSolutionExplorer": false
 }

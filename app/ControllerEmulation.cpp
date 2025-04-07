@@ -117,11 +117,12 @@ bool ViGEm::UpdateX360(ButtonState state) {
     if (state.R3) buttons |= 0x0080;
     if (state.L1) buttons |= 0x0100;
     if (state.R1) buttons |= 0x0200;
+    if (state.ps) buttons |= 0x0400;
     if (state.cross) buttons |= 0x1000;
     if (state.circle) buttons |= 0x2000;
     if (state.square) buttons |= 0x4000;
     if (state.triangle) buttons |= 0x8000;
-
+    
     report.wButtons = buttons;
     report.bLeftTrigger = state.L2;
     report.bRightTrigger = state.R2;

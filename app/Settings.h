@@ -113,6 +113,7 @@ struct AudioPlay {
     X(RightStickToMouse) \
     X(LeftStickToMouseSensitivity) \
     X(DisconnectControllerShortcut) \
+    X(colorPickerColor) \
     X(emuStatus)
 
 class Settings {
@@ -179,7 +180,7 @@ public:
     int MEDIUM_THRESHOLD;
     int QUIET_COLOR[3];
     int MEDIUM_COLOR[3];
-    int LOUD_COLOR[3];
+    int LOUD_COLOR[3];   
     float ScreenshotSoundLoudness;
     int DiscoSpeed;
     bool DisablePlayerLED;
@@ -218,6 +219,7 @@ public:
     std::string triggerFormat;
     float LeftStickToMouseSensitivity;
     bool DisconnectControllerShortcut;
+    float colorPickerColor[3];
 
     // UDP Haptics (not saved to JSON)
     std::string CurrentHapticFile;

@@ -99,6 +99,7 @@ Settings::Settings() {
     RightStickToMouse = false;
     LeftStickToMouseSensitivity = 0.03f;
     DisconnectControllerShortcut = false;
+    colorPickerColor[0] = 0; colorPickerColor[1] = 0; colorPickerColor[2] = 0;
 
     CurrentHapticFile = "";
     DontPlayIfAlreadyPlaying = false;

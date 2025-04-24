@@ -174,6 +174,8 @@ bool DualsenseUtils::InputFeatures::operator==(const InputFeatures& other) const
            Red == other.Red &&
            Green == other.Green &&
            Blue == other.Blue &&
+           ImprovedRumbleEmulation == other.ImprovedRumbleEmulation &&
+           RumbleReduction == other.RumbleReduction &&
            ID == other.ID;
 }
 
@@ -477,10 +479,10 @@ bool Dualsense::Write() {
             for (int i = 0; i < 10; i++) outReport[12 + i] = CurSettings.RightTriggerForces[i];
             outReport[22] = CurSettings.LeftTriggerMode;
             for (int i = 0; i < 10; i++) outReport[23 + i] = CurSettings.LeftTriggerForces[i];
-            uint8_t triggerReduction = 0x0, rumbleReduction = 0x0;
-            outReport[37] = (rumbleReduction << 4) | (triggerReduction & 0x0F);
-            outReport[42] = CurSettings.micLED;
-            outReport[43] = CurSettings._Brightness;
+            outReport[37] = (0x0 << 4) | (CurSettings.RumbleReduction & 0x0F);
+            outReport[39] ^= (1 << 0); // AllowLightBrightnessChange = 1
+            outReport[39] ^= CurSettings.ImprovedRumbleEmulation ? (1 << 2) : (0 << 2);
+            outReport[43] = (unsigned char)CurSettings._Brightness;
             outReport[44] = CurSettings.PlayerLED_Bitmask;
             outReport[45] = CurSettings.Red;
             outReport[46] = CurSettings.Green;
@@ -532,9 +534,11 @@ bool Dualsense::Write() {
             for (int i = 0; i < 10; i++) outReport[13 + i] = CurSettings.RightTriggerForces[i];
             outReport[23] = CurSettings.LeftTriggerMode;
             for (int i = 0; i < 10; i++) outReport[24 + i] = CurSettings.LeftTriggerForces[i];
-            outReport[40] = CurSettings._Brightness;
-            outReport[43] = CurSettings._Brightness;
-            outReport[44] = CurSettings.micLED;
+            uint8_t triggerReduction = 0x0;
+            outReport[38] = (0x0 << 4) | (CurSettings.RumbleReduction & 0x0F);
+            outReport[40] ^= (1 << 0);  // AllowLightBrightnessChange = 1
+            outReport[40] ^= CurSettings.ImprovedRumbleEmulation ? (1 << 2) : (0 << 2);
+            outReport[44] = (unsigned char)CurSettings._Brightness;
             outReport[45] = CurSettings.PlayerLED_Bitmask;
             outReport[46] = CurSettings.Red;
             outReport[47] = CurSettings.Green;
@@ -906,6 +910,8 @@ void Dualsense::SetPlayerLED(uint8_t Player) {
     }
 }
 
+
+
 void Dualsense::SetRightTrigger(Trigger::TriggerMode triggerMode, uint8_t Force1, uint8_t Force2, uint8_t Force3, uint8_t Force4,
                                uint8_t Force5, uint8_t Force6, uint8_t Force7, uint8_t Force8, uint8_t Force9, uint8_t Force10, uint8_t Force11) {
     CurSettings.RightTriggerMode = triggerMode;
@@ -954,4 +960,22 @@ void Dualsense::SetRumble(uint8_t LeftMotor, uint8_t RightMotor) {
 
 void Dualsense::UseHeadsetNotSpeaker(bool flag) {
     CurSettings.audioOutput = flag ? Feature::AudioOutput::Headset : Feature::AudioOutput::Speaker;
+}
+
+void Dualsense::SetLedBrightness(Feature::Brightness brightness)
+{
+    CurSettings._Brightness = brightness;
+}
+
+void Dualsense::EnableImprovedRumbleEmulation(bool flag)
+{
+    CurSettings.ImprovedRumbleEmulation = flag;
+}
+
+void Dualsense::SetRumbleReduction(int value)
+{
+    if (value > 7 || value < 0)
+        return;
+
+    CurSettings.RumbleReduction = value;
 }

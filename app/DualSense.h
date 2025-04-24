@@ -105,14 +105,13 @@ public:
 
 namespace Feature {
     enum MuteLight : uint8_t { Off = 0, On, Breathing, DoNothing, NoAction4, NoAction5, NoAction6, NoAction7 = 7 };
-    enum class LightBrightness : uint8_t { Bright = 0, Mid, Dim, BNoAction3, BNoAction4, BNoAction5, BNoAction6, BNoAction7 = 7 };
+    enum class Brightness : uint8_t { Bright = 0, Mid, Dim, BNoAction3, BNoAction4, BNoAction5, BNoAction6, BNoAction7 = 7 };
     enum LightFadeAnimation : uint8_t { Nothing = 0, FadeIn, FadeOut };
     enum RumbleMode : uint8_t { StandardRumble = 0xFF, Haptic_Feedback = 0xFC };
     enum FeatureType : int8_t { Full = 0x57, LetGo = 0x08, BT_Init = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x40 };
     enum AudioOutput : uint8_t { Headset = 0x05, Speaker = 0x31 };
     enum MicrophoneLED : uint8_t { Pulse = 0x2, MLED_On = 0x1, MLED_Off = 0x0 };
     enum MicrophoneStatus : uint8_t { MSTATUS_On = 0, MSTATUS_Off = 0x10 };
-    enum Brightness : uint8_t { High = 0x0, Medium = 0x1, Low = 0x2 };
     enum PlayerLED : uint8_t { PLAYER_OFF = 0x0, PLAYER_1 = 0x01, PLAYER_2 = 0x02, PLAYER_3 = 0x03, PLAYER_4 = 0x04, PLAYER_5 = 0x05 };
     enum DeviceType : uint8_t { DualSense = 0, DualSense_Edge = 1 };
     enum ConnectionType : uint8_t { BT = 0x0, USB = 0x1 };
@@ -150,6 +149,8 @@ namespace DualsenseUtils {
         X(Red) \
         X(Green) \
         X(Blue) \
+        X(RumbleReduction) \
+        X(ImprovedRumbleEmulation) \
         X(ID)
 
     class InputFeatures {
@@ -168,13 +169,15 @@ namespace DualsenseUtils {
         Trigger::TriggerMode LeftTriggerMode = Trigger::TriggerMode::Off;
         int RightTriggerForces[11] = {0};
         int LeftTriggerForces[11] = {0};
-        Feature::Brightness _Brightness = Feature::Brightness::High;
+        Feature::Brightness _Brightness = Feature::Brightness::Bright;
         Feature::PlayerLED playerLED = Feature::PlayerLED::PLAYER_OFF;
         unsigned char PlayerLED_Bitmask = 0x0;
         int Red = 0;
         int Green = 0;
         int Blue = 0;
         string ID = "";
+        bool ImprovedRumbleEmulation = true;
+        int RumbleReduction = 0x0;
 
         nlohmann::json to_json() const;
         static InputFeatures from_json(const nlohmann::json& j);
@@ -282,6 +285,9 @@ public:
     void SetHeadsetVolume(int Volume);
     void SetRumble(uint8_t LeftMotor, uint8_t RightMotor);
     void UseHeadsetNotSpeaker(bool flag);
+    void SetLedBrightness(Feature::Brightness brightness);
+    void EnableImprovedRumbleEmulation(bool flag);
+    void SetRumbleReduction(int value); // 0x0-0x7
 };
 
 #endif // DUALSENSE_H

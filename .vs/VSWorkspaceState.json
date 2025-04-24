@@ -11,10 +11,8 @@
   },
   "ExpandedNodes": [
     "",
-    "\\app",
-    "\\AudioPassthrough",
     "\\AudioPassthrough\\AudioPassthrough"
   ],
-  "SelectedNode": "\\app\\main.cpp",
+  "SelectedNode": "\\BTControl",
   "PreviewInSolutionExplorer": false
 }

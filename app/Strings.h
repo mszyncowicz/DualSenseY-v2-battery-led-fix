@@ -147,6 +147,10 @@ using json = nlohmann::json;
     X(DisconnectControllerShortcut, "Touchpad + Mic button = Disconnect Bluetooth controller") \
     X(ShowEditMenu, "Show edit menu") \
     X(StyleEditor, "Style editor") \
+    X(PlayerLedBrightness, "Player LED brightness") \
+    X(LightbarColor, "Lightbar color") \
+    X(RumbleReduction, "Rumble reduction") \
+    X(ImprovedRumbleEmulation, "Improved rumble emulation") \
     X(Tooltip_MaxMotor, "Sets maximum vibration for emulated controller") \
     X(Tooltip_GyroToRightAnalogStick, "When holding L2, the right analog stick will move according to your controller's motions") \
     X(Tooltip_GyroToMouse, "When holding L2, the mouse will move according to your controller's motions") \

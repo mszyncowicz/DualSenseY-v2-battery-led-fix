@@ -11,8 +11,8 @@
   },
   "ExpandedNodes": [
     "",
-    "\\AudioPassthrough\\AudioPassthrough"
+    "\\app"
   ],
-  "SelectedNode": "\\BTControl",
+  "SelectedNode": "\\.gitattributes",
   "PreviewInSolutionExplorer": false
 }

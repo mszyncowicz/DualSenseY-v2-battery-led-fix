@@ -1,4 +1,4 @@
-﻿const int VERSION = 42;
+﻿const int VERSION = 43;
 
 extern "C" {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -1490,7 +1490,7 @@ void writeControllerState(Dualsense& controller, Settings& settings,
 
 				std::chrono::high_resolution_clock::time_point Now =
 					std::chrono::high_resolution_clock::now();
-				if ((Now - udpServer.LastTime) > 8s) {
+				if ((Now - udpServer.LastTime) > 15s) {
 					udpServer.isActive = false;
 					settings.CurrentlyUsingUDP = false;
 					firstTimeUDP = true;

@@ -1,10 +1,8 @@
 #ifndef DUALSENSE_H
 #define DUALSENSE_H
 
-#include <Propvarutil.h>
 #include <atlcomcli.h>
 #include <cfgmgr32.h>
-#include <functiondiscoverykeys_devpkey.h>
 #include <hidapi.h>
 #include <mmdeviceapi.h>
 #include <setupapi.h>

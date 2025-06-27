@@ -1,4 +1,4 @@
-﻿const int VERSION = 43;
+﻿const int VERSION = 44;
 
 extern "C" {
 	__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
@@ -370,42 +370,47 @@ void writeEmuController(Dualsense& controller, Settings& settings) {
 
 			editedButtonState = controller.State;
 
-			int deltaLX = editedButtonState.LX - 128;
-			int deltaLY = editedButtonState.LY - 128;
+			if (settings.LeftAnalogDeadzone > 0) {
+				int deltaLX = editedButtonState.LX - 128;
+				int deltaLY = editedButtonState.LY - 128;
 
-			float magnitudeL = sqrt(deltaLX * deltaLX + deltaLY * deltaLY);
+				float magnitudeL = sqrt(deltaLX * deltaLX + deltaLY * deltaLY);
 
-			if (magnitudeL <= settings.LeftAnalogDeadzone) {
-				editedButtonState.LX = 128;
-				editedButtonState.LY = 128;
+				if (magnitudeL <= settings.LeftAnalogDeadzone) {
+					editedButtonState.LX = 128;
+					editedButtonState.LY = 128;
+				}
+				else {
+					float scale = (magnitudeL - settings.LeftAnalogDeadzone) /
+						(127.0f - settings.LeftAnalogDeadzone);
+
+					if (scale > 1.0f) scale = 1.0f;
+
+					editedButtonState.LX = 128 + static_cast<int>(deltaLX * scale);
+					editedButtonState.LY = 128 + static_cast<int>(deltaLY * scale);
+				}
+
 			}
-			else {
-				float scale = (magnitudeL - settings.LeftAnalogDeadzone) /
-					(127.0f - settings.LeftAnalogDeadzone);
 
-				if (scale > 1.0f) scale = 1.0f;
+			if(settings.RightAnalogDeadzone > 0) {
+				int deltaRX = editedButtonState.RX - 128;
+				int deltaRY = editedButtonState.RY - 128;
 
-				editedButtonState.LX = 128 + static_cast<int>(deltaLX * scale);
-				editedButtonState.LY = 128 + static_cast<int>(deltaLY * scale);
-			}
+				float magnitudeR = sqrt(deltaRX * deltaRX + deltaRY * deltaRY);
 
-			int deltaRX = editedButtonState.RX - 128;
-			int deltaRY = editedButtonState.RY - 128;
+				if (magnitudeR <= settings.RightAnalogDeadzone) {
+					editedButtonState.RX = 128;
+					editedButtonState.RY = 128;
+				}
+				else {
+					float scale = (magnitudeR - settings.RightAnalogDeadzone) /
+						(127.0f - settings.RightAnalogDeadzone);
 
-			float magnitudeR = sqrt(deltaRX * deltaRX + deltaRY * deltaRY);
+					if (scale > 1.0f) scale = 1.0f;
 
-			if (magnitudeR <= settings.RightAnalogDeadzone) {
-				editedButtonState.RX = 128;
-				editedButtonState.RY = 128;
-			}
-			else {
-				float scale = (magnitudeR - settings.RightAnalogDeadzone) /
-					(127.0f - settings.RightAnalogDeadzone);
-
-				if (scale > 1.0f) scale = 1.0f;
-
-				editedButtonState.RX = 128 + static_cast<int>(deltaRX * scale);
-				editedButtonState.RY = 128 + static_cast<int>(deltaRY * scale);
+					editedButtonState.RX = 128 + static_cast<int>(deltaRX * scale);
+					editedButtonState.RY = 128 + static_cast<int>(deltaRY * scale);
+				}
 			}
 
 			if (settings.TriggersAsButtons) {

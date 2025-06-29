@@ -1,4 +1,9 @@
 {
+  "ExpandedNodes": [
+    ""
+  ],
+  "SelectedNode": "\\C:\\Users\\igorp\\source\\repos\\WujekFoliarz\\DualSenseY-v2\\CMakeLists.txt\\DSX.exe (app\\DSX.exe)\\main.cpp",
+  "PreviewInSolutionExplorer": false,
   "OutputFoldersPerTargetSystem": {
     "Local Machine": [
       "out\\build\\x64-Debug",
@@ -8,10 +13,5 @@
       "out\\build\\x64-Release-DB",
       "out\\install\\x64-Release-DB"
     ]
-  },
-  "ExpandedNodes": [
-    "",
-    "\\AudioPassthrough\\AudioPassthrough"
-  ],
-  "PreviewInSolutionExplorer": false
+  }
 }

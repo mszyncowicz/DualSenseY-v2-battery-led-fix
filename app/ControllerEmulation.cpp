@@ -200,12 +200,12 @@ bool ViGEm::UpdateDS4(ButtonState state) {
     touch.bTouchData2[2] = state.trackPadTouch1.Y >> 4;
     report.Report.sCurrentTouch = touch;
 
-    report.Report.wAccelX = state.accelerometer.X;
-    report.Report.wAccelY = state.accelerometer.Y;
-    report.Report.wAccelZ = state.accelerometer.Z;
-    report.Report.wGyroX = state.gyro.X;
-    report.Report.wGyroY = state.gyro.Y;
-    report.Report.wGyroZ = state.gyro.Z;
+    report.Report.wAccelX = state.gyro.X;
+    report.Report.wAccelY = state.gyro.Y;
+    report.Report.wAccelZ = state.gyro.Z;
+    report.Report.wGyroX = state.accelerometer.X;
+    report.Report.wGyroY = state.accelerometer.Y;
+    report.Report.wGyroZ = state.accelerometer.Z;
     report.Report.wTimestamp = state.accelerometer.SensorTimestamp != 0 ? state.accelerometer.SensorTimestamp / 16 : 0;
 
     vigem_target_ds4_update_ex(client, ds4, report);

@@ -79,9 +79,8 @@
 - **Screenshot Functionality**: Save screenshots using the microphone button.
 - **Connection Type and Battery Info**: View connection type and battery level.
 
-## Requirements (For programmers)
+## Libraries used
 
-- **Libraries**
   - [Dear ImGui](https://github.com/ocornut/imgui) for the graphical interface.
   - [GLFW](https://www.glfw.org/) and **OpenGL** for rendering.
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
@@ -91,7 +90,6 @@
   - [Crashlogs](https://github.com/TylerGlaiel/Crashlogs)
   - [hidapi](https://github.com/libusb/hidapi)
   - [nlohmann/json](https://github.com/nlohmann/json)
-  - **Windows-only**: Uses the Windows API for audio endpoint management and screen capture.
 
 ## Usage
 

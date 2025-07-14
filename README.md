@@ -1,12 +1,15 @@
-This is a fork of https://github.com/WujekFoliarz/DualSenseY-v2 focused on battery indicators.
+This is a fork of [DualSenseY-v2](https://github.com/WujekFoliarz/DualSenseY-v2) focused on battery indicators.
 
 # Changelist:
-- added battery indication through player leds. The leds will show up in the following way
+- added battery indication through player leds. The leds will show up in the following way:
+
+```
 First led from the left - when battery > 5%
 second - when battery > 20%
 third - when battery > 40%
 fourth - when battery > 60%
 fifth - when battery > 80%
+```
 
 Functionality is useful for games which actively turns off RGB leds (like Tekken 8)
 
@@ -15,9 +18,9 @@ Functionality is useful for games which actively turns off RGB leds (like Tekken
 - fixed a bug in which the same controller would be considered as two separate controllers if connected with both bluetooth and usb.
 
 # TODO:
-- low battery windows notification (registry keys will be needed)
-- change tray icon to battery state of the selected controller
-- adding possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
+- [] low battery windows notification (registry keys will be needed)
+- [] change tray icon to battery state of the selected controller
+- [] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
 
 I will make a release when above changes will be done.
 

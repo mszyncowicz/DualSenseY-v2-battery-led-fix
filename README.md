@@ -18,9 +18,9 @@ Functionality is useful for games which actively turns off RGB leds (like Tekken
 - fixed a bug in which the same controller would be considered as two separate controllers if connected with both bluetooth and usb.
 
 # TODO:
-- [x] low battery windows notification (registry keys will be needed)
-- [v] change tray icon to battery state of the selected controller
-- [] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
+- [ ] low battery windows notification (registry keys will be needed)
+- [ ] change tray icon to battery state of the selected controller
+- [ ] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
 
 I will make a release when above changes will be done.
 

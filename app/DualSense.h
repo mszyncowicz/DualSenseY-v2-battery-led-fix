@@ -314,7 +314,7 @@ public:
 	void Read();
 	bool Write();
 	std::string GetMACAddress(bool colons = true);
-	std::string GetPath();
+	std::string GetPath() const;
 	Feature::ConnectionType GetConnectionType();
 	void InitializeAudioEngine();
 	DualsenseUtils::HapticFeedbackStatus GetHapticFeedbackStatus();
@@ -334,6 +334,7 @@ public:
 	void SetMicrophoneLED(bool LED, bool Pulse = false);
 	void SetMicrophoneVolume(int Volume);
 	void SetPlayerLED(uint8_t Player);
+	void AddPlayerLED(char Led);
 	void SetRightTrigger(Trigger::TriggerMode triggerMode, uint8_t Force1,
 						 uint8_t Force2, uint8_t Force3, uint8_t Force4,
 						 uint8_t Force5, uint8_t Force6, uint8_t Force7,
@@ -352,6 +353,7 @@ public:
 	void SetLedBrightness(Feature::Brightness brightness);
 	void EnableImprovedRumbleEmulation(bool flag);
 	void SetRumbleReduction(int value);  // 0x0-0x7
+	unsigned char GetPlayerBitMask() const;
 };
 
 #endif  // DUALSENSE_H

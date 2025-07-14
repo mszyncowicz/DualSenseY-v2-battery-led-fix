@@ -94,6 +94,7 @@ struct AudioPlay {
     X(RumbleToAT) \
     X(RumbleToAT_RigidMode) \
     X(BatteryLightbar) \
+    X(BatteryPlayerLed) \
     X(swipeThreshold) \
     X(TouchpadToMouse) \
     X(X360Shortcut) \
@@ -152,6 +153,7 @@ public:
     bool RumbleToAT;
     bool RumbleToAT_RigidMode;
     bool BatteryLightbar;
+    bool BatteryPlayerLed;
     bool TouchpadToMouse;
     bool X360Shortcut;
     bool DS4Shortcut;

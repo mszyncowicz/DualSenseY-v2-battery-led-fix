@@ -20,7 +20,15 @@ extern "C" {
 #include <algorithm>
 
 #include "stb_image.h"
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Data.Xml.Dom.h>
+#include <winrt/Windows.UI.Notifications.h>
+#include <windows.h>
 
+// Use the winrt namespaces
+using namespace winrt;
+using namespace Windows::Data::Xml::Dom;
+using namespace Windows::UI::Notifications;
 // #define _CRTDBG_MAP_ALLOC
 // #include <cstdlib>
 // #include <crtdbg.h>
@@ -62,6 +70,22 @@ struct TriggerSettings {
 	bool right = false;
 	uint8_t Forces[11];
 };
+
+std::string ExtractGuidFromPath(std::string path) {
+    size_t opening_brace = path.find_last_of('{');
+    size_t closing_brace = path.find_last_of('}');
+
+    // Basic validation to ensure we found both braces in the correct order
+    if (opening_brace != std::string::npos &&
+        closing_brace != std::string::npos &&
+        opening_brace < closing_brace)
+    {
+        return path.substr(opening_brace, closing_brace - opening_brace + 1);
+    }
+
+    // Return an empty string if the format is not as expected
+    return "";
+}
 
 void setTriggerSettings(TriggerSettings& trigger, const char* modeStr,
 						const int* feedbackArray, size_t feedbackSize) {
@@ -1346,7 +1370,7 @@ void writeControllerState(Dualsense& controller, Settings& settings,
 				(settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) &&
 				X360animationplayed) {
 				int batteryLevel = controller.State.battery.Level;
-
+				
 				if (batteryLevel > 20) {
 					batteryLevel = std::max<int>(0, std::min<int>(100, batteryLevel));
 
@@ -1369,6 +1393,38 @@ void writeControllerState(Dualsense& controller, Settings& settings,
 
 					controller.SetLightbar(led[0], 0, 0);
 				}
+			}
+
+			if (settings.BatteryPlayerLed && settings.DisablePlayerLED && !settings.CurrentlyUsingUDP &&
+				(settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) &&
+				X360animationplayed) {
+
+				int batteryLevel = controller.State.battery.Level;
+				batteryLevel = std::max<int>(0, std::min<int>(100, batteryLevel));
+
+				controller.SetPlayerLED(0);
+				if (batteryLevel > 5) {
+					controller.AddPlayerLED(0x01);
+				} else {
+
+				}
+				
+				if (batteryLevel > 20){
+					controller.AddPlayerLED(0x02);
+				}
+
+				if (batteryLevel > 40){
+					controller.AddPlayerLED(0x04);
+				}
+
+				if (batteryLevel > 60) {
+					controller.AddPlayerLED(0x08);
+				}
+
+				if (batteryLevel > 80){
+					controller.AddPlayerLED(0x16);
+				}
+
 			}
 
 			if (!settings.AudioToLED && !settings.DiscoMode &&
@@ -1511,7 +1567,7 @@ void writeControllerState(Dualsense& controller, Settings& settings,
 				controller.UseRumbleNotHaptics(false);
 			}
 
-			if (settings.DisablePlayerLED) {
+			if (settings.DisablePlayerLED && !settings.BatteryPlayerLed) {
 				controller.SetPlayerLED(0);
 			}
 
@@ -1582,6 +1638,32 @@ void mTray(Tray::Tray& tray, Config::AppConfig& AppConfig) {
 }
 
 int main() {
+	winrt::init_apartment();
+	    // Define your toast notification XML
+    std::wstring xml = LR"(
+        <toast>
+            <visual>
+                <binding template='ToastGeneric'>
+                    <text>Hello, Windows!</text>
+                    <text>This is a toast notification from C++</text>
+                </binding>
+            </visual>
+        </toast>)";
+
+    // Load the XML document
+    XmlDocument toastXml;
+    toastXml.LoadXml(xml);
+
+    // Create the toast notification
+    ToastNotification toast(toastXml);
+
+    // Set AppUserModelID
+    const wchar_t* appID = L"DSXBatteryMod";
+    SetCurrentProcessExplicitAppUserModelID(appID);
+
+    // Show the toast
+    ToastNotificationManager::CreateToastNotifier(appID).Show(toast);
+	
 	timeBeginPeriod(1);
 
 	Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
@@ -1591,57 +1673,6 @@ int main() {
 	}
 
 	bool UpdateAvailable = false;
-	if (!appConfig.SkipVersionCheck) {
-		try {
-			std::cout << "Attempting to download version string" << std::endl;
-			appConfig.SkipVersionCheck = true;
-			Config::WriteAppConfigToFile(appConfig);
-			cpr::Response response =
-				cpr::Get(cpr::Url("https://raw.githubusercontent.com/"
-						 "WujekFoliarz/DualSenseY-v2/master/version"),
-						 cpr::Verbose(false));
-			std::cout << "Download completed, status code: " << response.status_code
-				<< std::endl;
-
-			if (response.status_code == 200) {
-				if (response.text != "") {
-					appConfig.SkipVersionCheck = false;
-					Config::WriteAppConfigToFile(appConfig);
-
-					try {
-						int version = stoi(response.text);
-						if (version > VERSION) {
-							cout << "Update available!" << endl;
-							UpdateAvailable = true;
-						}
-						else {
-							cout << "Application is up-to-date! Remote version: " << version
-								<< endl;
-						}
-					}
-					catch (const std::invalid_argument& e) {
-						cout << "Invalid version string: " << e.what() << endl;
-					}
-					catch (const std::out_of_range& e) {
-						cout << "Version number out of range: " << e.what() << endl;
-					}
-				}
-				else {
-					cout << "Version string is empty" << endl;
-				}
-			}
-			else {
-				std::cout << "Version could not be downloaded, status code: "
-					<< response.status_code << std::endl;
-			}
-		}
-		catch (const std::exception& e) {
-			cout << "Standard exception: " << e.what() << endl;
-		}
-		catch (...) {
-			cout << "Unknown exception occurred during download" << endl;
-		}
-	}
 
 	if (appConfig.ElevateOnStartup) {
 		MyUtils::ElevateNow();
@@ -1934,9 +1965,9 @@ int main() {
 		if (BackgroundTextureLoaded) {
 			if (ImGui::Begin("Background", nullptr, window_flags)) {
 				ImVec2 availSize = ImGui::GetContentRegionAvail();
-				ImGui::Image((void*)(intptr_t)textureID, availSize);
-				ImGui::End();
+				ImGui::Image((ImTextureID)(intptr_t)textureID, availSize);
 			}
+			ImGui::End();
 		}
 
 		bool ShowNonControllerConfig = true;
@@ -1974,6 +2005,7 @@ int main() {
 					ImGui::PopItemWidth();
 				}
 			}
+			ImGui::End();
 		}
 
 		ImGui::SetNextWindowSize(
@@ -2039,7 +2071,7 @@ int main() {
 				bool IsPresent = false;
 
 				for (Dualsense& ds : DualSense) {
-					if (id == ds.GetPath()) {
+					if (ExtractGuidFromPath(id) == ExtractGuidFromPath(ds.GetPath())) {
 						IsPresent = true;
 						break;
 					}
@@ -2431,6 +2463,12 @@ int main() {
 											ImGui::Checkbox(strings.BatteryLightbar.c_str(),
 															&s.BatteryLightbar);
 											Tooltip(strings.Tooltip_BatteryLightbar.c_str());
+										}
+
+										if (s.DisablePlayerLED){
+											ImGui::Checkbox(strings.BatteryPlayerLed.c_str(),
+															&s.BatteryPlayerLed);
+											Tooltip(strings.Tooltip_BatteryPlayerLed.c_str());
 										}
 
 										if (!s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar) {
@@ -2931,9 +2969,10 @@ int main() {
 															"Multiple Position "
 															"Vibration";
 													}
-
 													ImGui::EndCombo();
 												}
+												
+
 
 												if (s.rmodestrSony == "Feedback") {
 													ImGui::SetNextItemWidth(300);
@@ -3552,7 +3591,7 @@ int main() {
 					ShowNonControllerConfig = true;
 				}
 			}
-
+			
 			if (ShowNonControllerConfig) {
 				ImGui::BeginMainMenuBar();
 				if (ImGui::BeginMenu("Config")) {
@@ -3640,8 +3679,11 @@ int main() {
 					ImGui::EndMenu();
 				}
 				MainMenuBarHeight = ImGui::GetFrameHeight();
-				ImGui::EndMenuBar();
+				ImGui::EndMainMenuBar();
 			}
+			ImGui::End();
+		} else {
+			ImGui::End();
 		}
 
 		if (IsMinimized)
@@ -3649,7 +3691,6 @@ int main() {
 		else
 			std::this_thread::sleep_for(std::chrono::milliseconds(6));
 
-		ImGui::End();
 		ImGui::Render();
 		end_cycle(window);
 	}

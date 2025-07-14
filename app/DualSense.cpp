@@ -587,14 +587,14 @@ void Dualsense::Read() {
 }
 
 bool Dualsense::Write() {
-	if (CurSettings == LastSettings && !FirstTimeWrite) {
+	/*if (CurSettings == LastSettings && !FirstTimeWrite) {
 		if (error != DefaultError && error != L"") {
 			Connected = false;
 			bt_initialized = false;
 			FirstTimeWrite = true;
 		}
 		return false;
-	}
+	} */
 	if (handle != nullptr && Connected) {
 		LastSettings = CurSettings;
 		if (connectionType == Feature::USB) {
@@ -731,7 +731,7 @@ std::string Dualsense::GetMACAddress(bool colons) {
 	return colons ? "00:00:00:00:00:00" : "000000000000";
 }
 
-std::string Dualsense::GetPath() { return path; }
+std::string Dualsense::GetPath() const { return path; }
 Feature::ConnectionType Dualsense::GetConnectionType() {
 	return (Feature::ConnectionType)connectionType;
 }
@@ -1133,6 +1133,10 @@ void Dualsense::SetPlayerLED(uint8_t Player) {
 	}
 }
 
+void Dualsense::AddPlayerLED(char Led) {
+	CurSettings.PlayerLED_Bitmask |= Led;
+}
+
 void Dualsense::SetRightTrigger(Trigger::TriggerMode triggerMode,
 								uint8_t Force1, uint8_t Force2, uint8_t Force3,
 								uint8_t Force4, uint8_t Force5, uint8_t Force6,
@@ -1207,4 +1211,8 @@ void Dualsense::SetRumbleReduction(int value) {
 	if (value > 7 || value < 0) return;
 
 	CurSettings.RumbleReduction = value;
+}
+
+unsigned char Dualsense::GetPlayerBitMask() const {
+	return CurSettings.PlayerLED_Bitmask;
 }

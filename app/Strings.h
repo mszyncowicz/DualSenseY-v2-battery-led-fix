@@ -111,6 +111,7 @@ using json = nlohmann::json;
     X(AudioToLED, "Audio to LED") \
     X(DiscoMode, "Disco Mode") \
     X(BatteryLightbar, "Lightbar battery status") \
+    X(BatteryPlayerLed, "Player LED battery status") \
     X(LED_Red, "Red") \
     X(LED_Green, "Green") \
     X(LED_Blue, "Blue") \
@@ -167,6 +168,7 @@ using json = nlohmann::json;
     X(Tooltip_AudioToLED, "Sync the lightbar with audio levels") \
     X(Tooltip_DiscoMode, "Animated color transition, gamers' favorite.") \
     X(Tooltip_BatteryLightbar, "Display Battery Status with color-coded LED indicators.") \
+    X(Tooltip_BatteryPlayerLed, "Display Battery Status encoded in player LEDs.") \
     X(Tooltip_HapticFeedback, "Controls standard rumble values of your DualSense. This is what your controller does to emulate DualShock 4 rumble motors.") \
     X(Tooltip_StartAudioToHaptics, "Creates haptic feedback from your system audio.") \
     X(Tooltip_TakeScreenshot, "Takes screenshot on mic button click. It's saved to your clipboard and your Pictures directory") \

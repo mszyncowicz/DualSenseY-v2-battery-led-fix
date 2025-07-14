@@ -11,7 +11,7 @@ fourth - when battery > 60%
 fifth - when battery > 80%
 ```
 
-Functionality is useful for games which actively turns off RGB leds (like Tekken 8)
+Functionality is useful for games which actively turns off RGB leds (like Tekken 8). The feature is visible only when player led is disabled.
 
 - removed functionality of changing state of the controller only when something changed on our part, because other applications can change the state of the controllers's indicators as well.
 

@@ -24,8 +24,6 @@ Functionality is useful for games which actively turns off RGB leds (like Tekken
 
 I will make a release when above changes will be done.
 
-The rest is original readme, some features might be removed in the future as I don't see a need for them.
-
 # Is this related to DSX?
  - No, it's a free alternative for those who need it and a hobby project.
 

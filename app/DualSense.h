@@ -78,8 +78,8 @@ public:
 
 enum class BatteryState : uint8_t {
 	POWER_SUPPLY_STATUS_DISCHARGING = 0x0,
-	POWER_SUPPLY_STATUS_CHARGING = 0x2,
-	POWER_SUPPLY_STATUS_FULL = 0x1,
+	POWER_SUPPLY_STATUS_CHARGING = 0x1,
+	POWER_SUPPLY_STATUS_FULL = 0x2,
 	POWER_SUPPLY_STATUS_NOT_CHARGING = 0xb,
 	POWER_SUPPLY_STATUS_ERROR = 0xf,
 	POWER_SUPPLY_TEMP_OR_VOLTAGE_OUT_OF_RANGE = 0xa,
@@ -279,6 +279,7 @@ private:
 	bool WasConnectedAtLeastOnce = false;
 	bool DisconnectedByError = false;
 	bool FirstTimeWrite = true;
+	bool isCharging = false;
 	wstring AudioDeviceInstanceID;
 	const char* AudioDeviceName = nullptr;
 	DualsenseUtils::InputFeatures CurSettings;
@@ -353,6 +354,8 @@ public:
 	void SetLedBrightness(Feature::Brightness brightness);
 	void EnableImprovedRumbleEmulation(bool flag);
 	void SetRumbleReduction(int value);  // 0x0-0x7
+	bool IsCharging() const;
+	void SetCharging(bool value);
 	unsigned char GetPlayerBitMask() const;
 };
 

@@ -110,6 +110,7 @@ using json = nlohmann::json;
     X(LedSection, "LED") \
     X(AudioToLED, "Audio to LED") \
     X(DiscoMode, "Disco Mode") \
+    X(Charging, "Charging") \
     X(BatteryLightbar, "Lightbar battery status") \
     X(BatteryPlayerLed, "Player LED battery status") \
     X(LED_Red, "Red") \
@@ -151,6 +152,8 @@ using json = nlohmann::json;
     X(PlayerLedBrightness, "Player LED brightness") \
     X(LightbarColor, "Lightbar color") \
     X(RumbleReduction, "Rumble reduction") \
+    X(BoolYes, "Yes") \
+    X(BoolNo, "No") \
     X(ImprovedRumbleEmulation, "Improved rumble emulation") \
     X(Tooltip_MaxMotor, "Sets maximum vibration for emulated controller") \
     X(Tooltip_GyroToRightAnalogStick, "When holding L2, the right analog stick will move according to your controller's motions") \

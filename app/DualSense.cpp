@@ -412,11 +412,13 @@ Dualsense::Dualsense(std::string Path)
 			hid_device_info* info = hid_get_device_info(handle);
 			if (info->bus_type == 1) {
 				connectionType = Feature::USB;
+				isCharging = true;
 				offset = 0;
 			}
 			else if (info->bus_type == 2) {
 				connectionType = Feature::BT;
 				offset = 1;
+				isCharging = false;
 			}
 			wstring parent;
 			string stringPath(Path);
@@ -547,6 +549,7 @@ void Dualsense::Read() {
 				static_cast<uint32_t>(ButtonStates[30 + offset] << 16);
 			buttonState.battery.State =
 				(BatteryState)((uint8_t)(ButtonStates[53 + offset] & 0xF0) >> 4);
+			isCharging = buttonState.battery.State == BatteryState::POWER_SUPPLY_STATUS_CHARGING;
 			buttonState.battery.Level =
 				min((int)((ButtonStates[53 + offset] & 0x0F) * 10 + 5), 100);
 			buttonState.PathIdentifier = path;
@@ -1215,4 +1218,12 @@ void Dualsense::SetRumbleReduction(int value) {
 
 unsigned char Dualsense::GetPlayerBitMask() const {
 	return CurSettings.PlayerLED_Bitmask;
+}
+
+void Dualsense::SetCharging(bool value) {
+	isCharging = value;
+}
+
+bool Dualsense::IsCharging() const {
+	return State.battery.State == BatteryState::POWER_SUPPLY_STATUS_CHARGING;;
 }

@@ -48,16 +48,43 @@ std::atomic<bool> stop_thread{false}; // Flag to signal the thread to stop
 
 struct ControllerData
 {
-	Dualsense *dualsense;
+	Dualsense *dualsenseUSB = nullptr;
+	Dualsense *dualsenseBT = nullptr;
+
 	Settings *settings;
-	std::thread *readThread;
-	std::thread *writeThread;
-	std::thread *emuThread;
+
+	std::thread *readThreadUSB = nullptr;
+	std::thread *writeThreadUSB = nullptr;
+	std::thread *emuThreadUSB = nullptr;
+
+	std::thread *readThreadBT = nullptr;
+	std::thread *writeThreadBT = nullptr;
+	std::thread *emuThreadBT = nullptr;
 
 	ControllerData() {}
 
-	ControllerData(Dualsense *d, Settings *s)
-		: dualsense(d), settings(s) {}
+	ControllerData(Settings *s)
+		: settings(s) {}
+
+	Dualsense *GetActiveConnection()
+	{
+		if (dualsenseUSB != nullptr && dualsenseUSB->Connected)
+		{
+			return dualsenseUSB;
+		}
+		else if (dualsenseBT != nullptr && dualsenseBT->Connected)
+		{
+			return dualsenseBT;
+		}
+		else if (dualsenseUSB != nullptr)
+		{
+			return dualsenseUSB;
+		}
+		else
+		{
+			return dualsenseBT;
+		}
+	}
 };
 
 std::unordered_map<std::string, ControllerData> controllerMap;
@@ -2325,13 +2352,19 @@ int main()
 			for (std::string &id : ControllerID)
 			{
 				bool IsPresent = false;
+				ControllerData *data = nullptr;
 
 				for (Dualsense &ds : DualSense)
 				{
-					if (ExtractGuidFromPath(id) == ExtractGuidFromPath(ds.GetPath()))
+					if (ExtractGuidFromPath(id) != "" && ExtractGuidFromPath(id) == ExtractGuidFromPath(ds.GetPath()))
 					{
-						if (id != ds.GetPath() && ds.State.battery.State == BatteryState::POWER_SUPPLY_STATUS_UNKNOWN)
+						if (id != ds.GetPath())
 						{
+							auto it = controllerMap.find(ExtractGuidFromPath(id));
+							if (it != controllerMap.end())
+							{
+								data = &it->second;
+							}
 							IsPresent = false;
 						}
 						else
@@ -2352,60 +2385,103 @@ int main()
 					if (x.Connected)
 					{
 						DualSense.push_back(x);
-
+						std::string guid = ExtractGuidFromPath(id);
 						// Read default config if present
 						std::string configPath = "";
-						MyUtils::GetConfigPathForController(configPath, id);
-						Settings s;
-						if (configPath != "")
+						MyUtils::GetConfigPathForController(configPath, guid);
+						Settings fallback; // default object
+						Settings *s = nullptr;
+						if (data != nullptr)
 						{
-							s = Config::ReadFromFile(configPath);
-							if (s.emuStatus != None)
+							s = data->settings;
+						}
+						else
+						{
+							Settings fallback;
+							Settings temp;
+							s = &fallback;
+							if (configPath != "")
 							{
-								MyUtils::RunAsyncHidHideRequest(DualSense.back().GetPath(),
-																"hide");
+								temp = Config::ReadFromFile(configPath);
+								s = &temp;
+								if (temp.emuStatus != None)
+								{
+									MyUtils::RunAsyncHidHideRequest(DualSense.back().GetPath(),
+																	"hide");
+								}
 							}
+							s = &ControllerSettings.emplace_back(*s);
 						}
 
-						ControllerSettings.emplace_back(s);
-						ControllerSettings.back().ControllerInput.ID = id;
+						s->ControllerInput.ID = id;
 
 						if (firstController)
 						{
-							ControllerSettings.back().UseUDP = true;
+							s->UseUDP = true;
 							firstController = false;
-							CurrentController = id.c_str();
+							CurrentController = guid.c_str();
 						}
 
 						readThreads.emplace_back(readControllerState,
 												 std::ref(DualSense.back()),
-												 std::ref(ControllerSettings.back()));
+												 std::ref(*s));
 
 						writeThreads.emplace_back(
 							writeControllerState, std::ref(DualSense.back()),
-							std::ref(ControllerSettings.back()), std::ref(udpServer));
+							std::ref(*s), std::ref(udpServer));
 
 						emuThreads.emplace_back(writeEmuController,
 												std::ref(DualSense.back()),
-												std::ref(ControllerSettings.back()));
-
-						controllerMap[id] = ControllerData(&DualSense.back(), &ControllerSettings.back());
-						controllerMap[id].readThread = &readThreads.back();
-						controllerMap[id].writeThread = &writeThreads.back();
-						controllerMap[id].emuThread = &emuThreads.back();
+												std::ref(*s));
+						if (data == nullptr)
+						{
+							controllerMap[guid] = ControllerData(s);
+							if (x.GetConnectionType() == Feature::BT)
+							{
+								controllerMap[guid].dualsenseBT = &DualSense.back();
+								controllerMap[guid].readThreadBT = &readThreads.back();
+								controllerMap[guid].writeThreadBT = &writeThreads.back();
+								controllerMap[guid].emuThreadBT = &emuThreads.back();
+							}
+							else
+							{
+								controllerMap[guid].dualsenseUSB = &DualSense.back();
+								controllerMap[guid].readThreadUSB = &readThreads.back();
+								controllerMap[guid].writeThreadUSB = &writeThreads.back();
+								controllerMap[guid].emuThreadUSB = &emuThreads.back();
+							}
+						}
+						else
+						{
+							if (data->GetActiveConnection()->GetConnectionType() == Feature::BT)
+							{
+								data->dualsenseUSB = &DualSense.back();
+								data->readThreadUSB = &readThreads.back();
+								data->writeThreadUSB = &writeThreads.back();
+								data->emuThreadUSB = &emuThreads.back();
+							}
+							else
+							{
+								data->dualsenseBT = &DualSense.back();
+								data->readThreadBT = &readThreads.back();
+								data->writeThreadBT = &writeThreads.back();
+								data->emuThreadBT = &emuThreads.back();
+							}
+						}
 					}
 				}
 			}
 			if (ImGui::BeginCombo("##", CurrentController.c_str()))
 			{
-				for (int n = 0; n < DualSense.size(); n++)
+				for (const auto& pair : controllerMap)
 				{
-					if (DualSense[n].GetPath() != "")
+					if (pair.first != "")
 					{
-						bool is_selected = (CurrentController == DualSense[n].GetPath().c_str());
-						if (ImGui::Selectable(DualSense[n].GetPath().c_str(), is_selected))
+						string path = pair.first;
+						bool is_selected = (CurrentController == path.c_str());
+						if (ImGui::Selectable(path.c_str(), is_selected))
 						{
-							CurrentController = DualSense[n].GetPath().c_str();
+							CurrentController = path.c_str();
 						}
 						if (is_selected)
 							ImGui::SetItemDefaultFocus();
@@ -2451,21 +2527,17 @@ int main()
 			for (int i = 0; i < ActiveDualsenseCount; i++)
 			{
 				DualSense[i].Reconnect();
-				DualSense[i].InitializeAudioEngine();
-				DualSense[i].LoadSound("screenshot", "sounds\\screenshot.wav");
-				DualSense[i].LoadSound("halted", "sounds\\halted.wav");
-				DualSense[i].LoadSound("resumed", "sounds\\resumed.wav");
-				DualSense[i].SetPlayerLED(i + 1);
+				//DualSense[i].SetPlayerLED(i + 1); change to setplayer number
 			}
 			auto it = controllerMap.find(CurrentController);
 			if (it != controllerMap.end())
 			{
 
 				ControllerData &data = it->second;
-				Dualsense &dualsense = *data.dualsense;
+				bool isNull = data.GetActiveConnection() == nullptr;
+				Dualsense &dualsense = *data.GetActiveConnection();
 				Settings &s = *data.settings;
-				if (dualsense.GetPath() == CurrentController &&
-					dualsense.Connected)
+				if (!isNull && dualsense.Connected)
 				{
 
 					if (ImGui::BeginMainMenuBar())
@@ -2515,14 +2587,14 @@ int main()
 								if (configPath != "")
 								{
 									MyUtils::WriteDefaultConfigPath(configPath,
-																	dualsense.GetPath());
+																	CurrentController);
 								}
 							}
 							Tooltip(strings.Tooltip_SetDefaultConfig.c_str());
 
 							if (ImGui::Button(strings.RemoveDefaultConfig.c_str()))
 							{
-								MyUtils::RemoveConfig(dualsense.GetPath());
+								MyUtils::RemoveConfig(CurrentController);
 							}
 							Tooltip(strings.Tooltip_RemoveDefaultConfig.c_str());
 

@@ -136,6 +136,7 @@ namespace Feature {
 	enum FeatureType : int8_t {
 		Full = 0x57,
 		LetGo = 0x08,
+		NoRGB = 0x57 & ~0x04,
 		BT_Init = 0x1 | 0x2 | 0x4 | 0x8 | 0x10 | 0x40
 	};
 	enum AudioOutput : uint8_t { Headset = 0x05, Speaker = 0x31 };
@@ -280,6 +281,8 @@ private:
 	bool DisconnectedByError = false;
 	bool FirstTimeWrite = true;
 	bool isCharging = false;
+	bool isRemoved = false;
+	bool disableLightbar = false;
 	wstring AudioDeviceInstanceID;
 	const char* AudioDeviceName = nullptr;
 	DualsenseUtils::InputFeatures CurSettings;
@@ -357,6 +360,9 @@ public:
 	bool IsCharging() const;
 	void SetCharging(bool value);
 	unsigned char GetPlayerBitMask() const;
+	bool IsRemoved() const;
+	void Remove();
+	void SetDisableLightbar(bool value);
 };
 
 #endif  // DUALSENSE_H

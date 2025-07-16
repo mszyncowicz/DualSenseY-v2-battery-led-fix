@@ -95,6 +95,7 @@ struct AudioPlay {
     X(RumbleToAT_RigidMode) \
     X(BatteryLightbar) \
     X(BatteryPlayerLed) \
+    X(DisableLightbar) \
     X(swipeThreshold) \
     X(TouchpadToMouse) \
     X(X360Shortcut) \
@@ -154,6 +155,7 @@ public:
     bool RumbleToAT_RigidMode;
     bool BatteryLightbar;
     bool BatteryPlayerLed;
+    bool DisableLightbar;
     bool TouchpadToMouse;
     bool X360Shortcut;
     bool DS4Shortcut;
@@ -222,6 +224,7 @@ public:
     float LeftStickToMouseSensitivity;
     bool DisconnectControllerShortcut;
     float colorPickerColor[3];
+    int player;
 
     // UDP Haptics (not saved to JSON)
     std::string CurrentHapticFile;

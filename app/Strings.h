@@ -113,6 +113,7 @@ using json = nlohmann::json;
     X(Charging, "Charging") \
     X(BatteryLightbar, "Lightbar battery status") \
     X(BatteryPlayerLed, "Player LED battery status") \
+    X(DisableLightbar, "Disable Lightbar") \
     X(LED_Red, "Red") \
     X(LED_Green, "Green") \
     X(LED_Blue, "Blue") \
@@ -164,6 +165,7 @@ using json = nlohmann::json;
     X(Tooltip_SpeakerVolume, "Sets speaker volume at hardware level, affects everything played on this controller") \
     X(Tooltip_HapticsToTriggers, "Turns haptic feedback signal to Adaptive Trigger effects, works only for games that don't write to the controller or Audio To Haptics feature") \
     X(Tooltip_RumbleToAT_RigidMode, "Sets rigid trigger effect") \
+    X(Tooltip_DisableLightbar, "Let games decide the lightbar color")\
     X(Tooltip_RumbleToAT, "Translates rumble vibrations to adaptive triggers, really good in games that don't support them natively") \
     X(Tooltip_SwapTriggersRumbleToAT, "Sets left motor to right trigger and right motor to left trigger") \
     X(Tooltip_MaxIntensity, "Sets maximum trigger vibration sensitivity for Rumble To Adaptive Triggers option") \

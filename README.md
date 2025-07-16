@@ -20,7 +20,7 @@ Functionality is useful for games which actively turns off RGB leds (like Tekken
 # TODO:
 - [ ] low battery windows notification (registry keys will be needed)
 - [ ] change tray icon to a battery state of the selected controller
-- [ ] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
+- [x] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
 
 I will make a release when above changes will be done.
 

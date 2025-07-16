@@ -64,6 +64,7 @@ Settings::Settings() {
     ScreenshotSoundLoudness = 1.0f;
     DiscoSpeed = 1;
     DisablePlayerLED = false;
+    DisableLightbar = false;
     RunAudioToHapticsOnStart = false;
     WasAudioToHapticsRan = false;
     WasAudioToHapticsCheckboxChecked = false;

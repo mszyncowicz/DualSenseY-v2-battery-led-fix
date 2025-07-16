@@ -44,6 +44,8 @@ using namespace Windows::UI::Notifications;
 static void glfw_error_callback(int error, const char *description);
 
 deque<Dualsense> DualSense;
+deque<Settings> ControllerSettings;
+
 std::atomic<bool> stop_thread{false}; // Flag to signal the thread to stop
 
 struct ControllerData
@@ -89,10 +91,81 @@ struct ControllerData
 
 std::unordered_map<std::string, ControllerData> controllerMap;
 
+void killController(ControllerData &data, std::string guid)
+{
+	if (data.dualsenseUSB != nullptr)
+	{
+		data.dualsenseUSB->Remove();
+	}
+	if (data.dualsenseBT != nullptr)
+	{
+		data.dualsenseBT->Remove();
+	}
+
+	DualSense.erase(
+		std::remove_if(DualSense.begin(), DualSense.end(),
+					   [](const Dualsense &d)
+					   {
+						   return d.IsRemoved();
+					   }),
+		DualSense.end());
+
+	auto it = ControllerSettings.begin();
+	while (&(*it) != data.settings)
+	{
+		++it;
+	}
+
+	ControllerSettings.erase(it);
+	if (data.readThreadUSB != nullptr)
+	{
+		if (data.readThreadUSB->joinable())
+		{
+			data.readThreadUSB->join();
+		}
+	}
+	if (data.writeThreadUSB != nullptr)
+	{
+		if (data.writeThreadUSB->joinable())
+		{
+			data.writeThreadUSB->join();
+		}
+	}
+	if (data.emuThreadUSB != nullptr)
+	{
+		if (data.emuThreadUSB->joinable())
+		{
+			data.emuThreadUSB->join();
+		}
+	}
+	if (data.readThreadUSB != nullptr)
+	{
+		if (data.readThreadUSB->joinable())
+		{
+			data.readThreadUSB->join();
+		}
+	}
+	if (data.writeThreadBT != nullptr)
+	{
+		if (data.writeThreadBT->joinable())
+		{
+			data.writeThreadBT->join();
+		}
+	}
+	if (data.emuThreadBT != nullptr)
+	{
+		if (data.emuThreadBT->joinable())
+		{
+			data.emuThreadBT->join();
+		}
+	}
+	controllerMap.erase(guid);
+}
+
 void readControllerState(Dualsense &controller, Settings &settings)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
-	while (!stop_thread)
+	while (!stop_thread && !controller.IsRemoved())
 	{
 		controller.Read();
 
@@ -471,7 +544,7 @@ void writeEmuController(Dualsense &controller, Settings &settings)
 	bool wasVirtualControllerStarted = false;
 	EmuStatus lastEmu = None;
 
-	while (!stop_thread)
+	while (!stop_thread && !controller.IsRemoved())
 	{
 		if (controller.Connected)
 		{
@@ -879,7 +952,7 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 	DualsenseUtils::InputFeatures preUDP;
 	auto lastTimeFailedToWrite = std::chrono::high_resolution_clock::now();
 
-	while (!stop_thread)
+	while (!stop_thread && !controller.IsRemoved())
 	{
 		if (true)
 		{
@@ -1137,7 +1210,7 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				}
 			}
 
-			if (!settings.CurrentlyUsingUDP &&
+			if (!settings.DisableLightbar && !settings.CurrentlyUsingUDP &&
 				(settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) &&
 				X360animationplayed)
 			{
@@ -1671,6 +1744,7 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				}
 				else
 				{
+					// notification
 				}
 
 				if (batteryLevel > 20)
@@ -1693,8 +1767,9 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 					controller.AddPlayerLED(0x16);
 				}
 			}
+			controller.SetDisableLightbar(settings.DisableLightbar);
 
-			if (!settings.AudioToLED && !settings.DiscoMode &&
+			if (!settings.DisableLightbar && !settings.AudioToLED && !settings.DiscoMode &&
 				!settings.BatteryLightbar &&
 				(settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) &&
 				!settings.CurrentlyUsingUDP && X360animationplayed)
@@ -1852,6 +1927,10 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 			if (settings.DisablePlayerLED && !settings.BatteryPlayerLed)
 			{
 				controller.SetPlayerLED(0);
+			}
+			else if (!settings.DisablePlayerLED)
+			{
+				controller.SetPlayerLED(settings.player);
 			}
 
 			controller.SetSpeakerVolume(settings.ControllerInput.SpeakerVolume);
@@ -2108,7 +2187,6 @@ int main()
 	stbi_image_free(
 		backgroundTexture); // Free the image data after loading into GPU
 
-	deque<Settings> ControllerSettings;
 	vector<thread> readThreads;	 // Store the threads for each controller
 	vector<thread> writeThreads; // Audio to LED threads
 	vector<thread> emuThreads;
@@ -2471,9 +2549,14 @@ int main()
 					}
 				}
 			}
+			if (CurrentController == "" && DualSense.size() > 0)
+			{
+				Dualsense front = DualSense.front();
+				CurrentController = ExtractGuidFromPath(front.GetPath().c_str());
+			}
 			if (ImGui::BeginCombo("##", CurrentController.c_str()))
 			{
-				for (const auto& pair : controllerMap)
+				for (const auto &pair : controllerMap)
 				{
 					if (pair.first != "")
 					{
@@ -2527,7 +2610,12 @@ int main()
 			for (int i = 0; i < ActiveDualsenseCount; i++)
 			{
 				DualSense[i].Reconnect();
-				//DualSense[i].SetPlayerLED(i + 1); change to setplayer number
+				// DualSense[i].SetPlayerLED(i + 1); change to setplayer number
+			}
+
+			for (int i = 0; i < ControllerSettings.size(); i++)
+			{
+				ControllerSettings[i].player = i + 1;
 			}
 			auto it = controllerMap.find(CurrentController);
 			if (it != controllerMap.end())
@@ -2788,15 +2876,18 @@ int main()
 
 									ImGui::EndCombo();
 								}
+								ImGui::Checkbox(strings.DisableLightbar.c_str(),
+												&s.DisableLightbar);
+								Tooltip(strings.Tooltip_DisableLightbar.c_str());
 
-								if (!s.DiscoMode && !s.BatteryLightbar)
+								if (!s.DisableLightbar && !s.DiscoMode && !s.BatteryLightbar)
 								{
 									ImGui::Checkbox(strings.AudioToLED.c_str(),
 													&s.AudioToLED);
 									Tooltip(strings.Tooltip_AudioToLED.c_str());
 								}
 
-								if (!s.AudioToLED && !s.BatteryLightbar)
+								if (!s.DisableLightbar && !s.AudioToLED && !s.BatteryLightbar)
 								{
 									ImGui::Checkbox(strings.DiscoMode.c_str(), &s.DiscoMode);
 									Tooltip(strings.Tooltip_DiscoMode.c_str());
@@ -2807,7 +2898,7 @@ int main()
 										&s.DiscoSpeed, 1, 10);
 								}
 
-								if (s.AudioToLED)
+								if (s.AudioToLED && !s.DisableLightbar)
 								{
 									ImGui::Separator();
 									if (HF_status ==
@@ -2890,7 +2981,7 @@ int main()
 									Tooltip(strings.Tooltip_BatteryPlayerLed.c_str());
 								}
 
-								if (!s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar)
+								if (!s.DisableLightbar && !s.AudioToLED && !s.DiscoMode && !s.BatteryLightbar)
 								{
 									ImGui::SetNextItemWidth(350);
 									ImGui::ColorPicker3(strings.LightbarColor.c_str(),
@@ -4100,6 +4191,11 @@ int main()
 					}
 
 					ShowNonControllerConfig = false;
+				}
+				else
+				{
+					killController(data, CurrentController);
+					CurrentController = "";
 				}
 			}
 			else

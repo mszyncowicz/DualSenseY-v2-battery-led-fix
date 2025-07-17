@@ -89,6 +89,8 @@ struct ControllerData
 	}
 };
 
+
+
 std::unordered_map<std::string, ControllerData> controllerMap;
 
 void killController(ControllerData &data, std::string guid)
@@ -160,6 +162,44 @@ void killController(ControllerData &data, std::string guid)
 		}
 	}
 	controllerMap.erase(guid);
+}
+
+void showToast(int controllerNumber, int batteryPercent)
+{
+	winrt::init_apartment();
+	std::wstring sound;
+
+	if (batteryPercent > 5)
+	{
+		sound = L"Reminder";
+	}
+	else
+	{
+		sound = L"Alarm2";
+	}
+
+	std::wstring xml = std::format(
+		LR"(
+        <toast scenario="alarm">
+            <visual>
+                <binding template='ToastGeneric'>
+                    <text>Low battery on controller #{}!</text>
+                    <text>The battery is below {}%</text>
+                </binding>
+            </visual>
+            <audio src="ms-winsoundevent:Notification.{}"/>
+        </toast>)",
+		controllerNumber, batteryPercent, sound);
+
+	XmlDocument toastXml;
+	toastXml.LoadXml(xml);
+
+	ToastNotification toast(toastXml);
+
+	const wchar_t *appID = L"DSX";
+	SetCurrentProcessExplicitAppUserModelID(appID);
+
+	ToastNotificationManager::CreateToastNotifier(appID).Show(toast);
 }
 
 void readControllerState(Dualsense &controller, Settings &settings)
@@ -951,7 +991,8 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 	bool firstTimeUDP = true;
 	DualsenseUtils::InputFeatures preUDP;
 	auto lastTimeFailedToWrite = std::chrono::high_resolution_clock::now();
-
+	bool showBatteryLevel1 = true;
+	bool showBatteryLevel2 = true;
 	while (!stop_thread && !controller.IsRemoved())
 	{
 		if (true)
@@ -959,6 +1000,11 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 			if (!lastMic && MicShortcutTriggered)
 			{
 				MicShortcutTriggered = false;
+			}
+			if (controller.IsCharging())
+			{
+				showBatteryLevel1 = true;
+				showBatteryLevel2 = true;
 			}
 
 			if (settings.emuStatus == X360 && !X360animationplayed)
@@ -1741,10 +1787,16 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				if (batteryLevel > 5)
 				{
 					controller.AddPlayerLED(0x01);
+					if (showBatteryLevel1 && batteryLevel < 10 && !controller.IsCharging())
+					{
+						showToast(settings.player, batteryLevel);
+						showBatteryLevel1 = false;
+					}
 				}
-				else
+				else if (showBatteryLevel2 && !controller.IsCharging())
 				{
-					// notification
+					showToast(settings.player, batteryLevel);
+					showBatteryLevel2 = false;
 				}
 
 				if (batteryLevel > 20)
@@ -1767,6 +1819,7 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 					controller.AddPlayerLED(0x16);
 				}
 			}
+
 			controller.SetDisableLightbar(settings.DisableLightbar);
 
 			if (!settings.DisableLightbar && !settings.AudioToLED && !settings.DiscoMode &&
@@ -2012,34 +2065,6 @@ void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig)
 
 int main()
 {
-	winrt::init_apartment();
-	// Define your toast notification XML
-	std::wstring xml = LR"(
-        <toast>
-            <visual>
-                <binding template='ToastGeneric'>
-                    <text>Hello, Windows!</text>
-                    <text>This is a toast notification from C++</text>
-                </binding>
-            </visual>
-        </toast>)";
-
-	// Load the XML document
-	XmlDocument toastXml;
-	toastXml.LoadXml(xml);
-
-	// Create the toast notification
-	ToastNotification toast(toastXml);
-
-	// Set AppUserModelID
-	const wchar_t *appID = L"DSXBatteryMod";
-	SetCurrentProcessExplicitAppUserModelID(appID);
-
-	// Show the toast
-	ToastNotificationManager::CreateToastNotifier(appID).Show(toast);
-
-	timeBeginPeriod(1);
-
 	Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
 
 	if (appConfig.ShowConsole == false)
@@ -2337,7 +2362,6 @@ int main()
 
 		start_cycle();
 		ImGui::NewFrame();
-
 		// Get the viewport size (size of the application window)
 
 		ImVec2 window_size = io.DisplaySize;
@@ -4386,7 +4410,6 @@ int main()
 	MyUtils::DeinitializeAudioEndpoint();
 	//_CrtDumpMemoryLeaks();
 
-	timeEndPeriod(1);
 	return 0;
 }
 

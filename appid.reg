@@ -1,0 +1,6 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Classes\AppUserModelId\DSX]
+"DisplayName"="MakesSense"
+"IconUri"="P:\\Tools\\DualSenseY-v2-battery-led-fix\\build\\app\\Release\\utilities\\icon.ico"
+"IconBackgroundColor"="AARRGGBB"

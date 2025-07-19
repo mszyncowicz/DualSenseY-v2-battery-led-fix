@@ -1,4 +1,4 @@
-﻿const int VERSION = 45;
+﻿const int VERSION = 0;
 
 extern "C"
 {
@@ -26,11 +26,13 @@ extern "C"
 #include <winrt/Windows.Data.Xml.Dom.h>
 #include <winrt/Windows.UI.Notifications.h>
 #include <windows.h>
-
+#include <shellapi.h>
 // Use the winrt namespaces
 using namespace winrt;
 using namespace Windows::Data::Xml::Dom;
 using namespace Windows::UI::Notifications;
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 // #define _CRTDBG_MAP_ALLOC
 // #include <cstdlib>
 // #include <crtdbg.h>
@@ -88,8 +90,6 @@ struct ControllerData
 		}
 	}
 };
-
-
 
 std::unordered_map<std::string, ControllerData> controllerMap;
 
@@ -210,7 +210,7 @@ void readControllerState(Dualsense &controller, Settings &settings)
 		controller.Read();
 
 		if (controller.Connected == false)
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 }
 
@@ -1775,7 +1775,7 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				}
 			}
 
-			if (settings.BatteryPlayerLed && settings.DisablePlayerLED && !settings.CurrentlyUsingUDP &&
+			if (controller.Connected && settings.BatteryPlayerLed && settings.DisablePlayerLED && !settings.CurrentlyUsingUDP &&
 				(settings.emuStatus != DS4 || settings.OverrideDS4Lightbar) &&
 				X360animationplayed)
 			{
@@ -2053,19 +2053,136 @@ void window_iconify_callback(GLFWwindow *window, int iconified)
 		IsMinimized = false;
 	}
 }
+HICON hIcon;
+NOTIFYICONDATAW nid;
+std::string CurrentController = "";
+HINSTANCE g_hInstance;
+HWND mainWindow;
+HWND g_trayHwnd;
+GLFWwindow *window;
+Config::AppConfig appConfig;
+#define WM_TRAYICON (WM_USER + 1)
+#define ID_TRAY_EXIT 1001
+#define ID_TRAY_SHOW 1002
 
-void mTray(Tray::Tray &tray, Config::AppConfig &AppConfig)
+void mTrayUpdate()
 {
-	tray.addEntry(
-		Tray::Button("Show window", [&]
-					 { AppConfig.ShowWindow = true; }));
+	if (CurrentController != "")
+	{
+		ControllerData data = controllerMap[CurrentController];
+		Dualsense *connection = data.GetActiveConnection();
+		if (connection != nullptr)
+		{
+			int batteryLevel = connection->State.battery.Level;
+			int player = data.settings->player;
+			wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), std::format(L"MakeSense: {}# - {}%", player, batteryLevel).c_str());
+		}
+	}
+	else
+	{
+		wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
+	}
 
-	tray.run();
+	Shell_NotifyIconW(NIM_MODIFY, &nid);
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(600));
+}
+
+LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_TRAYICON)
+	{
+		if (lParam == WM_RBUTTONUP)
+		{
+			POINT pt;
+			GetCursorPos(&pt);
+
+			HMENU hMenu = CreatePopupMenu();
+			AppendMenuW(hMenu, MF_STRING, ID_TRAY_SHOW, L"Show window");
+			AppendMenuW(hMenu, MF_SEPARATOR, 0, nullptr);
+			AppendMenuW(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
+
+			SetForegroundWindow(hwnd); // Needed to make menu disappear correctly
+			TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, nullptr);
+			DestroyMenu(hMenu);
+		}
+	}
+	else if (msg == WM_COMMAND)
+	{
+		switch (LOWORD(wParam))
+		{
+		case ID_TRAY_EXIT:
+			Shell_NotifyIconW(NIM_DELETE, new NOTIFYICONDATAW{.cbSize = sizeof(NOTIFYICONDATAW), .hWnd = hwnd, .uID = 1});
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+			DestroyWindow(hwnd);
+			PostQuitMessage(0);
+			break;
+		case ID_TRAY_SHOW:
+			// MessageBoxW(nullptr, L"Show Window clicked!", L"Tray", MB_OK);
+			appConfig.ShowWindow = true;
+			break;
+		}
+	}
+	else if (msg == WM_DESTROY)
+	{
+		PostQuitMessage(0);
+	}
+
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+HWND CreateTrayWindow()
+{
+	const wchar_t CLASS_NAME[] = L"MyTrayWindow";
+
+	WNDCLASSW wc = {};
+	wc.lpfnWndProc = TrayWndProc;
+	wc.hInstance = g_hInstance;
+	wc.lpszClassName = CLASS_NAME;
+
+	RegisterClassW(&wc);
+
+	return CreateWindowExW(
+		WS_EX_TOOLWINDOW, CLASS_NAME, L"HiddenTrayWindow",
+		WS_POPUP, CW_USEDEFAULT, CW_USEDEFAULT, 1, 1,
+		nullptr, nullptr, g_hInstance, nullptr);
+}
+
+void InitTrayIcon(HWND hwnd)
+{
+	nid = {};
+	nid.cbSize = sizeof(NOTIFYICONDATAW);
+	nid.hWnd = hwnd; // Your tray message window
+	nid.uID = 1;
+	nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+	nid.uCallbackMessage = WM_TRAYICON;																   // Your custom tray icon message
+	nid.hIcon = hIcon;																				   // ← your loaded icon
+	wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
+
+	Shell_NotifyIconW(NIM_ADD, &nid);
+}
+
+void RunTrayLoop()
+{
+	HWND hwnd = CreateTrayWindow();
+	g_trayHwnd = hwnd;
+
+	InitTrayIcon(hwnd);
+
+	MSG msg;
+	while (!stop_thread)
+	{
+		if (GetMessage(&msg, nullptr, 0, 0))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
 }
 
 int main()
 {
-	Config::AppConfig appConfig = Config::ReadAppConfigFromFile();
+	appConfig = Config::ReadAppConfigFromFile();
 
 	if (appConfig.ShowConsole == false)
 	{
@@ -2082,10 +2199,12 @@ int main()
 	{
 		cout << "Not elevating" << endl;
 	}
-
-	Tray::Tray tray("test", "utilities\\icon.ico");
-	std::thread trayThread(mTray, std::ref(tray), std::ref(appConfig));
-	trayThread.detach();
+	hIcon = (HICON)LoadImageW(
+		NULL,
+		L"utilities\\icon.ico", // Your relative path
+		IMAGE_ICON,
+		0, 0, // Use icon's default size
+		LR_LOADFROMFILE | LR_DEFAULTSIZE);
 
 	bool WasElevated = MyUtils::IsRunAsAdministrator();
 
@@ -2161,15 +2280,22 @@ int main()
 
 	string title = "DualSenseY - Version " + std::to_string(VERSION);
 	// Create window with graphics context
-	auto *window = glfwCreateWindow(static_cast<std::int32_t>(1200),
-									static_cast<std::int32_t>(900), title.c_str(),
-									nullptr, nullptr);
+	window = glfwCreateWindow(static_cast<std::int32_t>(1200),
+										  static_cast<std::int32_t>(900), title.c_str(),
+										  nullptr, nullptr);
+
+	mainWindow = glfwGetWin32Window(window);
 	if (window == nullptr)
 	{
 		MessageBox(0, "Window could not be created!", "Error", 0);
 		return 1;
 	}
-
+	// createTray();
+	g_hInstance = GetModuleHandle(nullptr);
+	std::thread trayThread(RunTrayLoop);
+	trayThread.detach();
+	std::thread trayThread2(mTrayUpdate);
+	trayThread2.detach();
 	glfwMakeContextCurrent(window);
 
 	// Setup Dear ImGui context
@@ -2215,7 +2341,6 @@ int main()
 	vector<thread> readThreads;	 // Store the threads for each controller
 	vector<thread> writeThreads; // Audio to LED threads
 	vector<thread> emuThreads;
-	std::string CurrentController = "";
 	bool firstController = true;
 	vector<std::string> ControllerID = DualsenseUtils::EnumerateControllerIDs();
 
@@ -4396,8 +4521,9 @@ int main()
 	udpServer.Dispose();
 	if (trayThread.joinable())
 		trayThread.join();
-	tray.exit();
-	tray.~Tray();
+	if (trayThread2.joinable())
+		trayThread2.join();
+	DestroyIcon(hIcon);
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

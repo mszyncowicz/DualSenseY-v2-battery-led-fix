@@ -2092,7 +2092,9 @@ LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_TRAYICON)
 	{
-		if (lParam == WM_RBUTTONUP)
+		switch (lParam)
+		{
+		case WM_RBUTTONUP:
 		{
 			POINT pt;
 			GetCursorPos(&pt);
@@ -2105,6 +2107,11 @@ LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			SetForegroundWindow(hwnd); // Needed to make menu disappear correctly
 			TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, nullptr);
 			DestroyMenu(hMenu);
+		}
+		break;
+		case WM_LBUTTONDBLCLK:
+			appConfig.ShowWindow = true;
+			break;
 		}
 	}
 	else if (msg == WM_COMMAND)
@@ -2281,8 +2288,8 @@ int main()
 	string title = "DualSenseY - Version " + std::to_string(VERSION);
 	// Create window with graphics context
 	window = glfwCreateWindow(static_cast<std::int32_t>(1200),
-										  static_cast<std::int32_t>(900), title.c_str(),
-										  nullptr, nullptr);
+							  static_cast<std::int32_t>(900), title.c_str(),
+							  nullptr, nullptr);
 
 	mainWindow = glfwGetWin32Window(window);
 	if (window == nullptr)

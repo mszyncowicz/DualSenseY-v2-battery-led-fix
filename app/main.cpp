@@ -1781,42 +1781,46 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 			{
 
 				int batteryLevel = controller.State.battery.Level;
-				batteryLevel = std::max<int>(0, std::min<int>(100, batteryLevel));
 
-				controller.SetPlayerLED(0);
-				if (batteryLevel > 5)
+				if (batteryLevel > 0 && batteryLevel <= 100)
 				{
-					controller.AddPlayerLED(0x01);
-					if (showBatteryLevel1 && batteryLevel < 10 && !controller.IsCharging())
+					batteryLevel = std::max<int>(0, std::min<int>(100, batteryLevel));
+
+					controller.SetPlayerLED(0);
+					if (batteryLevel > 5)
+					{
+						controller.AddPlayerLED(0x01);
+						if (showBatteryLevel1 && batteryLevel < 10 && !controller.IsCharging())
+						{
+							showToast(settings.player, batteryLevel);
+							showBatteryLevel1 = false;
+						}
+					}
+					else if (showBatteryLevel2 && !controller.IsCharging())
 					{
 						showToast(settings.player, batteryLevel);
-						showBatteryLevel1 = false;
+						showBatteryLevel2 = false;
 					}
-				}
-				else if (showBatteryLevel2 && !controller.IsCharging())
-				{
-					showToast(settings.player, batteryLevel);
-					showBatteryLevel2 = false;
-				}
 
-				if (batteryLevel > 20)
-				{
-					controller.AddPlayerLED(0x02);
-				}
+					if (batteryLevel > 20)
+					{
+						controller.AddPlayerLED(0x02);
+					}
 
-				if (batteryLevel > 40)
-				{
-					controller.AddPlayerLED(0x04);
-				}
+					if (batteryLevel > 40)
+					{
+						controller.AddPlayerLED(0x04);
+					}
 
-				if (batteryLevel > 60)
-				{
-					controller.AddPlayerLED(0x08);
-				}
+					if (batteryLevel > 60)
+					{
+						controller.AddPlayerLED(0x08);
+					}
 
-				if (batteryLevel > 80)
-				{
-					controller.AddPlayerLED(0x16);
+					if (batteryLevel > 80)
+					{
+						controller.AddPlayerLED(0x16);
+					}
 				}
 			}
 
@@ -2067,25 +2071,28 @@ Config::AppConfig appConfig;
 
 void mTrayUpdate()
 {
-	if (CurrentController != "")
+	while (!stop_thread)
 	{
-		ControllerData data = controllerMap[CurrentController];
-		Dualsense *connection = data.GetActiveConnection();
-		if (connection != nullptr)
+		if (CurrentController != "")
 		{
-			int batteryLevel = connection->State.battery.Level;
-			int player = data.settings->player;
-			wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), std::format(L"MakeSense: {}# - {}%", player, batteryLevel).c_str());
+			ControllerData data = controllerMap[CurrentController];
+			Dualsense *connection = data.GetActiveConnection();
+			if (connection != nullptr)
+			{
+				int batteryLevel = connection->State.battery.Level;
+				int player = data.settings->player;
+				wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), std::format(L"MakeSense: {}# - {}%", player, batteryLevel).c_str());
+			}
 		}
-	}
-	else
-	{
-		wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
-	}
+		else
+		{
+			wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
+		}
 
-	Shell_NotifyIconW(NIM_MODIFY, &nid);
+		Shell_NotifyIconW(NIM_MODIFY, &nid);
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(600));
+		std::this_thread::sleep_for(std::chrono::milliseconds(600));
+	}
 }
 
 LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -2175,7 +2182,8 @@ void RunTrayLoop()
 	g_trayHwnd = hwnd;
 
 	InitTrayIcon(hwnd);
-
+	std::thread trayThread(mTrayUpdate);
+	trayThread.detach();
 	MSG msg;
 	while (!stop_thread)
 	{
@@ -2184,6 +2192,10 @@ void RunTrayLoop()
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
+	}
+	if (trayThread.joinable())
+	{
+		trayThread.join();
 	}
 }
 
@@ -2301,8 +2313,6 @@ int main()
 	g_hInstance = GetModuleHandle(nullptr);
 	std::thread trayThread(RunTrayLoop);
 	trayThread.detach();
-	std::thread trayThread2(mTrayUpdate);
-	trayThread2.detach();
 	glfwMakeContextCurrent(window);
 
 	// Setup Dear ImGui context
@@ -4528,8 +4538,6 @@ int main()
 	udpServer.Dispose();
 	if (trayThread.joinable())
 		trayThread.join();
-	if (trayThread2.joinable())
-		trayThread2.join();
 	DestroyIcon(hIcon);
 
 	ImGui_ImplOpenGL3_Shutdown();

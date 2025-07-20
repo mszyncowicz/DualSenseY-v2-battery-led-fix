@@ -13,16 +13,22 @@ fifth - when battery > 80%
 
 Functionality is useful for games which actively turns off RGB leds (like Tekken 8). The feature is visible only when player led is disabled.
 
-- removed functionality of changing state of the controller only when something changed on our part, because other applications can change the state of the controllers's indicators as well.
+- removed functionality of changing state of the controller only when something changed on our part, because other applications can change the state of the controllers indicators as well. The write can still be completely disabled with a shortcut.
 
-- fixed a bug in which the same controller would be considered as two separate controllers if connected with both bluetooth and usb.
+- fixed a bug in which the same controller would be considered two separate controllers if connected with both bluetooth and usb.
 
-# TODO:
-- [x] low battery windows notification (registry keys will be needed)
-- [x] change tray icon to a battery state of the selected controller
-- [x] add possibility to disable RGB LED modifier (currently it always changes to pitch black). Currently it makes the leds flicker when a game tries to switch to its own color.
+- added battery notifications which will show in windows notification bar. First one will show when battery is lower than 10%, second when lower than 5%.
 
-I will make a release when above changes will be done.
+- changed tray icon to indicate the state of the selected controller's battery
+
+- added possibility to not update lightbar rgbs with everything else.
+
+- slowed down controller's update period to 1 second (like it is in DualSenseX)
+
+- removed rumble features (caused problems with dualsense native games)
+
+TODO:
+change the name of the application to MakeSense - to distinct itself from DSY
 
 # Is this related to DSX?
  - No, it's a free alternative for those who need it and a hobby project.
@@ -105,7 +111,6 @@ I will make a release when above changes will be done.
   - [miniaudio](https://github.com/mackron/miniaudio) for audio processing.
   - [ViGEmClient](https://github.com/nefarius/ViGEmClient) for controller emulation.
   - [libcpr](https://github.com/libcpr/cpr)
-  - [traypp](https://github.com/Soundux/traypp)
   - [Crashlogs](https://github.com/TylerGlaiel/Crashlogs)
   - [hidapi](https://github.com/libusb/hidapi)
   - [nlohmann/json](https://github.com/nlohmann/json)

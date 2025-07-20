@@ -2005,9 +2005,12 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				{
 					controller.Write();
 				}
-				if (!settings.DisableLightbar && (settings.AudioToLED || settings.DiscoMode)){
+				if (!settings.DisableLightbar && (settings.AudioToLED || settings.DiscoMode))
+				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(1));
-				} else {
+				}
+				else
+				{
 					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				}
 			}
@@ -2060,7 +2063,18 @@ void window_iconify_callback(GLFWwindow *window, int iconified)
 		IsMinimized = false;
 	}
 }
-HICON hIcon;
+
+std::vector<std::wstring> icons = {
+	L"icon100",
+	L"icon80",
+	L"icon60",
+	L"icon40",
+	L"icon20",
+	L"icon"};
+
+HICON *hIcon; // default icon
+std::unordered_map<std::wstring, HICON> iconMap;
+
 NOTIFYICONDATAW nid;
 std::string CurrentController = "";
 HINSTANCE g_hInstance;
@@ -2084,18 +2098,71 @@ void mTrayUpdate()
 			{
 				int batteryLevel = connection->State.battery.Level;
 				int player = data.settings->player;
+
 				wcscpy_s(nid.szTip, ARRAYSIZE(nid.szTip), std::format(L"MakeSense: {}# - {}%", player, batteryLevel).c_str());
+				std::wstring iconstring = L"icon";
+				if (batteryLevel > 5 && batteryLevel < 20)
+				{
+					iconstring += L"20";
+				}
+				else if (batteryLevel < 40)
+				{
+					iconstring += L"40";
+				}
+				else if (batteryLevel < 60)
+				{
+					iconstring += L"60";
+				}
+				else if (batteryLevel < 80)
+				{
+					iconstring += L"80";
+				}
+				else
+				{
+					iconstring += L"100";
+				}
+
+				if (connection->IsCharging())
+				{
+					iconstring += L"c";
+				}
+				hIcon = &iconMap[iconstring];
 			}
 		}
 		else
 		{
+			hIcon = &iconMap[L"icon"];
 			wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
 		}
-
+		nid.hIcon = *hIcon; // ← your loaded ico10n
 		Shell_NotifyIconW(NIM_MODIFY, &nid);
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(600));
 	}
+}
+
+void loadAllIcons()
+{
+	for (const auto &icon : icons)
+	{
+		std::wstring path = std::format(L"utilities\\{}.ico", icon);
+		iconMap[icon] = (HICON)LoadImageW(
+			NULL, path.c_str(), // Your relative path
+			IMAGE_ICON,
+			0, 0, // Use icon's default size
+			LR_LOADFROMFILE | LR_DEFAULTSIZE);
+
+		std::wstring iconc = icon + L"c";
+		std::wstring path2 = std::format(L"utilities\\{}.ico", iconc);
+
+		iconMap[iconc] = (HICON)LoadImageW(
+			NULL, path2.c_str(), // Your relative path
+			IMAGE_ICON,
+			0, 0, // Use icon's default size
+			LR_LOADFROMFILE | LR_DEFAULTSIZE);
+	}
+
+	hIcon = &iconMap[L"icon"];
 }
 
 LRESULT CALLBACK TrayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -2173,7 +2240,7 @@ void InitTrayIcon(HWND hwnd)
 	nid.uID = 1;
 	nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
 	nid.uCallbackMessage = WM_TRAYICON;																   // Your custom tray icon message
-	nid.hIcon = hIcon;																				   // ← your loaded icon
+	nid.hIcon = *hIcon;																				   // ← your loaded icon
 	wcscpy_s(nid.szTip, sizeof(nid.szTip) / sizeof(wchar_t), L"MakeSense - no controllers connected"); // Tooltip shown on hover
 
 	Shell_NotifyIconW(NIM_ADD, &nid);
@@ -2221,12 +2288,7 @@ int main()
 	{
 		cout << "Not elevating" << endl;
 	}
-	hIcon = (HICON)LoadImageW(
-		NULL,
-		L"utilities\\icon.ico", // Your relative path
-		IMAGE_ICON,
-		0, 0, // Use icon's default size
-		LR_LOADFROMFILE | LR_DEFAULTSIZE);
+	loadAllIcons();
 
 	bool WasElevated = MyUtils::IsRunAsAdministrator();
 
@@ -3919,7 +3981,7 @@ int main()
 								ImGui::Separator();
 								ImGui::Spacing();
 							}
-						} 
+						}
 					}
 					else
 					{
@@ -4541,7 +4603,10 @@ int main()
 	udpServer.Dispose();
 	if (trayThread.joinable())
 		trayThread.join();
-	DestroyIcon(hIcon);
+	for (const auto &pair : iconMap)
+	{
+		DestroyIcon(pair.second);
+	}
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

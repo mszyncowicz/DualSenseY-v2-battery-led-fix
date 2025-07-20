@@ -72,6 +72,8 @@ namespace MyUtils {
     std::string GetExecutablePath();   
     void AddToStartup();
     void RemoveFromStartup();
+    void AddNotifications();
+    void RemoveNotifications();
     std::string GetImagesFolderPath();
     std::string GetLocalFolderPath();
     int scaleFloatToInt(float input_float, float max_float);

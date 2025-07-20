@@ -37,6 +37,8 @@ namespace Config {
         j["ShowConsole"] = ShowConsole;
         j["Language"] = Language;
         j["SkipVersionCheck"] = SkipVersionCheck;
+        j["ShowNotifications"] = ShowNotifications;
+
         return j;
     }
 
@@ -53,6 +55,7 @@ namespace Config {
         if (j.contains("ShowConsole")) j.at("ShowConsole").get_to(appconfig.ShowConsole);
         if (j.contains("Language")) j.at("Language").get_to(appconfig.Language);
         if (j.contains("DefaultStyleFilepath")) j.at("DefaultStyleFilepath").get_to(appconfig.DefaultStyleFilepath);
+        if (j.contains("ShowNotifications")) j.at("ShowNotifications").get_to(appconfig.ShowNotifications);
 
         return appconfig;
     }

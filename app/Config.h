@@ -25,6 +25,7 @@ public:
     std::string DefaultStyleFilepath = "";
     bool SkipVersionCheck = false;
     bool DisconnectAllBTControllersOnExit = false;
+    bool ShowNotifications = false;
 
     nlohmann::json to_json() const;
     static AppConfig from_json(const nlohmann::json &j);

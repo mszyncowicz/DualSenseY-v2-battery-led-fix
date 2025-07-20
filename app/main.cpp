@@ -164,22 +164,26 @@ void killController(ControllerData &data, std::string guid)
 	controllerMap.erase(guid);
 }
 
+Config::AppConfig appConfig;
+
 void showToast(int controllerNumber, int batteryPercent)
 {
-	winrt::init_apartment();
-	std::wstring sound;
-
-	if (batteryPercent > 5)
+	if (appConfig.ShowNotifications)
 	{
-		sound = L"Reminder";
-	}
-	else
-	{
-		sound = L"Alarm2";
-	}
+		winrt::init_apartment();
+		std::wstring sound;
 
-	std::wstring xml = std::format(
-		LR"(
+		if (batteryPercent > 5)
+		{
+			sound = L"Reminder";
+		}
+		else
+		{
+			sound = L"Looping.Alarm2";
+		}
+
+		std::wstring xml = std::format(
+			LR"(
         <toast scenario="alarm">
             <visual>
                 <binding template='ToastGeneric'>
@@ -189,17 +193,18 @@ void showToast(int controllerNumber, int batteryPercent)
             </visual>
             <audio src="ms-winsoundevent:Notification.{}"/>
         </toast>)",
-		controllerNumber, batteryPercent, sound);
+			controllerNumber, batteryPercent, sound);
 
-	XmlDocument toastXml;
-	toastXml.LoadXml(xml);
+		XmlDocument toastXml;
+		toastXml.LoadXml(xml);
 
-	ToastNotification toast(toastXml);
+		ToastNotification toast(toastXml);
 
-	const wchar_t *appID = L"DSX";
-	SetCurrentProcessExplicitAppUserModelID(appID);
+		const wchar_t *appID = L"MakeSense";
+		SetCurrentProcessExplicitAppUserModelID(appID);
 
-	ToastNotificationManager::CreateToastNotifier(appID).Show(toast);
+		ToastNotificationManager::CreateToastNotifier(appID).Show(toast);
+	}
 }
 
 void readControllerState(Dualsense &controller, Settings &settings)
@@ -2081,7 +2086,6 @@ HINSTANCE g_hInstance;
 HWND mainWindow;
 HWND g_trayHwnd;
 GLFWwindow *window;
-Config::AppConfig appConfig;
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 #define ID_TRAY_SHOW 1002
@@ -2327,7 +2331,7 @@ int main()
 
 	if (InstancesCount > 1)
 	{
-		MessageBox(0, "DSY/DSX is already running!", "Error", 0);
+		MessageBox(0, "MakeSense/DSX is already running!", "Error", 0);
 		return 1;
 	}
 
@@ -2362,7 +2366,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
 
-	string title = "DualSenseY - Version " + std::to_string(VERSION);
+	string title = "MakeSense";
 	// Create window with graphics context
 	window = glfwCreateWindow(static_cast<std::int32_t>(1200),
 							  static_cast<std::int32_t>(900), title.c_str(),
@@ -2570,7 +2574,6 @@ int main()
 		start_cycle();
 		ImGui::NewFrame();
 		// Get the viewport size (size of the application window)
-
 		ImVec2 window_size = io.DisplaySize;
 
 		// Set window flags to remove the ability to resize, move, or close the
@@ -2958,6 +2961,23 @@ int main()
 								Config::WriteAppConfigToFile(appConfig);
 							}
 							Tooltip(strings.RunWithWindows.c_str());
+
+							if (ImGui::Checkbox(strings.ShowNotifications.c_str(),
+												&appConfig.ShowNotifications))
+							{
+								if (appConfig.ShowNotifications)
+								{
+									MyUtils::AddNotifications();
+								}
+								else
+								{
+									MyUtils::RemoveNotifications();
+								}
+
+								Config::WriteAppConfigToFile(appConfig);
+							}
+
+							Tooltip(strings.Tooltip_ShowNotifications.c_str());
 
 							if (ImGui::Checkbox(strings.ShowConsole.c_str(),
 												&appConfig.ShowConsole))
@@ -4489,8 +4509,24 @@ int main()
 
 						Config::WriteAppConfigToFile(appConfig);
 					}
-					Tooltip(strings.RunWithWindows.c_str());
 
+					Tooltip(strings.RunWithWindows.c_str());
+					if (ImGui::Checkbox(strings.ShowNotifications.c_str(),
+										&appConfig.ShowNotifications))
+					{
+						if (appConfig.ShowNotifications)
+						{
+							MyUtils::AddNotifications();
+						}
+						else
+						{
+							MyUtils::RemoveNotifications();
+						}
+
+						Config::WriteAppConfigToFile(appConfig);
+					}
+
+					Tooltip(strings.Tooltip_ShowNotifications.c_str());
 					if (ImGui::Checkbox(strings.ShowConsole.c_str(),
 										&appConfig.ShowConsole))
 					{

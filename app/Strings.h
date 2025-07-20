@@ -141,6 +141,7 @@ using json = nlohmann::json;
     X(HideToTray, "Hide to tray") \
     X(HideWindowOnStartup, "Hide window on startup") \
     X(RunWithWindows, "Run with Windows") \
+    X(ShowNotifications, "Show notifications") \
     X(Scale, "Scale") \
     X(AnalogSticks, "Analog Sticks") \
     X(EmulatedControllerSettings, "Emulated controller settings") \
@@ -191,6 +192,7 @@ using json = nlohmann::json;
     X(Tooltip_HideWindowOnStartup, "Hides window at startup") \
     X(Tooltip_RunWithWindows, "Runs application on startup") \
     X(Tooltip_TouchpadToMouse, "Use dualsense touchpad like a laptop touchpad") \
+    X(Tooltip_ShowNotifications, "Shows low battery notifications on the notification bar") \
     X(Tooltip_StopWriting, "This option will halt the communication between DualSenseY and your DualSense controller. Useful when you want to play a native DualSense game without closing this app.")
 
 class Strings {

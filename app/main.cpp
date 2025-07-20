@@ -2005,8 +2005,11 @@ void writeControllerState(Dualsense &controller, Settings &settings,
 				{
 					controller.Write();
 				}
-
-				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				if (!settings.DisableLightbar && (settings.AudioToLED || settings.DiscoMode)){
+					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+				} else {
+					std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				}
 			}
 			else
 			{
@@ -3916,7 +3919,7 @@ int main()
 								ImGui::Separator();
 								ImGui::Spacing();
 							}
-						}
+						} 
 					}
 					else
 					{
@@ -3998,7 +4001,7 @@ int main()
 						MyUtils::StartAudioToHaptics(dualsense.GetAudioDeviceName());
 						s.WasAudioToHapticsRan = true;
 					}
-
+					/*
 					if (ImGui::CollapsingHeader(strings.HapticFeedback.c_str()))
 					{
 						if (s.emuStatus == None)
@@ -4086,7 +4089,7 @@ int main()
 								ImGui::Text(strings.AudioEngineNotInitializedError.c_str());
 							}
 						}
-					}
+					} */
 
 					if (ImGui::CollapsingHeader(strings.AnalogSticks.c_str()))
 					{

@@ -231,7 +231,7 @@ namespace DualsenseUtils {
 		int Green = 0;
 		int Blue = 0;
 		string ID = "";
-		bool ImprovedRumbleEmulation = true;
+		bool ImprovedRumbleEmulation = false;
 		int RumbleReduction = 0x0;
 
 		nlohmann::json to_json() const;
